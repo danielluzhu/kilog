@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "migrate": "bun run scripts/migrate.ts",
-    "start": "bun run server.ts"
+    "start": "bun run server.ts",
+    "build:static": "bun run scripts/export-static.ts"
   }
 }
