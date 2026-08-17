@@ -1,10 +1,14 @@
-# The workout database and everything derived from it. This is a public repo;
-# the log itself stays on the machine that runs the server.
+# The live workout database and everything derived from it.
 data/
 *.db
 *.db-shm
 *.db-wal
 *.db.bak-*
+
+# ...except the committed backup snapshot, which is deliberate. The log is
+# already public on the gh-pages branch, so this exposes nothing new — it is
+# here to be restorable, which the exported JSON is not.
+!backups/workout.db
 
 # Original spreadsheet export the database was migrated from (scripts/migrate.ts).
 *.xlsx
