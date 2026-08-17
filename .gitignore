@@ -1,0 +1,19 @@
+# The workout database and everything derived from it. This is a public repo;
+# the log itself stays on the machine that runs the server.
+data/
+*.db
+*.db-shm
+*.db-wal
+*.db.bak-*
+
+# Original spreadsheet export the database was migrated from (scripts/migrate.ts).
+*.xlsx
+
+# Favicon source bundle — the generated icons in public/ are what's actually served.
+favicon_io_lxj.zip
+
+# Local Claude Code settings (machine-specific paths and permissions).
+.claude/settings.local.json
+
+node_modules/
+.DS_Store

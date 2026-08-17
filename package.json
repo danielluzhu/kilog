@@ -1,0 +1,9 @@
+{
+  "name": "workout-log",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate": "bun run scripts/migrate.ts",
+    "start": "bun run server.ts"
+  }
+}
