@@ -9,12 +9,17 @@
   // under a project path like /kilog/ without knowing which at build time.
   const BASE = new URL(".", document.currentScript.src).href;
 
+  // Captured before window.fetch is replaced below. The export files live
+  // under BASE + "api/", so loading them through the patched fetch would be
+  // caught by this shim's own /api/ routing and 404 against itself.
+  const nativeFetch = window.fetch.bind(window);
+
   const cache = new Map();
   function load(name) {
     if (!cache.has(name)) {
       cache.set(
         name,
-        fetch(`${BASE}api/${name}.json`).then((res) => {
+        nativeFetch(`${BASE}api/${name}.json`).then((res) => {
           if (!res.ok) throw new Error(`missing export: ${name}`);
           return res.json();
         })
@@ -96,8 +101,6 @@
   const READ_ONLY = {
     error: "This is a read-only snapshot — open the log on the machine running the server to make changes.",
   };
-
-  const nativeFetch = window.fetch.bind(window);
 
   window.fetch = async function (input, init) {
     const url = new URL(
