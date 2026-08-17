@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lapse</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<header>
+  <h1><a href="/index.html" class="app-icon-link" aria-label="Workout Log home"><img src="/android-chrome-192x192.png" alt="" class="app-icon" /></a> Workout Log</h1>
+  <nav>
+    <a href="/index.html">Log</a>
+    <a href="/dictionary.html">Exercise Dictionary</a>
+    <a href="/lapse.html" class="active">Lapse</a>
+    <a href="/volume.html">Volume</a>
+    <a href="/onerm.html">1RM Calculator</a>
+    <a href="/cardio.html">Runs & Hikes</a>
+    <a href="/prilepin.html">Prilepin's Table</a>
+    <a href="/snatch.html">The Snatch</a>
+  </nav>
+</header>
+
+<main>
+  <section class="card">
+    <label for="exercise-select">Exercise</label>
+    <input
+      type="text"
+      id="exercise-select"
+      list="lapse-exercise-options"
+      placeholder="Start typing any exercise, e.g. FSQ"
+      autocomplete="off"
+    />
+    <datalist id="lapse-exercise-options"></datalist>
+    <p class="muted" style="margin: 0.6rem 0 0;">
+      Works for any exercise. The estimated-1RM chart only plots sessions with a clean
+      "weight x reps" set — everything else still shows in the history table below it.
+    </p>
+    <div id="lapse-quick-access" style="margin-top:0.6rem; display:flex; flex-wrap:wrap; gap:0.4rem;"></div>
+  </section>
+
+  <p class="muted" id="empty-state">Pick an exercise above to see its history and progression.</p>
+  <p class="muted" id="no-history-state" style="display:none;"></p>
+
+  <div id="lapse-content" style="display:none">
+    <section class="card">
+      <h2 style="margin-top:0">
+        <span id="exercise-title-name"></span><span id="exercise-title-abbrev" class="exercise-title-abbrev muted" tabindex="0" role="button" title="Click to edit full name"></span>
+      </h2>
+      <div id="exercise-name-edit" style="display:none; margin-bottom:0.75rem;">
+        <div class="row" style="align-items:flex-end; margin-bottom:0;">
+          <div>
+            <label for="exercise-name-input">Full name</label>
+            <input type="text" id="exercise-name-input" placeholder="e.g. Front Squat" />
+          </div>
+          <div style="flex:0; display:flex; gap:0.4rem;">
+            <button type="button" id="exercise-name-save" class="small primary">Save</button>
+            <button type="button" id="exercise-name-cancel" class="small">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="title-tier-row">
+        <label for="exercise-fatigue" style="margin-bottom:0;">Fatigue tier</label>
+        <select id="exercise-fatigue" class="tag-select fatigue-select"></select>
+        <span class="muted" id="exercise-fatigue-note"></span>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-value" id="stat-count">—</span><span class="stat-label">times logged</span></div>
+        <div class="stat"><span class="stat-value" id="stat-first">—</span><span class="stat-label">first logged</span></div>
+        <div class="stat"><span class="stat-value" id="stat-last">—</span><span class="stat-label">last logged</span></div>
+      </div>
+      <div class="record-banner" id="stat-max-weight-banner" style="display:none;">
+        <span class="record-banner-label">🏆 Heaviest weight ever moved</span>
+        <span class="record-banner-value" id="stat-max-weight">—</span>
+        <span class="record-banner-detail" id="stat-max-weight-detail"></span>
+        <div class="record-banner-recent">
+          <div class="record-recent">
+            <span class="record-recent-value" id="stat-max-weight-365">—</span>
+            <span class="record-recent-label">heaviest, last 365 days</span>
+          </div>
+          <div class="record-recent">
+            <span class="record-recent-value" id="stat-max-weight-90">—</span>
+            <span class="record-recent-label">heaviest, last 90 days</span>
+          </div>
+        </div>
+      </div>
+      <div class="stats-row" style="margin-top:0.75rem;">
+        <div class="stat"><span class="stat-value" id="stat-max-all">—</span><span class="stat-label" id="stat-max-all-label">all-time max (1RM, kg)</span></div>
+        <div class="stat"><span class="stat-value" id="stat-max-365">—</span><span class="stat-label">max, last 365 days</span></div>
+        <div class="stat"><span class="stat-value" id="stat-max-90">—</span><span class="stat-label">max, last 90 days</span></div>
+      </div>
+      <p class="muted composite-note" id="composite-note" style="display:none; margin:0.9rem 0 0;"></p>
+    </section>
+
+    <div class="range-bar" id="chart-range">
+      <span class="range-bar-label">Timeline</span>
+      <button type="button" class="chip range-btn" data-range="30">Last 30 days</button>
+      <button type="button" class="chip range-btn" data-range="90">Last 90 days</button>
+      <button type="button" class="chip range-btn" data-range="365">Last year</button>
+      <button type="button" class="chip range-btn" data-range="all">All time</button>
+    </div>
+
+    <section class="card" id="chart-section-single">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+        <h2 style="margin-top:0">Estimated 1RM over time</h2>
+        <button type="button" class="small" id="chart-reset-zoom" style="display:none;">Reset zoom</button>
+      </div>
+      <p class="muted" style="margin-top:0" id="chart-single-sub">Each point is the best set that session's estimated one-rep max (Epley formula).</p>
+      <div id="chart-wrap"></div>
+      <p class="muted" id="no-weight-msg" style="display:none; margin-bottom:0;"
+         data-empty-msg="Couldn't find a clean &quot;weight x reps&quot; set (e.g. &quot;135x5&quot;) in any logged session for this exercise — showing raw history below instead.">
+        Couldn't find a clean "weight x reps" set (e.g. "135x5") in any logged session for this
+        exercise — showing raw history below instead.
+      </p>
+    </section>
+
+    <div id="chart-split-sections" style="display:none;"></div>
+
+    <section class="card" id="chart-section-weekly">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+        <h2 style="margin-top:0">Heaviest weight per week</h2>
+        <button type="button" class="small" id="weekly-reset-zoom" style="display:none;">Reset zoom</button>
+      </div>
+      <p class="muted" style="margin-top:0">
+        One point per training week — the single biggest weight actually moved that week, whatever
+        the reps. Unlike the estimated 1RM above, this is a number that was really on the bar.
+      </p>
+      <div id="weekly-chart-wrap"></div>
+      <p class="muted" id="weekly-no-weight-msg" style="display:none; margin-bottom:0;"
+         data-empty-msg="Couldn't find a clean &quot;weight x reps&quot; set (e.g. &quot;135x5&quot;) in any logged session for this exercise, so there's no weight to plot per week.">
+        Couldn't find a clean "weight x reps" set (e.g. "135x5") in any logged session for this
+        exercise, so there's no weight to plot per week.
+      </p>
+    </section>
+
+    <section>
+      <h2>History <span class="muted" style="text-transform:none; font-weight:normal;">(newest first)</span></h2>
+      <table>
+        <thead><tr><th>Date</th><th>Sets</th><th>Top weight</th><th></th></tr></thead>
+        <tbody id="lapse-history-body"></tbody>
+      </table>
+    </section>
+  </div>
+</main>
+
+<script src="/utils.js"></script>
+<script src="/lapse.js"></script>
+</body>
+</html>
