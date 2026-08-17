@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { db } from "./db.ts";
 import { normalizeDate } from "./lib/dates.ts";
 import { countSets } from "./lib/setCount.ts";
@@ -719,6 +720,33 @@ function deleteCardio(id: number) {
   if (result.changes === 0) throw new Error("not found");
 }
 
+// ---------- auth ----------
+
+// The log is personal, so any publicly-reachable deployment sets KILOG_PASSWORD
+// and everything behind it requires HTTP Basic auth. Left unset (the local
+// default) the check is skipped entirely, so running on localhost is unchanged.
+const PASSWORD = process.env.KILOG_PASSWORD ?? "";
+
+function authorized(req: Request) {
+  if (!PASSWORD) return true;
+
+  const header = req.headers.get("authorization");
+  if (!header?.startsWith("Basic ")) return false;
+
+  let decoded: string;
+  try {
+    decoded = atob(header.slice("Basic ".length));
+  } catch {
+    return false;
+  }
+
+  // Any username is accepted; only the password half is checked.
+  const supplied = decoded.slice(decoded.indexOf(":") + 1);
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(PASSWORD);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 // ---------- server ----------
 
 const server = Bun.serve({
@@ -727,6 +755,13 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     const { pathname } = url;
+
+    if (!authorized(req)) {
+      return new Response("Unauthorized", {
+        status: 401,
+        headers: { "WWW-Authenticate": 'Basic realm="kilog", charset="UTF-8"' },
+      });
+    }
 
     try {
       if (pathname === "/api/workouts" && req.method === "GET") {
