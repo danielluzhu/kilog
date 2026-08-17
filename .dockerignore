@@ -1,0 +1,18 @@
+# The workout database is never baked into the image — it lives on the Fly
+# volume mounted at /app/data. Copying it here would leak the log into every
+# image layer and then be shadowed by the mount anyway.
+data/
+*.db
+*.db-shm
+*.db-wal
+*.db.bak-*
+
+*.xlsx
+favicon_io_lxj.zip
+
+.git/
+.gitignore
+.claude/
+node_modules/
+.DS_Store
+README.md
