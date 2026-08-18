@@ -261,19 +261,37 @@ input[type="file"]::file-selector-button:hover { border-color: var(--muted); }
 button {
   cursor: pointer;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--surface-2);
   color: var(--fg);
-  border-radius: 6px;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
-button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button:hover { border-color: var(--muted); }
+button:active { transform: translateY(1px); }
+button.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+  font-weight: 650;
+}
+button.primary:hover { border-color: var(--accent); filter: brightness(1.08); }
 button.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
 button.small { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
 
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+th, td { text-align: left; padding: 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom-color: var(--muted);
+}
 #dict-body tr:nth-child(even) { background: var(--row-alt); }
 
 /* Exercise Dictionary column sizing. Without explicit widths the two text
@@ -281,7 +299,10 @@ th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: u
    its mostly-short values don't need, while the Full name input — the field
    actually being edited — gets squeezed. A few legacy "abbreviations" are
    whole sentences, so that column wraps instead of forcing the table wide. */
-.col-abbrev { width: 13%; overflow-wrap: anywhere; }
+/* Scoped to the cell: on the header the same rule broke "ABBREVIATION"
+   across two lines once the tracking widened. */
+.col-abbrev { width: 13%; }
+td.col-abbrev { overflow-wrap: anywhere; }
 .col-name { width: 26%; }
 .col-tag { width: 10%; }
 .col-num { width: 4.5rem; }
@@ -292,11 +313,11 @@ th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: u
    muted so the two states are distinguishable at a glance. */
 .tag-select {
   width: 100%;
-  padding: 0.2rem 0.3rem;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.78rem;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
   color: var(--muted);
 }
 .tag-select.is-set { color: var(--fg); border-color: var(--accent); }
@@ -345,18 +366,18 @@ tr.day-header-row:first-child td { padding-top: 0.5rem; }
    / cardio — isolation's neutral sits between the two warm hues on purpose,
    since red beside yellow fails the dark-mode separation floor. */
 :root {
-  --tier-complex: #e34948;
-  --tier-compound: #2a78d6;
+  --tier-complex: #e66767;
+  --tier-compound: #3987e5;
   --tier-isolation: var(--muted);
-  --tier-technique: #eda100;
-  --tier-cardio: #1baf7a;
+  --tier-technique: #c98500;
+  --tier-cardio: #199e70;
 }
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --tier-complex: #e66767;
-    --tier-compound: #3987e5;
-    --tier-technique: #c98500;
-    --tier-cardio: #199e70;
+    --tier-complex: #e34948;
+    --tier-compound: #2a78d6;
+    --tier-technique: #eda100;
+    --tier-cardio: #1baf7a;
   }
 }
 .pill.fatigue-complex { color: var(--tier-complex); border-color: var(--tier-complex); }
