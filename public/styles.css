@@ -570,9 +570,14 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 .composite-note { font-size: 0.85rem; line-height: 1.45; }
 
 /* Lapse */
-.stats-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+.stats-row { display: flex; gap: 1.25rem 2.5rem; flex-wrap: wrap; }
 .stat { display: flex; flex-direction: column; }
-.stat-value { font-size: 1.6rem; font-weight: 600; }
+.stat-value {
+  font-size: 2.1rem;
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  line-height: 1.05;
+}
 .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
 
 /* Both the single default chart (#chart-wrap) and each dynamically-created
@@ -580,14 +585,32 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
    against this box, so every chart mount needs `position: relative`. */
 #chart-wrap, .chart-wrap { position: relative; }
 #chart-wrap svg, .chart-wrap svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; cursor: crosshair; }
-.chart-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-line { fill: none; stroke: var(--accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
 .chart-gridline { stroke: var(--border); stroke-width: 1; }
+.chart-axis-text { letter-spacing: 0.04em; }
 .chart-axis-text { fill: var(--muted); font-size: 10px; }
 .chart-dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
 .chart-dot-pr { stroke-width: 3; }
 .chart-pr-label { fill: var(--accent); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
 .chart-endlabel { fill: var(--fg); font-size: 11px; font-weight: 600; }
 .chart-crosshair { stroke: var(--muted); stroke-width: 1; opacity: 0; pointer-events: none; }
+
+/* The exercise name is the subject of the Lapse page, not a section label —
+   it gets headline treatment while every other h2 stays a quiet marker. */
+.exercise-title {
+  font-size: 1.75rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  text-transform: none;
+  color: var(--fg);
+  margin-bottom: 0.6rem;
+}
+.exercise-title .exercise-title-abbrev {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-left: 0.4rem;
+}
 
 .exercise-title-abbrev { cursor: pointer; border-bottom: 1px dashed var(--muted); }
 .exercise-title-abbrev:hover { color: var(--accent); border-bottom-color: var(--accent); }
@@ -610,9 +633,9 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 .chart-tooltip {
   position: absolute;
   pointer-events: none;
-  background: var(--bg);
+  background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.35rem 0.6rem;
   font-size: 0.8rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
@@ -627,12 +650,15 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 /* 1RM Calculator */
 .chip {
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--surface-2);
   color: var(--fg);
   border-radius: 999px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 .chip:hover { border-color: var(--accent); color: var(--accent); }
 .chip-active { border-color: var(--accent); color: var(--accent-fg); background: var(--accent); }
@@ -675,13 +701,13 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
    #121212): all checks pass; three light slots fall below 3:1 contrast, which
    the breakdown table below the chart covers. */
 :root {
-  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
-  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
 }
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+    --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
   }
 }
 .vol-s1 { fill: var(--s1); } .vol-s2 { fill: var(--s2); }
