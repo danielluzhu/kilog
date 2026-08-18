@@ -1221,8 +1221,21 @@ function renderWeeklyTopWeightChart(history, abbreviation, fullName) {
 // lifted number, not an estimate, so it deserves top billing.
 let heaviestEverDate = null;
 
+// The set a highlight came from, written the way the log and the history
+// table write it. An estimated 1RM is only as meaningful as the weight and
+// reps behind it — a heavy single and a long set of fives can land on the
+// same estimate — so every highlight names its own set.
+function rawSetOf(s) {
+  return s.resolvedRaw ?? s.raw ?? "";
+}
+
+function setDetailText(s) {
+  const raw = rawSetOf(s);
+  return raw ? `${raw} · ${formatDate(s.date)}` : formatDate(s.date);
+}
+
 function describeRecordSet(s) {
-  const detail = `${s.reps} rep${s.reps === 1 ? "" : "s"} · ${formatDate(s.date)}`;
+  const detail = setDetailText(s);
   const logged = s.bodyweight
     ? `Logged as "${s.resolvedRaw ?? s.raw}" — ${formatKg(s.weight)} total with bodyweight`
     : `Logged as "${s.resolvedRaw ?? s.raw}"`;
@@ -1254,15 +1267,20 @@ function renderMaxWeightStat(history, abbreviation, fullName) {
     ["#stat-max-weight-90", d90],
   ]) {
     const node = $(el);
+    const detailNode = $(`${el}-detail`);
     if (!record) {
       node.textContent = "—";
       node.title = "Nothing logged in this window";
+      detailNode.textContent = "";
       node.classList.remove("is-record");
       continue;
     }
     const d = describeRecordSet(record);
     node.textContent = formatScoredWeight(record, record.weight);
-    node.title = `${d.detail} — ${d.logged}`;
+    // The set was only in the tooltip before, which left the two recent
+    // figures as bare numbers with no way to see what produced them.
+    detailNode.textContent = d.detail;
+    node.title = d.logged;
     // Flagged when the window matches the all-time best *weight*, not the
     // same session — hitting your best again on a later day is still current
     // form, and comparing dates would miss it.
