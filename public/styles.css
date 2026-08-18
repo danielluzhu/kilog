@@ -324,6 +324,33 @@ tr.day-panel-row td { background: var(--row-alt); padding: 0.9rem 0.6rem; border
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
+/* The set behind the figure, in the same "weight x reps" form as the log. */
+.record-recent-detail,
+.stat-detail {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.15rem;
+}
+.record-recent-detail:empty,
+.stat-detail:empty { display: none; }
+
+/* The 1RM figures are derived, unlike the record banner above them, which is
+   a weight that was actually on the bar. The dashed rule and the header keep
+   the two from reading as the same kind of number. */
+.estimate-block {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+.estimate-block-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+}
 
 .record-badge {
   display: inline-block;
