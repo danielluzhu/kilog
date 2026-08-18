@@ -705,12 +705,13 @@ function createChartInstance(dom, metric = ONE_RM_METRIC) {
 
     // Stat tiles are optional: a chart whose figures are already reported
     // elsewhere on the page (the heaviest-ever banner) mounts without them.
-    const setStat = (el, record) => {
+    const setStat = (el, detailEl, record) => {
       if (el) el.textContent = record ? valueOf(record) : "—";
+      if (detailEl) detailEl.textContent = record ? setDetailText(record) : "";
     };
-    setStat(dom.statAll, allTime);
-    setStat(dom.stat365, y365);
-    setStat(dom.stat90, d90);
+    setStat(dom.statAll, dom.detailAll, allTime);
+    setStat(dom.stat365, dom.detail365, y365);
+    setStat(dom.stat90, dom.detail90, d90);
     prDates = {
       allTime: allTime ? allTime.date : null,
       y365: y365 ? y365.date : null,
@@ -994,6 +995,9 @@ const defaultChartInstance = createChartInstance({
   statAll: $("#stat-max-all"),
   stat365: $("#stat-max-365"),
   stat90: $("#stat-max-90"),
+  detailAll: $("#stat-max-all-detail"),
+  detail365: $("#stat-max-365-detail"),
+  detail90: $("#stat-max-90-detail"),
 });
 
 // ---------- bodyweight vs. added-weight split ----------
@@ -1061,9 +1065,9 @@ function chartSectionTemplate(title, subtitle, metric) {
       </div>
       <p class="muted" style="margin-top:0">${escapeHtml(subtitle)}</p>
       <div class="stats-row" style="margin-bottom:0.75rem;">
-        <div class="stat"><span class="stat-value chart-stat-max-all">—</span><span class="stat-label">all-time max (${escapeHtml(metric.statSuffix)})</span></div>
-        <div class="stat"><span class="stat-value chart-stat-max-365">—</span><span class="stat-label">max, last 365 days</span></div>
-        <div class="stat"><span class="stat-value chart-stat-max-90">—</span><span class="stat-label">max, last 90 days</span></div>
+        <div class="stat"><span class="stat-value chart-stat-max-all">—</span><span class="stat-label">all-time max (${escapeHtml(metric.statSuffix)})</span><span class="stat-detail chart-stat-detail-all"></span></div>
+        <div class="stat"><span class="stat-value chart-stat-max-365">—</span><span class="stat-label">max, last 365 days</span><span class="stat-detail chart-stat-detail-365"></span></div>
+        <div class="stat"><span class="stat-value chart-stat-max-90">—</span><span class="stat-label">max, last 90 days</span><span class="stat-detail chart-stat-detail-90"></span></div>
       </div>
       <div class="chart-wrap"></div>
       <p class="muted chart-no-weight-msg" style="display:none; margin-bottom:0;"
@@ -1081,6 +1085,9 @@ function chartInstanceFromSection(section, metric) {
       statAll: section.querySelector(".chart-stat-max-all"),
       stat365: section.querySelector(".chart-stat-max-365"),
       stat90: section.querySelector(".chart-stat-max-90"),
+      detailAll: section.querySelector(".chart-stat-detail-all"),
+      detail365: section.querySelector(".chart-stat-detail-365"),
+      detail90: section.querySelector(".chart-stat-detail-90"),
     },
     metric
   );
@@ -1186,6 +1193,9 @@ const weeklyChartInstance = createChartInstance(
     statAll: null,
     stat365: null,
     stat90: null,
+    detailAll: null,
+    detail365: null,
+    detail90: null,
   },
   TOP_WEIGHT_METRIC
 );
