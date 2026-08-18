@@ -437,7 +437,7 @@ tr.day-panel-row td { background: var(--row-alt); padding: 0.9rem 0.6rem; border
 .muted { color: var(--muted); }
 .actions { display: flex; gap: 0.4rem; }
 .status { font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.1em; }
-.status.ok { color: #16a34a; }
+.status.ok { color: var(--ok); }
 .status.err { color: var(--danger); }
 
 /* Lapse — all-time heaviest-lift callout. Deliberately the loudest element
@@ -447,13 +447,17 @@ tr.day-panel-row td { background: var(--row-alt); padding: 0.9rem 0.6rem; border
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.15rem 0.75rem;
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--accent);
-  border-left: 4px solid var(--accent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  gap: 0.15rem 0.85rem;
+  margin-top: 1.1rem;
+  padding: 1.1rem 1.25rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: var(--radius);
+  /* The one number on the page that was really on the bar — lit from the
+     corner so it reads as the page's light source. */
+  background:
+    radial-gradient(125% 150% at 0% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 62%),
+    var(--surface-2);
+  box-shadow: var(--shadow-lift);
 }
 .record-banner-label {
   font-size: 0.75rem;
@@ -462,8 +466,14 @@ tr.day-panel-row td { background: var(--row-alt); padding: 0.9rem 0.6rem; border
   letter-spacing: 0.03em;
   width: 100%;
 }
-.record-banner-value { font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1.1; }
-.record-banner-detail { font-size: 0.85rem; color: var(--muted); }
+.record-banner-value {
+  font-size: clamp(2.7rem, 8vw, 3.6rem);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  color: var(--accent);
+  line-height: 1;
+}
+.record-banner-detail { font-size: 0.82rem; color: var(--muted); }
 
 /* Trailing-window bests, subordinate to the all-time figure above them. */
 .record-banner-recent {
@@ -476,7 +486,12 @@ tr.day-panel-row td { background: var(--row-alt); padding: 0.9rem 0.6rem; border
   border-top: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .record-recent { display: flex; flex-direction: column; }
-.record-recent-value { font-size: 1.1rem; font-weight: 600; cursor: help; }
+.record-recent-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: help;
+}
 /* The window's best is also the all-time best — the PR is current, not historic. */
 .record-recent-value.is-record { color: var(--accent); }
 .record-recent-value.is-record::after { content: " 🏆"; font-size: 0.75rem; }
@@ -501,8 +516,8 @@ tr.day-panel-row td { background: var(--row-alt); padding: 0.9rem 0.6rem; border
    a weight that was actually on the bar. The dashed rule and the header keep
    the two from reading as the same kind of number. */
 .estimate-block {
-  margin-top: 0.9rem;
-  padding-top: 0.75rem;
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
   border-top: 1px dashed var(--border);
 }
 .estimate-block-label {
