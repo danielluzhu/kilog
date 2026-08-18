@@ -69,11 +69,6 @@
         <select id="exercise-fatigue" class="tag-select fatigue-select"></select>
         <span class="muted" id="exercise-fatigue-note"></span>
       </div>
-      <div class="stats-row">
-        <div class="stat"><span class="stat-value" id="stat-count">—</span><span class="stat-label">times logged</span></div>
-        <div class="stat"><span class="stat-value" id="stat-first">—</span><span class="stat-label">first logged</span></div>
-        <div class="stat"><span class="stat-value" id="stat-last">—</span><span class="stat-label">last logged</span></div>
-      </div>
       <div class="record-banner" id="stat-max-weight-banner" style="display:none;">
         <span class="record-banner-label">🏆 Heaviest weight ever moved</span>
         <span class="record-banner-value" id="stat-max-weight">—</span>
@@ -94,7 +89,6 @@
         <div class="stat"><span class="stat-value" id="stat-max-365">—</span><span class="stat-label">max, last 365 days</span></div>
         <div class="stat"><span class="stat-value" id="stat-max-90">—</span><span class="stat-label">max, last 90 days</span></div>
       </div>
-      <p class="muted composite-note" id="composite-note" style="display:none; margin:0.9rem 0 0;"></p>
     </section>
 
     <div class="range-bar" id="chart-range">
@@ -136,6 +130,16 @@
         Couldn't find a clean "weight x reps" set (e.g. "135x5") in any logged session for this
         exercise, so there's no weight to plot per week.
       </p>
+    </section>
+
+    <section class="card" id="logging-summary">
+      <h2 style="margin-top:0">Logging summary</h2>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-value" id="stat-count">—</span><span class="stat-label">times logged</span></div>
+        <div class="stat"><span class="stat-value" id="stat-first">—</span><span class="stat-label">first logged</span></div>
+        <div class="stat"><span class="stat-value" id="stat-last">—</span><span class="stat-label">last logged</span></div>
+      </div>
+      <p class="muted composite-note" id="composite-note" style="display:none; margin:0.9rem 0 0;"></p>
     </section>
 
     <section>
