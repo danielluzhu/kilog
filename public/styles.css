@@ -1,85 +1,226 @@
 :root {
-  color-scheme: light dark;
-  --bg: #ffffff;
-  --fg: #1a1a1a;
-  --muted: #6b7280;
-  --border: #e2e2e2;
-  --accent: #2563eb;
-  --accent-fg: #ffffff;
-  --row-alt: #f7f7f8;
-  --danger: #dc2626;
+  /* Dark-first: the log is read in a gym, at night, on a phone. The light
+     theme is the override, not the other way round.
+
+     --page is the backdrop, --bg the surface a card/control/chart sits on.
+     They are separate because --bg is load-bearing well beyond backgrounds:
+     input fills, chart-dot strokes and the gaps between stacked volume bars
+     all key off it, and every one of those is drawn on a card, not on the
+     page. Repointing --bg at the backdrop would put page-coloured seams on
+     card-coloured charts. */
+  color-scheme: dark light;
+
+  --page: #0c0e12;
+  --bg: #14181f;
+  --surface-2: #1b212b;
+  --fg: #f2f5f9;
+  --muted: #98a3b5;
+  --border: #262d38;
+  --accent: #5b9dff;
+  --accent-fg: #08111f;
+  --row-alt: #191e26;
+  --danger: #ff6b6b;
+  --ok: #3ddc97;
+
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 12px 28px -16px rgba(0, 0, 0, 0.75);
+  --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 22px 46px -22px rgba(0, 0, 0, 0.85);
+
+  /* One tracking/weight pair for every number meant to be read across a
+     room, so a hero figure and a stat tile differ in size but not voice. */
+  --display-tracking: -0.035em;
+  --display-weight: 800;
 }
-@media (prefers-color-scheme: dark) {
+
+@media (prefers-color-scheme: light) {
   :root {
-    --bg: #121212;
-    --fg: #f0f0f0;
-    --muted: #9ca3af;
-    --border: #2b2b2b;
-    --accent: #3b82f6;
-    --accent-fg: #0b0b0b;
-    --row-alt: #1a1a1a;
-    --danger: #f87171;
+    --page: #f2f5fa;
+    --bg: #ffffff;
+    --surface-2: #f7f9fc;
+    --fg: #0e141d;
+    --muted: #59647a;
+    --border: #dde3ec;
+    --accent: #1c5fd4;
+    --accent-fg: #ffffff;
+    --row-alt: #f5f7fb;
+    --danger: #c62828;
+    --ok: #0f8a5f;
+
+    --shadow: 0 1px 2px rgba(14, 20, 29, 0.06), 0 12px 28px -18px rgba(14, 20, 29, 0.35);
+    --shadow-lift: 0 1px 2px rgba(14, 20, 29, 0.08), 0 22px 46px -24px rgba(14, 20, 29, 0.45);
   }
 }
 
 * { box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--page);
   color: var(--fg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Every figure on this site is compared against another figure directly above
+   or below it, so digits are tabular everywhere by default. */
+input, button, select, textarea, table, .stat-value, .record-banner-value,
+.record-recent-value { font-variant-numeric: tabular-nums; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
 }
 
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
   gap: 0.5rem;
+  /* Eight pages, one nav — keep it reachable without a scroll back up. */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--page) 80%, transparent);
+  backdrop-filter: saturate(1.6) blur(14px);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+}
+/* Below this the eight nav links wrap to three rows, and a sticky header
+   would hold ~170px of a phone screen hostage for the whole scroll. */
+@media (max-width: 899px) {
+  header {
+    position: static;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--page);
+  }
 }
 
-header h1 { font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+header h1 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
 .app-icon { width: 1.9rem; height: 1.9rem; display: block; flex-shrink: 0; object-fit: contain; }
 .app-icon-link { display: flex; line-height: 0; }
 .app-icon-link:hover .app-icon { opacity: 0.8; }
 
+nav { display: flex; flex-wrap: wrap; gap: 0.15rem; }
 nav a {
   color: var(--muted);
   text-decoration: none;
-  margin-left: 1rem;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  transition: color 0.15s ease, background 0.15s ease;
 }
-nav a.active, nav a:hover { color: var(--accent); }
+nav a:hover { color: var(--fg); background: var(--surface-2); }
+nav a.active { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
 
 main {
-  max-width: 900px;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.75rem 1.5rem 4rem;
 }
 
-h2 { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2rem; }
+/* Section headings are labels, not headlines — the numbers under them are
+   what carries size on this site. */
+h2 {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: 2rem;
+}
 
 .card {
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  padding: 1.35rem 1.45rem;
+  margin-bottom: 1.1rem;
+  box-shadow: var(--shadow);
 }
 
-label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
+label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
 
 input[type="text"], input[type="date"], input[type="file"], textarea {
   width: 100%;
-  padding: 0.5rem 0.6rem;
+  padding: 0.55rem 0.7rem;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
   color: var(--fg);
   font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+input[type="text"]:focus, input[type="date"]:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+::placeholder { color: var(--muted); opacity: 0.75; }
+
+/* Prose links (page intros, cross-references). Every other anchor on the
+   site — nav, date, exercise, composite — sets its own colour and wins. */
+a { color: var(--accent); text-underline-offset: 0.15em; }
+a:hover { color: var(--fg); }
+
+select {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+/* The file picker's button is UA chrome and ignores the rules above — left
+   alone it renders as a light-grey system button on a dark card. */
+input[type="file"] { padding: 0.4rem; }
+input[type="file"]::file-selector-button {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-right: 0.75rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--fg);
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover { border-color: var(--muted); }
 
 .row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .row > div { flex: 1; min-width: 140px; }
