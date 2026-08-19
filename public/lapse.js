@@ -600,11 +600,15 @@ function computeTicks(min, max, count = 4) {
 // Preset windows over the timeline. These only change which slice of the
 // chart is drawn; the stat tiles and the all-time record banner always
 // reflect the full history regardless of what's selected.
+// Each preset resolves its own cutoff rather than declaring a day count,
+// because year-to-date isn't expressible as one — it's pinned to Jan 1 and
+// widens as the year goes on.
 const RANGE_PRESETS = [
-  { key: "30", days: 30, label: "Last 30 days" },
-  { key: "90", days: 90, label: "Last 90 days" },
-  { key: "365", days: 365, label: "Last year" },
-  { key: "all", days: null, label: "All time" },
+  { key: "30", label: "Last 30 days", cutoff: () => daysAgoDate(30) },
+  { key: "90", label: "Last 90 days", cutoff: () => daysAgoDate(90) },
+  { key: "ytd", label: "Year to date", cutoff: () => startOfYearDate() },
+  { key: "365", label: "Last year", cutoff: () => daysAgoDate(365) },
+  { key: "all", label: "All time", cutoff: () => null },
 ];
 let currentRangeKey = "all";
 
@@ -614,8 +618,8 @@ function currentRangeLabel() {
 
 function pointsInCurrentRange(points) {
   const preset = RANGE_PRESETS.find((r) => r.key === currentRangeKey);
-  if (!preset || preset.days === null) return points;
-  const cutoff = daysAgoDate(preset.days);
+  const cutoff = preset?.cutoff();
+  if (!cutoff) return points;
   return points.filter((p) => {
     const d = parseDateParts(p.date);
     return d && d >= cutoff;
