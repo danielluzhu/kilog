@@ -726,6 +726,46 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 .vol-swatch.vol-other { background: var(--muted); }
 #muscle-chart-wrap { position: relative; }
 #muscle-chart-wrap svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; }
+/* Fixed-window rates, sitting between the stat tiles and the chart. Smaller
+   than a stat tile on purpose: they qualify the totals above rather than
+   competing with them. */
+.rate-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.rate-row-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-right: 0.25rem;
+}
+.rate-item { display: inline-flex; align-items: baseline; gap: 0.35rem; }
+.rate-value { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+.rate-label { font-size: 0.72rem; color: var(--muted); }
+
+.rate-table-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 1.4rem 0 0.4rem;
+}
+.rate-table { font-size: 0.85rem; }
+.rate-table th, .rate-table td { padding: 0.4rem 0.6rem; }
+.rate-table td { font-variant-numeric: tabular-nums; }
+.rate-table td:first-child { white-space: nowrap; }
+.rate-table .vol-swatch { margin-right: 0.45rem; vertical-align: baseline; }
+
 .vol-legend { display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: center; }
 .vol-key { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--muted); }
 
