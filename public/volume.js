@@ -620,8 +620,8 @@ function render() {
     totalText: (v) => `${formatFatigueUnits(v)} WFU`,
   };
 
-  renderRateRow("#vol-rate", "Sets", "sets");
-  renderRateRow("#wfu-rate", "WFU", "wfu");
+  renderRateRow("#vol-rate", "Sets", "sets", "sets/wk");
+  renderRateRow("#wfu-rate", "WFU", "wfu", "WFU/wk");
   renderPatternRates(patternSpec);
 
   renderStacked($("#vol-chart-wrap"), $("#vol-empty"), buckets, tierSpec);
@@ -685,6 +685,11 @@ $("#custom-days").addEventListener("input", (e) => {
   customDays = n;
   if (bucketMode === "custom") render();
 });
+
+// The two calendar chips name their year, so a log read next January says
+// 2027 and 2026 without anyone editing the markup.
+$("#vrange-this-year").textContent = `This year (${currentYear()})`;
+$("#vrange-last-year").textContent = `Last year (${currentYear() - 1})`;
 
 markActive();
 loadVolume();
