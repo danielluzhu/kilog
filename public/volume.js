@@ -443,6 +443,77 @@ function patternClass(key) {
   return idx === -1 ? "vol-other" : `vol-s${idx + 1}`;
 }
 
+// ---------- weekly rates ----------
+
+// Three fixed windows, deliberately independent of the range and bucket
+// chips above: they exist to be compared against each other ("am I doing
+// more than I used to"), which only works if changing the view can't move
+// them. All time runs from the first logged day, so it isn't flattered by
+// however long the log has been quiet.
+const RATE_WINDOWS = [
+  { key: "all", label: "all time" },
+  { key: "365", label: "last year" },
+  { key: "90", label: "last 90 days" },
+];
+
+const formatRate = (v) => (Math.round(v * 10) / 10).toFixed(1);
+
+function rowsInWindow(key) {
+  if (key === "all") return rows;
+  return rows.filter((r) => r.day >= dayNumber(todayIso()) - Number(key));
+}
+
+// Elapsed calendar weeks, not weeks trained — a week off is part of the
+// average, which is the point of quoting a rate rather than a total.
+function weeksInWindow(key) {
+  if (key !== "all") return Number(key) / 7;
+  if (rows.length === 0) return 0;
+  const first = rows.reduce((min, r) => Math.min(min, r.day), Infinity);
+  return Math.max(1, dayNumber(todayIso()) - first + 1) / 7;
+}
+
+function rateIn(key, field, filter) {
+  const weeks = weeksInWindow(key);
+  if (!weeks) return null;
+  const total = rowsInWindow(key)
+    .filter((r) => !filter || filter(r))
+    .reduce((sum, r) => sum + (field === "wfu" ? r.wfu : r.setCount), 0);
+  return total / weeks;
+}
+
+function renderRateRow(sel, noun, field) {
+  // Spelled out because the tile above divides by periods actually trained,
+  // and the two numbers would otherwise look like they disagree.
+  const explain =
+    `Every calendar week in the window, including weeks with nothing logged. ` +
+    `The tile above averages only over periods you trained.`;
+  $(sel).innerHTML =
+    `<span class="rate-row-label" title="${escapeHtml(explain)}">${escapeHtml(noun)} per week</span>` +
+    RATE_WINDOWS.map((w) => {
+      const rate = rateIn(w.key, field);
+      return `<span class="rate-item"><span class="rate-value">${
+        rate === null ? "—" : formatRate(rate)
+      }</span><span class="rate-label">${escapeHtml(w.label)}</span></span>`;
+    }).join("");
+}
+
+function renderPatternRates(spec) {
+  const dimmed = dimmerFor(spec);
+  const present = PATTERN_STACK.filter((k) => rows.some((r) => r.pattern === k));
+  $("#pattern-rate-body").innerHTML = present
+    .map((k) => {
+      const cells = RATE_WINDOWS.map((w) => {
+        const rate = rateIn(w.key, "sets", (r) => r.pattern === k);
+        return `<td>${rate === null ? '<span class="muted">—</span>' : formatRate(rate)}</td>`;
+      }).join("");
+      return `<tr${dimmed && dimmed(k) ? ' class="col-dimmed"' : ""}>
+        <td><i class="vol-swatch ${patternClass(k)}"></i>${escapeHtml(patternLabel(k))}</td>
+        ${cells}
+      </tr>`;
+    })
+    .join("");
+}
+
 // ---------- render ----------
 
 function renderStats(buckets) {
@@ -454,12 +525,12 @@ function renderStats(buckets) {
   $("#vol-total").textContent = total || "—";
   $("#vol-sessions").textContent = trainingDays.size || "—";
   $("#vol-per-bucket").textContent = buckets.length ? Math.round(total / buckets.length) : "—";
-  $("#vol-per-bucket-label").textContent = `avg sets per ${bucketNoun()}`;
+  $("#vol-per-bucket-label").textContent = `avg sets per active ${bucketNoun()}`;
   $("#vol-wfu").textContent = totalWfu ? formatFatigueUnits(totalWfu) : "—";
   $("#vol-wfu-per-bucket").textContent = buckets.length
     ? formatFatigueUnits(totalWfu / buckets.length)
     : "—";
-  $("#vol-wfu-per-bucket-label").textContent = `avg WFU per ${bucketNoun()}`;
+  $("#vol-wfu-per-bucket-label").textContent = `avg WFU per active ${bucketNoun()}`;
 
   // The heaviest bucket in the range, and how much a set cost on average —
   // the two numbers a set count can't tell you.
@@ -507,6 +578,10 @@ function render() {
     unit: "Weighted fatigue units",
     totalText: (v) => `${formatFatigueUnits(v)} WFU`,
   };
+
+  renderRateRow("#vol-rate", "Sets", "sets");
+  renderRateRow("#wfu-rate", "WFU", "wfu");
+  renderPatternRates(patternSpec);
 
   renderStacked($("#vol-chart-wrap"), $("#vol-empty"), buckets, tierSpec);
   renderStacked($("#muscle-chart-wrap"), $("#muscle-empty"), buckets, patternSpec);
