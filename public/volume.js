@@ -27,7 +27,10 @@ const TIER_LABELS = FATIGUE_TIER_LABELS;
 // the same pattern no matter which range is selected — colour follows the
 // entity, never its rank in the current view. "Other" (conditioning, calves,
 // core) takes a neutral rather than a sixth hue, since it's a catch-all.
-const PATTERN_SERIES = ["full", "push", "squat", "pulls", "hinge"];
+// Appended rather than slotted in beside squat and hinge: the colour a
+// pattern gets is its index here, so inserting in the middle would repaint
+// every chart the log has ever shown.
+const PATTERN_SERIES = ["full", "push", "squat", "pulls", "hinge", "leg", "core"];
 const OTHER_KEY = "other";
 // Kept separate from "Other" on purpose. "Other" is a real bucket for work
 // that fits none of the five patterns; "Unassigned" is an exercise with no
