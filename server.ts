@@ -353,7 +353,7 @@ function parseSledWeight(body: any): number | null | undefined {
 
 // Same present-vs-absent contract as parseSledWeight: `undefined` means the
 // caller didn't mention it, `null` means clear it back to the auto guess.
-const MOVEMENT_PATTERNS = ["full", "push", "squat", "pulls", "hinge", "other"];
+const MOVEMENT_PATTERNS = ["full", "push", "squat", "pulls", "hinge", "leg", "core", "other"];
 
 function parseMovementPattern(body: any): string | null | undefined {
   if (!(body && Object.prototype.hasOwnProperty.call(body, "movementPattern"))) return undefined;
