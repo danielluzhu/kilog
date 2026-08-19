@@ -67,6 +67,18 @@ function daysAgoDate(days) {
   return d;
 }
 
+// Start of the current calendar year. Unlike the trailing windows above,
+// year-to-date is anchored to a date rather than a day count: it is a few
+// days wide in January and nearly a full year wide in December, which is the
+// whole reason to offer it alongside "last year".
+function startOfYearIso() {
+  return `${todayIso().slice(0, 4)}-01-01`;
+}
+
+function startOfYearDate() {
+  return parseDateParts(startOfYearIso());
+}
+
 function round1(n) {
   return Math.round(n * 10) / 10;
 }
