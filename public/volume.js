@@ -400,13 +400,32 @@ function renderTable(tbodySel, buckets, spec) {
       <tr>
         <td>${escapeHtml(bucketLabel(b, { long: true }))}</td>
         ${present
-          .map((k) => `<td>${b[seriesName][k] || '<span class="muted">—</span>'}</td>`)
+          .map((k) => `<td${cls(k)}>${b[seriesName][k] || '<span class="muted">—</span>'}</td>`)
           .join("")}
         <td><strong>${b.total}</strong></td>
         ${showWfu ? `<td>${b.wfu ? formatFatigueUnits(b.wfu) : '<span class="muted">—</span>'}</td>` : ""}
       </tr>`
     )
     .join("");
+}
+
+// Movement patterns picked out for comparison. Empty means "no selection" —
+// everything renders at full strength — rather than "nothing selected", so
+// the page opens showing all of the data.
+const selectedPatterns = new Set();
+
+// null when nothing is selected, so callers can skip the dimming work
+// entirely rather than testing an always-false predicate per segment.
+function dimmerFor(spec) {
+  const sel = spec.selected;
+  if (!sel || sel.size === 0) return null;
+  return (key) => !sel.has(key);
+}
+
+function selectedTotal(bucket, spec) {
+  return spec.stack
+    .filter((k) => spec.selected.has(k))
+    .reduce((sum, k) => sum + (bucket[spec.seriesName][k] || 0), 0);
 }
 
 function patternClass(key) {
@@ -462,6 +481,8 @@ function render() {
     stack: PATTERN_STACK,
     classFor: patternClass,
     labelFor: patternLabel,
+    selectable: true,
+    selected: selectedPatterns,
   };
 
   // The same tier split, weighted: bar height is fatigue cost rather than set
@@ -515,6 +536,22 @@ document.querySelectorAll(".vrange-btn").forEach((btn) => {
     markActive();
     render();
   });
+});
+
+// Delegated, because renderLegend replaces the legend's contents on every
+// render and per-button listeners would not survive it.
+$("#muscle-legend").addEventListener("click", (e) => {
+  if (e.target.closest("[data-clear]")) {
+    selectedPatterns.clear();
+    render();
+    return;
+  }
+  const btn = e.target.closest(".vol-key-toggle");
+  if (!btn) return;
+  const key = btn.dataset.key;
+  if (selectedPatterns.has(key)) selectedPatterns.delete(key);
+  else selectedPatterns.add(key);
+  render();
 });
 
 $("#custom-days").addEventListener("input", (e) => {
