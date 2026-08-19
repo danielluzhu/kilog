@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="./static-api.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>1RM Calculator</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+<link rel="shortcut icon" href="./favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+<link rel="manifest" href="./site.webmanifest" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header>
+  <h1><a href="./index.html" class="app-icon-link" aria-label="Workout Log home"><img src="./android-chrome-192x192.png" alt="" class="app-icon" /></a> Workout Log</h1>
+  <nav>
+    <a href="./index.html">Log</a>
+    <a href="./dictionary.html">Exercise Dictionary</a>
+    <a href="./lapse.html">Lapse</a>
+    <a href="./volume.html">Volume</a>
+    <a href="./onerm.html" class="active">1RM Calculator</a>
+    <a href="./cardio.html">Runs & Hikes</a>
+    <a href="./prilepin.html">Prilepin's Table</a>
+    <a href="./snatch.html">The Snatch</a>
+  </nav>
+</header>
+
+<main>
+  <section class="card">
+    <h2 style="margin-top:0">Estimate your one-rep max</h2>
+    <div class="row">
+      <div>
+        <label for="orm-weight">Weight (kg)</label>
+        <input type="text" inputmode="decimal" id="orm-weight" placeholder="e.g. 100" />
+      </div>
+      <div>
+        <label for="orm-reps">Reps</label>
+        <input type="text" inputmode="numeric" id="orm-reps" placeholder="e.g. 5" />
+      </div>
+    </div>
+    <div class="stat" style="margin-top:0.5rem;">
+      <span class="stat-value" id="orm-result">—</span>
+      <span class="stat-label">estimated 1RM, kg (Epley formula)</span>
+    </div>
+    <p class="muted" style="margin-top:0.5rem; margin-bottom:0;">1RM = weight × (1 + reps ÷ 30)</p>
+    <p class="muted" id="orm-cap-note" style="margin:0.35rem 0 0; display:none;"></p>
+  </section>
+
+  <section class="card">
+    <h2 style="margin-top:0">Pull a set from your log</h2>
+    <label for="orm-exercise">Exercise</label>
+    <input type="text" id="orm-exercise" list="orm-exercise-options" placeholder="e.g. FSQ" autocomplete="off" />
+    <datalist id="orm-exercise-options"></datalist>
+    <p class="muted" id="orm-recent-hint" style="margin: 0.6rem 0 0;"></p>
+    <div id="orm-recent-sets" style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.4rem;"></div>
+  </section>
+
+  <section>
+    <h2>Estimated max by rep range</h2>
+    <p class="muted" style="margin-top:0">Derived from the 1RM above via the same formula, inverted.</p>
+    <table>
+      <thead><tr><th>Reps</th><th>Estimated weight (kg)</th></tr></thead>
+      <tbody id="orm-table-body"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="./utils.js"></script>
+<script src="./onerm.js"></script>
+</body>
+</html>

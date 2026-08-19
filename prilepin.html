@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="./static-api.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prilepin's Table</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+<link rel="shortcut icon" href="./favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+<link rel="manifest" href="./site.webmanifest" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header>
+  <h1><a href="./index.html" class="app-icon-link" aria-label="Workout Log home"><img src="./android-chrome-192x192.png" alt="" class="app-icon" /></a> Workout Log</h1>
+  <nav>
+    <a href="./index.html">Log</a>
+    <a href="./dictionary.html">Exercise Dictionary</a>
+    <a href="./lapse.html">Lapse</a>
+    <a href="./volume.html">Volume</a>
+    <a href="./onerm.html">1RM Calculator</a>
+    <a href="./cardio.html">Runs & Hikes</a>
+    <a href="./prilepin.html" class="active">Prilepin's Table</a>
+    <a href="./snatch.html">The Snatch</a>
+  </nav>
+</header>
+
+<main>
+  <section class="card">
+    <h2 style="margin-top:0">Prilepin's Table</h2>
+    <p class="muted" style="margin-top:0">
+      A classic guideline for how much volume to do at a given intensity (% of 1RM), from
+      Soviet weightlifting research. It was developed for Olympic-style lifting — it applies most
+      directly to <strong>Complex</strong> lifts (snatch, clean, jerk) and other big
+      <strong>Compound</strong> barbell lifts, and doesn't really have anything to say about
+      <strong>Isolation</strong> work. See the Fatigue column on the
+      <a href="./dictionary.html">Exercise Dictionary</a> for how an exercise is classified.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Intensity</th><th>Reps per set</th><th>Optimal total reps</th><th>Rep range</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>&lt;70%</td><td>3–6</td><td>24</td><td>18–30</td></tr>
+        <tr><td>70–79%</td><td>3–6</td><td>18</td><td>12–24</td></tr>
+        <tr><td>80–89%</td><td>2–4</td><td>15</td><td>10–20</td></tr>
+        <tr><td>90%+</td><td>1–2</td><td>4</td><td>4–10</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2 style="margin-top:0">Apply to an exercise</h2>
+    <label for="prilepin-exercise">Exercise</label>
+    <input
+      type="text"
+      id="prilepin-exercise"
+      list="prilepin-exercise-options"
+      placeholder="Start typing any exercise, e.g. FSQ"
+      autocomplete="off"
+    />
+    <datalist id="prilepin-exercise-options"></datalist>
+    <p class="muted" id="prilepin-hint" style="margin: 0.6rem 0 0;">
+      Pulls the all-time best estimated 1RM for this exercise and converts each intensity row into
+      an actual weight.
+    </p>
+
+    <div id="prilepin-result" style="display:none; margin-top:1rem;">
+      <div class="stats-row">
+        <div class="stat">
+          <span class="stat-value" id="prilepin-title">—</span>
+          <span class="stat-label">exercise</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="prilepin-tier">—</span>
+          <span class="stat-label">fatigue tier</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="prilepin-1rm">—</span>
+          <span class="stat-label">est. 1RM used (kg)</span>
+        </div>
+      </div>
+      <table style="margin-top:1rem;">
+        <thead>
+          <tr><th>Intensity</th><th>Weight (kg)</th><th>Reps per set</th><th>Optimal total reps</th><th>Rep range</th></tr>
+        </thead>
+        <tbody id="prilepin-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="./utils.js"></script>
+<script src="./prilepin.js"></script>
+</body>
+</html>

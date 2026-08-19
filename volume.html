@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="./static-api.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Volume</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+<link rel="shortcut icon" href="./favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+<link rel="manifest" href="./site.webmanifest" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header>
+  <h1><a href="./index.html" class="app-icon-link" aria-label="Workout Log home"><img src="./android-chrome-192x192.png" alt="" class="app-icon" /></a> Workout Log</h1>
+  <nav>
+    <a href="./index.html">Log</a>
+    <a href="./dictionary.html">Exercise Dictionary</a>
+    <a href="./lapse.html">Lapse</a>
+    <a href="./volume.html" class="active">Volume</a>
+    <a href="./onerm.html">1RM Calculator</a>
+    <a href="./cardio.html">Runs &amp; Hikes</a>
+    <a href="./prilepin.html">Prilepin's Table</a>
+    <a href="./snatch.html">The Snatch</a>
+  </nav>
+</header>
+
+<main>
+  <p class="muted">
+    Total sets logged over time, split by fatigue tier — Complex (heavy snatch, clean, jerk),
+    Compound (squats, deadlifts, presses, pulls), Isolation (single-muscle accessory work),
+    Technique (light Olympic drills like the tall snatch and snatch balance), and Cardio
+    (running, biking, hiking). Group the bars by day, week, 30-day block, or any interval —
+    weeks, and any custom interval in whole weeks, run Monday to Sunday.
+  </p>
+
+  <section class="card">
+    <div class="range-bar">
+      <span class="range-bar-label">Group by</span>
+      <button type="button" class="chip bucket-btn" data-bucket="day">Day</button>
+      <button type="button" class="chip bucket-btn" data-bucket="week">Week</button>
+      <button type="button" class="chip bucket-btn" data-bucket="30">30 days</button>
+      <button type="button" class="chip bucket-btn" data-bucket="custom">Custom</button>
+      <span id="custom-days-wrap" style="display:none; align-items:center; gap:0.35rem;">
+        <input type="text" inputmode="numeric" id="custom-days" value="14" style="width:4rem; padding:0.25rem 0.4rem; font-size:0.8rem;" />
+        <span class="muted" style="font-size:0.8rem;">days</span>
+      </span>
+    </div>
+    <div class="range-bar" style="margin-bottom:0;">
+      <span class="range-bar-label">Range</span>
+      <button type="button" class="chip vrange-btn" data-range="90">Last 90 days</button>
+      <button type="button" class="chip vrange-btn" data-range="thisyear" id="vrange-this-year">This year</button>
+      <button type="button" class="chip vrange-btn" data-range="lastyear" id="vrange-last-year">Last year</button>
+      <button type="button" class="chip vrange-btn" data-range="365">Last 365 days</button>
+      <button type="button" class="chip vrange-btn" data-range="all">All time</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+      <h2 style="margin-top:0">Set volume</h2>
+      <div class="vol-legend" id="tier-legend"></div>
+    </div>
+    <div class="stats-row" style="margin-bottom:0.9rem;">
+      <div class="stat"><span class="stat-value" id="vol-total">—</span><span class="stat-label">sets in range</span></div>
+      <div class="stat"><span class="stat-value" id="vol-per-bucket">—</span><span class="stat-label" id="vol-per-bucket-label">avg per bucket</span></div>
+      <div class="stat"><span class="stat-value" id="vol-sessions">—</span><span class="stat-label">training days</span></div>
+      <div class="stat" title="Weighted fatigue units: counted sets x 2 (clean &amp; jerk), x1.5 (snatch, clean, jerk, pulls), x1 (compound), x0.4 (isolation). Technique drills and steady-state cardio don't score; intervals do, at x1.">
+        <span class="stat-value" id="vol-wfu">—</span><span class="stat-label">fatigue units (WFU)</span>
+      </div>
+      <div class="stat"><span class="stat-value" id="vol-wfu-per-bucket">—</span><span class="stat-label" id="vol-wfu-per-bucket-label">avg WFU per bucket</span></div>
+    </div>
+    <div class="rate-row" id="vol-rate"></div>
+    <div id="vol-chart-wrap"></div>
+    <p class="muted" id="vol-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
+  </section>
+
+  <section class="card">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+      <h2 style="margin-top:0">Weighted fatigue (WFU)</h2>
+      <div class="vol-legend" id="wfu-legend"></div>
+    </div>
+    <p class="muted" style="margin-top:0">
+      The same sets, priced by what they cost: <strong>x2</strong> clean &amp; jerk,
+      <strong>x1.5</strong> snatch, clean, jerk and their pulls, <strong>x1</strong> compound lifts,
+      <strong>x0.4</strong> isolation. Technique drills and steady-state cardio don't score;
+      intervals count at x1. Bar height is fatigue cost, not set count — so a week of accessory
+      work sits well below a week of the same number of Olympic sets.
+    </p>
+    <div class="stats-row" style="margin-bottom:0.9rem;">
+      <div class="stat"><span class="stat-value" id="wfu-peak">—</span><span class="stat-label" id="wfu-peak-label">heaviest bucket</span></div>
+      <div class="stat"><span class="stat-value" id="wfu-per-set">—</span><span class="stat-label">avg WFU per set</span></div>
+    </div>
+    <div class="rate-row" id="wfu-rate"></div>
+    <div id="wfu-chart-wrap"></div>
+    <p class="muted" id="wfu-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
+  </section>
+
+  <section class="card">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+      <h2 style="margin-top:0">Volume by movement pattern</h2>
+      <div class="vol-legend" id="muscle-legend"></div>
+    </div>
+    <p class="muted" style="margin-top:0">
+      The same sets, split by the movement each exercise trains. Leg covers knee-and-below work
+      that is neither a squat nor a deadlift — lunges, step-ups, leg curls and extensions, calves,
+      jumps — and Core covers trunk work. "Other" is what's left: conditioning, mostly.
+      <strong>Click a pattern in the legend</strong> to pick it out; click more to compare several
+      at once. The selection drops to the bottom of every bar so it sits on one baseline and can be
+      read across the range; the rest grey out above it, keeping each bar's full height so the
+      comparison still shows against the whole session.
+    </p>
+    <div id="muscle-chart-wrap"></div>
+    <p class="muted" id="muscle-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
+
+    <h3 class="rate-table-title">Sets per week, by pattern</h3>
+    <table class="rate-table">
+      <thead><tr id="pattern-rate-head"></tr></thead>
+      <tbody id="pattern-rate-body"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Breakdown by tier <span class="muted" style="text-transform:none; font-weight:normal;">(newest first)</span></h2>
+    <p class="muted" style="margin-top:0">
+      WFU weights each set by what it costs rather than counting them all alike:
+      <strong>x2</strong> clean &amp; jerk, <strong>x1.5</strong> snatch, clean, jerk and their pulls,
+      <strong>x1</strong> compound lifts, <strong>x0.4</strong> isolation. Technique drills and
+      steady-state cardio don't score; intervals count at x1. A set logged with no completed
+      reps counts nowhere on this page.
+    </p>
+    <table>
+      <thead><tr id="vol-table-head"></tr></thead>
+      <tbody id="vol-table-body"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Breakdown by movement pattern <span class="muted" style="text-transform:none; font-weight:normal;">(newest first)</span></h2>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr id="muscle-table-head"></tr></thead>
+        <tbody id="muscle-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="./utils.js"></script>
+<script src="./volume.js"></script>
+</body>
+</html>
