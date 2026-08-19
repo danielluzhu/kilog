@@ -682,7 +682,7 @@ function classifyEquipment(abbreviation, fullName) {
 //   · "tricep ... pulldown" must hit Push before "pulldown" sends it to Pulls.
 //   · "leg curl" must hit Hinge before "curl" sends it to Pulls.
 // Anything unmatched returns null and shows as unset rather than guessing.
-const MOVEMENT_PATTERNS = ["full", "push", "squat", "pulls", "hinge", "other"];
+const MOVEMENT_PATTERNS = ["full", "push", "squat", "pulls", "hinge", "leg", "core", "other"];
 
 const MOVEMENT_PATTERN_LABELS = {
   full: "Full",
@@ -690,33 +690,75 @@ const MOVEMENT_PATTERN_LABELS = {
   squat: "Squat",
   pulls: "Pulls",
   hinge: "Hinge",
+  leg: "Leg",
+  core: "Core",
   other: "Other",
 };
 
 const MOVEMENT_PATTERN_RULES = [
   // Neither a lift pattern nor a muscle: conditioning and calf work.
-  { pattern: "other", words: ["run", "jog", "sprint", "hike", "hiit", "erg", "bike", "cycling", "swim", "elliptical", "jump rope", "skip rope", "stair", "treadmill", "conditioning", "calf"] },
+  { pattern: "other", words: ["run", "jog", "sprint", "hike", "hiit", "erg", "bike", "cycling", "swim", "elliptical", "jump rope", "skip rope", "stair", "treadmill", "conditioning"] },
   // Hip-driven: deadlifts and their Olympic derivatives, plus hamstring and
   // low-back work. Ahead of Full so "snatch deadlift" lands here.
-  { pattern: "hinge", words: ["deadlift", "dead lift", "snatch pull", "clean pull", "panda pull", "high pull", "pull through", "pull-through", "rdl", "romanian", "stiff leg", "stiff-leg", "good morning", "leg curl", "lying curl", "seated curl", "nordic", "back extension", "hyperextension", "hip thrust", "glute bridge", "bridge", "swing"] },
+  { pattern: "hinge", words: ["deadlift", "dead lift", "snatch pull", "clean pull", "panda pull", "high pull", "pull through", "pull-through", "rdl", "romanian", "stiff leg", "stiff-leg", "good morning", "back extension", "hyperextension", "hip thrust", "glute bridge", "bridge", "swing"] },
   // Whole-body Olympic lifts. Ahead of Push so "clean & jerk" isn't a jerk.
   { pattern: "full", words: ["clean", "snatch"] },
   // Posterior shoulder work that would otherwise read as a press.
   { pattern: "pulls", words: ["rear delt", "delt fly", "face pull", "bent-over lateral raise", "bent over lateral raise", "bent-over raise"] },
   // Pressing, plus the shoulder and triceps work that trains alongside it.
   { pattern: "push", words: ["bench press", "chest press", "chest fly", "pec deck", "push up", "push-up", "pushup", "dip", "fly", "flye", "crossover", "incline press", "decline press", "shoulder press", "overhead press", "military press", "arnold", "push press", "pushpress", "ohp", "jerk", "handstand", "lateral raise", "lu raise", "front raise", "side raise", "delt raise", "tricep", "pushdown", "push down", "pressdown", "press down", "skull crusher", "skullcrusher", "close grip", "close-grip", "overhead extension", "jm press", "press in squat"] },
+  // Trunk work. Every keyword here is qualified on purpose: a bare
+  // "rotation" would swallow shoulder rotations, and a bare "ab" would take
+  // "abduction" with it, so the rotations name their plane and "ab " keeps
+  // its space.
+  { pattern: "core", words: ["plank", "crunch", "sit up", "sit-up", "situp", "ab ", "abs", "ab wheel", "oblique", "russian twist", "cable twist", "torso twist", "trunk twist", "cable rotation", "torso rotation", "trunk rotation", "cross body rotation", "crossbody rotation", "pallof", "woodchop", "wood chop", "dead bug", "hollow", "l-sit", "leg raise", "knee raise", "toes to bar", "rollout", "side bend", "v-up"] },
+  // Leg work that is neither a squat nor a hinge: knee flexion and
+  // extension on their own, unilateral stepping, calves, and jumps. Ahead of
+  // Pulls because "leg curl" has to beat the bare "curl" that lands there,
+  // and after Other so "jump rope" stays conditioning.
+  { pattern: "leg", words: ["leg curl", "lying curl", "seated curl", "nordic", "leg extension", "lunge", "step up", "step-up", "stepup", "calf", "glute kick", "kickback", "kick back", "abduction", "adduction", "box jump", "jump", "sled push"] },
   // Everything pulled toward the body.
   { pattern: "pulls", words: ["pull up", "pull-up", "pullup", "chin up", "chin-up", "chinup", "pulldown", "pull down", "pull-down", "lat ", "pullover", "pull over", "row", "muscle up", "muscle-up", "curl", "shrug"] },
-  // Knee-dominant.
-  { pattern: "squat", words: ["squat", "leg press", "leg extension", "lunge", "step up", "step-up", "split squat", "thruster", "wall sit", "sled push", "box jump", "jump"] },
+  // Squat pattern proper: the bar (or the machine's pad) tracks over the
+  // knees with the torso loaded. Leg press and wall sit belong here — same
+  // pattern, different apparatus.
+  { pattern: "squat", words: ["squat", "leg press", "thruster", "wall sit"] },
 ];
 
 // Returns one of MOVEMENT_PATTERNS, or null when nothing matches confidently.
+// A spelled-out abbreviation is a name in all but the field it's stored in:
+// "SidePlank" and "CableRotation" describe themselves as well as any full
+// name would, and 216 of the dictionary's entries have no name at all. Split
+// on the case boundaries and read it as one.
+//
+// Only when it looks like prose: an all-caps code carries no words ("SB",
+// "LPD"), and matching keywords inside one would be coincidence, not meaning.
+function nameFromAbbreviation(abbreviation) {
+  const a = String(abbreviation || "");
+  if (a.length < 5 || !/[a-z]/.test(a) || !/^[A-Za-z]+$/.test(a)) return "";
+  return a.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+}
+
+// Anchored at the start of a word, not anywhere in the string: plain
+// substring matching read "run" inside "crunch" and "row" inside "throw",
+// filing a crunch under conditioning and a ball throw under pulls. The end
+// stays unanchored so a keyword still covers its plurals — "dip" catches
+// "dips", "row" catches "rows".
+const patternWordCache = new Map();
+function matchesPatternWord(name, word) {
+  let re = patternWordCache.get(word);
+  if (!re) {
+    re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`);
+    patternWordCache.set(word, re);
+  }
+  return re.test(name);
+}
+
 function classifyMovementPattern(abbreviation, fullName) {
-  const name = (fullName || "").toLowerCase();
+  const name = ((fullName || "").trim() || nameFromAbbreviation(abbreviation)).toLowerCase();
   if (!name) return null;
   for (const rule of MOVEMENT_PATTERN_RULES) {
-    if (rule.words.some((w) => name.includes(w))) return rule.pattern;
+    if (rule.words.some((w) => matchesPatternWord(name, w))) return rule.pattern;
   }
   return null;
 }
