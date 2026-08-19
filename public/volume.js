@@ -93,7 +93,11 @@ function rowsInRange() {
   if (rangeKey === "all") return rows;
   // Counted back from the Pacific calendar day, so the range doesn't gain or
   // lose a day depending on what timezone the browser happens to be in.
-  const cutoff = dayNumber(todayIso()) - Number(rangeKey);
+  // Year-to-date is the one window pinned to a date instead of a count.
+  const cutoff =
+    rangeKey === "ytd"
+      ? dayNumber(startOfYearIso())
+      : dayNumber(todayIso()) - Number(rangeKey);
   return rows.filter((r) => r.day >= cutoff);
 }
 
