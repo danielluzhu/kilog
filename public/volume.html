@@ -70,6 +70,7 @@
       </div>
       <div class="stat"><span class="stat-value" id="vol-wfu-per-bucket">—</span><span class="stat-label" id="vol-wfu-per-bucket-label">avg WFU per bucket</span></div>
     </div>
+    <div class="rate-row" id="vol-rate"></div>
     <div id="vol-chart-wrap"></div>
     <p class="muted" id="vol-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
   </section>
@@ -90,6 +91,7 @@
       <div class="stat"><span class="stat-value" id="wfu-peak">—</span><span class="stat-label" id="wfu-peak-label">heaviest bucket</span></div>
       <div class="stat"><span class="stat-value" id="wfu-per-set">—</span><span class="stat-label">avg WFU per set</span></div>
     </div>
+    <div class="rate-row" id="wfu-rate"></div>
     <div id="wfu-chart-wrap"></div>
     <p class="muted" id="wfu-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
   </section>
@@ -109,6 +111,14 @@
     </p>
     <div id="muscle-chart-wrap"></div>
     <p class="muted" id="muscle-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
+
+    <h3 class="rate-table-title">Sets per week, by pattern</h3>
+    <table class="rate-table">
+      <thead>
+        <tr><th>Pattern</th><th>All time</th><th>Last year</th><th>Last 90 days</th></tr>
+      </thead>
+      <tbody id="pattern-rate-body"></tbody>
+    </table>
   </section>
 
   <section>
