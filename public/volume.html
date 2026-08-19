@@ -50,8 +50,9 @@
     <div class="range-bar" style="margin-bottom:0;">
       <span class="range-bar-label">Range</span>
       <button type="button" class="chip vrange-btn" data-range="90">Last 90 days</button>
-      <button type="button" class="chip vrange-btn" data-range="ytd">Year to date</button>
-      <button type="button" class="chip vrange-btn" data-range="365">Last year</button>
+      <button type="button" class="chip vrange-btn" data-range="thisyear" id="vrange-this-year">This year</button>
+      <button type="button" class="chip vrange-btn" data-range="lastyear" id="vrange-last-year">Last year</button>
+      <button type="button" class="chip vrange-btn" data-range="365">Last 365 days</button>
       <button type="button" class="chip vrange-btn" data-range="all">All time</button>
     </div>
   </section>
@@ -114,9 +115,7 @@
 
     <h3 class="rate-table-title">Sets per week, by pattern</h3>
     <table class="rate-table">
-      <thead>
-        <tr><th>Pattern</th><th>All time</th><th>Last year</th><th>Last 90 days</th></tr>
-      </thead>
+      <thead><tr id="pattern-rate-head"></tr></thead>
       <tbody id="pattern-rate-body"></tbody>
     </table>
   </section>
