@@ -207,8 +207,13 @@ function renderStacked(
     format = formatSets,
     unit = "Sets",
     totalText = (v) => `${v} set${v === 1 ? "" : "s"}`,
+    selected,
   }
 ) {
+  // Unselected series stay in the stack rather than being dropped: the bar
+  // keeps its true height, so a selected pattern is still read against the
+  // whole session's volume instead of against a silently rescaled axis.
+  const isDimmed = dimmerFor({ selected });
   if (buckets.length === 0) {
     wrap.innerHTML = "";
     emptyEl.style.display = "";
@@ -249,7 +254,8 @@ function renderStacked(
           if (v <= 0) return "";
           const h = (v / top) * plotH;
           yCursor -= h;
-          return `<rect class="vol-bar ${classFor(key)}" x="${x.toFixed(1)}" y="${yCursor.toFixed(
+          const dimmed = isDimmed && isDimmed(key) ? " vol-dimmed" : "";
+          return `<rect class="vol-bar ${classFor(key)}${dimmed}" x="${x.toFixed(1)}" y="${yCursor.toFixed(
             1
           )}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}"><title>${escapeHtml(
             `${labelFor(key)}: ${format(v)}`
@@ -289,7 +295,7 @@ function renderStacked(
     wrap,
     buckets,
     { padL, plotH, W, H, slot, padT, top },
-    { seriesName, stack, labelFor, totalKey, format, totalText }
+    { seriesName, stack, labelFor, totalKey, format, totalText, selected }
   );
 }
 
@@ -311,14 +317,20 @@ function attachHover(wrap, buckets, geom, spec) {
     crosshair.style.opacity = "1";
 
     const total = b[spec.totalKey];
+    const dimmed = dimmerFor(spec);
+    // With a selection up, the breakdown lists only what was picked and the
+    // headline reads "12 of 45 sets" — the comparison the selection is for.
     const parts = spec.stack
-      .filter((k) => (b[spec.seriesName][k] || 0) > 0)
+      .filter((k) => (b[spec.seriesName][k] || 0) > 0 && !(dimmed && dimmed(k)))
       .map((k) => `${spec.format(b[spec.seriesName][k])} ${spec.labelFor(k).toLowerCase()}`);
+    const headline = dimmed
+      ? `${spec.format(selectedTotal(b, spec))} of ${spec.totalText(total)}`
+      : spec.totalText(total);
 
     tooltip.innerHTML = `<span class="tt-date"></span><span class="tt-value"></span>`;
     tooltip.querySelector(".tt-date").textContent = bucketLabel(b, { long: true });
     tooltip.querySelector(".tt-value").textContent =
-      `${spec.totalText(total)}${parts.length ? ` — ${parts.join(", ")}` : ""}`;
+      `${headline}${parts.length ? ` — ${parts.join(", ")}` : ""}`;
 
     const barTopY = geom.padT + geom.plotH - (total / geom.top) * geom.plotH;
     tooltip.style.left = `${(cx / geom.W) * rect.width}px`;
@@ -337,25 +349,48 @@ function attachHover(wrap, buckets, geom, spec) {
 // Only the series actually present in the current view, in fixed stack order —
 // so a legend shrinks with the data but never reassigns a colour, and a tier
 // you haven't trained in the selected range doesn't claim space.
-function renderLegend(sel, buckets, { seriesName, stack, classFor, labelFor }) {
+function renderLegend(sel, buckets, spec) {
+  const { seriesName, stack, classFor, labelFor, selectable, selected } = spec;
   const present = stack.filter((k) => buckets.some((b) => (b[seriesName][k] || 0) > 0));
-  $(sel).innerHTML = present
-    .map(
-      (k) =>
-        `<span class="vol-key"><i class="vol-swatch ${classFor(k)}"></i>${escapeHtml(labelFor(k))}</span>`
-    )
+  const dimmed = dimmerFor(spec);
+
+  // A selectable legend is the filter control, so its entries are buttons —
+  // a click target that reads as one, and reachable from the keyboard.
+  const keys = present
+    .map((k) => {
+      const swatch = `<i class="vol-swatch ${classFor(k)}"></i>${escapeHtml(labelFor(k))}`;
+      if (!selectable) return `<span class="vol-key">${swatch}</span>`;
+      const off = dimmed && dimmed(k);
+      const on = selected.has(k);
+      return `<button type="button" class="vol-key vol-key-toggle${off ? " is-dimmed" : ""}${
+        on ? " is-selected" : ""
+      }" data-key="${escapeHtml(k)}" aria-pressed="${on}">${swatch}</button>`;
+    })
     .join("");
+
+  const clear = selectable && dimmed
+    ? `<button type="button" class="vol-key vol-key-clear" data-clear="1">Show all</button>`
+    : "";
+
+  $(sel).innerHTML = keys + clear;
 }
 
 // `showWfu` adds the weighted total as a final column — the tier table only,
 // since the weighting is a property of the tier and repeating it against
 // movement patterns would just be the same number sliced a way it doesn't
 // come from.
-function renderTable(tbodySel, buckets, { seriesName, stack, labelFor, headSel, showWfu }) {
+function renderTable(tbodySel, buckets, spec) {
+  const { seriesName, stack, labelFor, headSel, showWfu } = spec;
   const present = stack.filter((k) => buckets.some((b) => (b[seriesName][k] || 0) > 0));
+  // The table sits under the chart it describes, so a selection has to reach
+  // it too — otherwise the two disagree about what's being looked at.
+  const dimmed = dimmerFor(spec);
+  const cls = (k) => (dimmed && dimmed(k) ? ' class="col-dimmed"' : "");
   if (headSel) {
     $(headSel).innerHTML =
-      `<th>Period</th>${present.map((k) => `<th>${escapeHtml(labelFor(k))}</th>`).join("")}<th>Total</th>` +
+      `<th>Period</th>${present
+        .map((k) => `<th${cls(k)}>${escapeHtml(labelFor(k))}</th>`)
+        .join("")}<th>Total</th>` +
       (showWfu ? `<th title="${escapeHtml(WFU_EXPLAINER)}">WFU</th>` : "");
   }
   $(tbodySel).innerHTML = [...buckets]
