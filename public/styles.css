@@ -726,8 +726,52 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 .vol-swatch.vol-other { background: var(--muted); }
 #muscle-chart-wrap { position: relative; }
 #muscle-chart-wrap svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; }
-.vol-legend { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+.vol-legend { display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: center; }
 .vol-key { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--muted); }
+
+/* A selectable legend doubles as the filter control, so its entries are
+   buttons — stripped back to look like the plain legend they replace until
+   they are hovered or picked. */
+.vol-key-toggle {
+  font: inherit;
+  font-size: 0.8rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  margin: -0.15rem -0.15rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.vol-key-toggle:hover { border-color: var(--border); color: var(--fg); }
+.vol-key-toggle.is-selected {
+  color: var(--fg);
+  font-weight: 650;
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+/* Unpicked series stay legible enough to name — they are still drawn in the
+   chart, just pushed back. */
+.vol-key-toggle.is-dimmed { opacity: 0.4; }
+.vol-key-toggle.is-dimmed .vol-swatch { filter: grayscale(1); }
+
+.vol-key-clear {
+  font: inherit;
+  font-size: 0.75rem;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.vol-key-clear:hover { color: var(--fg); border-color: var(--muted); }
+
+/* Two-class selector so it outranks the single-class palette fills below. */
+.vol-bar.vol-dimmed { fill: var(--muted); opacity: 0.16; }
+
+/* The same de-emphasis in the breakdown table under the chart. */
+.col-dimmed { opacity: 0.35; }
 .vol-swatch { width: 0.7rem; height: 0.7rem; border-radius: 2px; display: inline-block; }
 .vol-swatch.vol-complex { background: var(--tier-complex); }
 .vol-swatch.vol-compound { background: var(--tier-compound); }
