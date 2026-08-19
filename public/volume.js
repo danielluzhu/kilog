@@ -89,16 +89,38 @@ function bucketSizeDays() {
   return Math.max(1, Math.min(365, Math.round(customDays) || 1));
 }
 
+function currentYear() {
+  return Number(todayIso().slice(0, 4));
+}
+
+// Inclusive day bounds for every window the page offers, so the chips and the
+// per-week rates can never disagree about what "this year" covers — and so a
+// rate always divides by exactly the span it summed over.
+//
+// A trailing window is counted back from the Pacific calendar day, so it
+// doesn't gain or lose a day depending on the browser's timezone. Calendar
+// windows are pinned to Jan 1 instead: "this year" and "last year" are
+// year boundaries, not 365-day rulers, which is the distinction the trailing
+// windows can't make.
+function windowBounds(key) {
+  const today = dayNumber(todayIso());
+  const year = currentYear();
+  if (key === "all") {
+    const first = rows.length ? rows.reduce((min, r) => Math.min(min, r.day), Infinity) : today;
+    return { from: first, to: today };
+  }
+  if (key === "thisyear") return { from: dayNumber(`${year}-01-01`), to: today };
+  if (key === "lastyear") {
+    return { from: dayNumber(`${year - 1}-01-01`), to: dayNumber(`${year - 1}-12-31`) };
+  }
+  // Trailing N days, today included — so 90 days is 90 days, not 91.
+  return { from: today - Number(key) + 1, to: today };
+}
+
 function rowsInRange() {
   if (rangeKey === "all") return rows;
-  // Counted back from the Pacific calendar day, so the range doesn't gain or
-  // lose a day depending on what timezone the browser happens to be in.
-  // Year-to-date is the one window pinned to a date instead of a count.
-  const cutoff =
-    rangeKey === "ytd"
-      ? dayNumber(startOfYearIso())
-      : dayNumber(todayIso()) - Number(rangeKey);
-  return rows.filter((r) => r.day >= cutoff);
+  const { from, to } = windowBounds(rangeKey);
+  return rows.filter((r) => r.day >= from && r.day <= to);
 }
 
 // day 4 (1970-01-05) was a Monday, so it anchors every week-aligned grid.
@@ -450,38 +472,39 @@ function patternClass(key) {
 // more than I used to"), which only works if changing the view can't move
 // them. All time runs from the first logged day, so it isn't flattered by
 // however long the log has been quiet.
-const RATE_WINDOWS = [
-  { key: "all", label: "all time" },
-  { key: "365", label: "last year" },
-  { key: "90", label: "last 90 days" },
-];
+// This year and last year are the two the trailing windows can't separate:
+// "last 365 days" straddles the boundary and is neither. Labelled with the
+// actual years so there is nothing left to interpret.
+function rateWindows() {
+  const year = currentYear();
+  return [
+    { key: "all", label: "all time" },
+    { key: "lastyear", label: String(year - 1) },
+    { key: "thisyear", label: `${year} so far` },
+    { key: "90", label: "last 90 days" },
+  ];
+}
 
 const formatRate = (v) => (Math.round(v * 10) / 10).toFixed(1);
 
-function rowsInWindow(key) {
-  if (key === "all") return rows;
-  return rows.filter((r) => r.day >= dayNumber(todayIso()) - Number(key));
-}
-
-// Elapsed calendar weeks, not weeks trained — a week off is part of the
-// average, which is the point of quoting a rate rather than a total.
+// Elapsed calendar weeks over the window's own bounds, not weeks trained — a
+// week off is part of the average, which is the point of quoting a rate.
 function weeksInWindow(key) {
-  if (key !== "all") return Number(key) / 7;
-  if (rows.length === 0) return 0;
-  const first = rows.reduce((min, r) => Math.min(min, r.day), Infinity);
-  return Math.max(1, dayNumber(todayIso()) - first + 1) / 7;
+  const { from, to } = windowBounds(key);
+  return Math.max(1, to - from + 1) / 7;
 }
 
 function rateIn(key, field, filter) {
   const weeks = weeksInWindow(key);
-  if (!weeks) return null;
-  const total = rowsInWindow(key)
-    .filter((r) => !filter || filter(r))
+  if (!weeks || rows.length === 0) return null;
+  const { from, to } = windowBounds(key);
+  const total = rows
+    .filter((r) => r.day >= from && r.day <= to && (!filter || filter(r)))
     .reduce((sum, r) => sum + (field === "wfu" ? r.wfu : r.setCount), 0);
   return total / weeks;
 }
 
-function renderRateRow(sel, noun, field) {
+function renderRateRow(sel, noun, field, unit) {
   // Spelled out because the tile above divides by periods actually trained,
   // and the two numbers would otherwise look like they disagree.
   const explain =
@@ -489,23 +512,41 @@ function renderRateRow(sel, noun, field) {
     `The tile above averages only over periods you trained.`;
   $(sel).innerHTML =
     `<span class="rate-row-label" title="${escapeHtml(explain)}">${escapeHtml(noun)} per week</span>` +
-    RATE_WINDOWS.map((w) => {
-      const rate = rateIn(w.key, field);
-      return `<span class="rate-item"><span class="rate-value">${
-        rate === null ? "—" : formatRate(rate)
-      }</span><span class="rate-label">${escapeHtml(w.label)}</span></span>`;
-    }).join("");
+    rateWindows()
+      .map((w) => {
+        const rate = rateIn(w.key, field);
+        return `<span class="rate-item"><span class="rate-value">${
+          rate === null ? "—" : formatRate(rate)
+        }</span><span class="rate-unit">${escapeHtml(unit)}</span><span class="rate-label">${escapeHtml(
+          w.label
+        )}</span></span>`;
+      })
+      .join("");
 }
 
 function renderPatternRates(spec) {
   const dimmed = dimmerFor(spec);
+  const windows = rateWindows();
   const present = PATTERN_STACK.filter((k) => rows.some((r) => r.pattern === k));
+
+  // Rendered rather than written into the markup: the column names carry the
+  // actual years, so they change with the calendar.
+  $("#pattern-rate-head").innerHTML =
+    `<th>Pattern</th>` +
+    windows
+      .map((w) => `<th>${escapeHtml(w.label)} <span class="th-unit">sets/wk</span></th>`)
+      .join("");
+
   $("#pattern-rate-body").innerHTML = present
     .map((k) => {
-      const cells = RATE_WINDOWS.map((w) => {
-        const rate = rateIn(w.key, "sets", (r) => r.pattern === k);
-        return `<td>${rate === null ? '<span class="muted">—</span>' : formatRate(rate)}</td>`;
-      }).join("");
+      const cells = windows
+        .map((w) => {
+          const rate = rateIn(w.key, "sets", (r) => r.pattern === k);
+          // The unit rides in the column header here rather than on every
+          // cell — 28 repetitions of "sets/wk" is noise, not clarity.
+          return `<td>${rate === null ? '<span class="muted">—</span>' : formatRate(rate)}</td>`;
+        })
+        .join("");
       return `<tr${dimmed && dimmed(k) ? ' class="col-dimmed"' : ""}>
         <td><i class="vol-swatch ${patternClass(k)}"></i>${escapeHtml(patternLabel(k))}</td>
         ${cells}
