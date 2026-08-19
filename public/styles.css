@@ -748,9 +748,13 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
   letter-spacing: 0.1em;
   margin-right: 0.25rem;
 }
-.rate-item { display: inline-flex; align-items: baseline; gap: 0.35rem; }
+.rate-item { display: inline-flex; align-items: baseline; gap: 0.3rem; }
 .rate-value { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+/* The unit travels with the number, so a figure lifted out of its row or read
+   from the middle of a table still says what it measures. */
+.rate-unit { font-size: 0.68rem; color: var(--muted); margin-left: 0.25rem; white-space: nowrap; }
 .rate-label { font-size: 0.72rem; color: var(--muted); }
+.th-unit { font-weight: 500; text-transform: none; letter-spacing: 0; opacity: 0.75; }
 
 .rate-table-title {
   font-size: 0.68rem;
