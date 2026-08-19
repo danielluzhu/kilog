@@ -214,6 +214,15 @@ function renderStacked(
   // keeps its true height, so a selected pattern is still read against the
   // whole session's volume instead of against a silently rescaled axis.
   const isDimmed = dimmerFor({ selected });
+
+  // Segments draw bottom-up in stack order, so putting the selection first
+  // sits it on the axis. Stacked series otherwise start at whatever height
+  // the series below them happened to reach, and a bar-to-bar comparison
+  // ends up reading the wobble in that baseline rather than the series.
+  // Within each group the fixed order holds, so colours never swap places.
+  const drawOrder = isDimmed
+    ? [...stack.filter((k) => !isDimmed(k)), ...stack.filter((k) => isDimmed(k))]
+    : stack;
   if (buckets.length === 0) {
     wrap.innerHTML = "";
     emptyEl.style.display = "";
@@ -248,7 +257,7 @@ function renderStacked(
     .map((b, i) => {
       const x = padL + slot * (i + 0.5) - barW / 2;
       let yCursor = padT + plotH;
-      const segs = stack
+      const segs = drawOrder
         .map((key) => {
           const v = b[seriesName][key] || 0;
           if (v <= 0) return "";
