@@ -516,15 +516,17 @@ const FATIGUE_TIER_LABELS = {
 // axially-loaded compounds are the 1.0 baseline, and isolation work is 0.4
 // (the middle of its 0.3–0.5 band — minimal systemic and CNS cost).
 //
-// Technique drills and steady-state conditioning score 0. They're stored as
-// sets, but a hike logged as "mile" or a tall-snatch primer isn't the kind of
-// work this is measuring. Intervals are the exception — genuinely repeated
-// hard efforts — and take the 1.0 baseline.
+// Technique drills take the 1.0 baseline: a tall-snatch primer is light, but
+// it is still a set performed, and zeroing it made a technical session read as
+// an empty day. Steady-state conditioning stays at 0 — a hike logged as "mile"
+// isn't the kind of work this is measuring at all. Intervals are the exception
+// to that, genuinely repeated hard efforts, and take the baseline too.
 const FATIGUE_MULTIPLIERS = {
   cleanAndJerk: 2,
   olympic: 1.5,
   compound: 1,
   isolation: 0.4,
+  technique: 1,
   intervals: 1,
   uncounted: 0,
 };
@@ -576,7 +578,7 @@ function isOlympicVariant(abbreviation, fullName) {
 // for callers that already know it (the Volume page reads the dictionary's
 // override off its own rows rather than through registerDictionary).
 function fatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTier(abbreviation, fullName)) {
-  if (tier === "technique") return FATIGUE_MULTIPLIERS.uncounted;
+  if (tier === "technique") return FATIGUE_MULTIPLIERS.technique;
   if (tier === "cardio") {
     return isIntervalConditioning(abbreviation, fullName)
       ? FATIGUE_MULTIPLIERS.intervals
@@ -608,7 +610,7 @@ function formatFatigueUnits(units) {
 // number the reader has to take on faith.
 const WFU_EXPLAINER =
   "Weighted fatigue units: counted sets x 2 (clean & jerk), x1.5 (snatch, clean, jerk, pulls), " +
-  "x1 (compound), x0.4 (isolation). Technique drills and steady-state cardio don't score; intervals do, at x1.";
+  "x1 (compound, technique), x0.4 (isolation). Steady-state cardio doesn't score; intervals do, at x1.";
 
 // ---------- Prilepin's table ----------
 // Classic Soviet-weightlifting volume guidance by intensity. The first and
