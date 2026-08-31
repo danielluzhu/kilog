@@ -30,26 +30,59 @@
 // with an "x". Callers opt in via `singlesLadder`, since this module has no
 // exercise context of its own.
 //
+// A starting-weight prefix ("S+", "S63+", "B+") names equipment the whole
+// session sits in, not one set's load: a sled is bolted to the machine and a
+// landmine's bar does not come off between sets. It gets written once on the
+// first set and dropped from the rest, so it is carried across the session
+// here — and split off before the weight logic runs, since "S+310x16" fits
+// none of the shapes below and would leave the bare "16" after it inheriting
+// no weight at all.
+//
+// Scoped to the session. A sled's weight is a property of one machine, and
+// the same exercise meets different machines, so an explicit "S63+" governs
+// its own day and nothing carries between days.
+//
 // Mirrored in public/utils.js for runtime use (new workouts logged through
 // the app) — keep both copies in sync if this logic changes.
 const MAX_PLAUSIBLE_REPS_UNDER_LOAD = 50;
+const LOAD_PREFIX_RE = /^[sb]\d*(?:\.\d+)?\+/i;
+const LOAD_PREFIX_PARTS_RE = /^([sb])(\d+(?:\.\d+)?)?\+/i;
+
+function sessionLoadPrefix(sets: string[]): string | null {
+  let prefix: string | null = null;
+  for (const raw of sets) {
+    const m = String(raw).trim().match(LOAD_PREFIX_PARTS_RE);
+    if (!m) continue;
+    // An explicit weight wins over a bare "S+" written earlier in the day.
+    if (m[2]) return m[0];
+    if (!prefix) prefix = m[0];
+  }
+  return prefix;
+}
 
 export function resolveWeightCarryover(sets: string[], singlesLadder = false): string[] {
+  const sessionPrefix = sessionLoadPrefix(sets);
   let lastWeight: string | null = null;
-  return sets.map((raw) => {
-    const value = raw.trim();
+  return sets.map((rawInput) => {
+    const trimmed = String(rawInput).trim();
+    const own = trimmed.match(LOAD_PREFIX_RE);
+    const raw = own ? trimmed.slice(own[0].length) : rawInput;
+    const carried = own ? own[0] : sessionPrefix;
+    const withPrefix = (out: string): string =>
+      carried && /^\d/.test(out) ? carried + out : out;
+    const value = String(raw).trim();
 
     const weighted = value.match(/^(\d+(?:\.\d+)?)\s*x/i);
     if (weighted) {
       lastWeight = weighted[1];
-      return raw;
+      return withPrefix(value);
     }
 
     if (singlesLadder) {
       const bareWeight = value.match(/^(\d+(?:\.\d+)?)$/);
       if (bareWeight) {
         lastWeight = bareWeight[1];
-        return `${bareWeight[1]}x1`;
+        return withPrefix(`${bareWeight[1]}x1`);
       }
     }
 
@@ -59,15 +92,15 @@ export function resolveWeightCarryover(sets: string[], singlesLadder = false): s
       // from — it's bodyweight-only (0 added weight), not unknown.
       if (lastWeight === null) {
         lastWeight = "0";
-        return `0x${value}`;
+        return withPrefix(`0x${value}`);
       }
       const reps = parseInt(bareInt[1], 10);
       const isUnderLoad = parseFloat(lastWeight) > 0;
       if (isUnderLoad && reps > MAX_PLAUSIBLE_REPS_UNDER_LOAD) {
         lastWeight = bareInt[1]; // treat as a new weight, implicitly 1 rep
-        return `${bareInt[1]}x1`;
+        return withPrefix(`${bareInt[1]}x1`);
       }
-      return `${lastWeight}x${value}`;
+      return withPrefix(`${lastWeight}x${value}`);
     }
 
     // Completed/attempted ratios and bonus-rep pairs stay reps-shaped
@@ -75,9 +108,9 @@ export function resolveWeightCarryover(sets: string[], singlesLadder = false): s
     // every example seen, so the load-implausibility check doesn't apply.
     if (/^\d+\/\d+$/.test(value) || /^\d+\+\d+$/.test(value)) {
       if (lastWeight === null) lastWeight = "0";
-      return `${lastWeight}x${value}`;
+      return withPrefix(`${lastWeight}x${value}`);
     }
 
-    return raw;
+    return rawInput;
   });
 }
