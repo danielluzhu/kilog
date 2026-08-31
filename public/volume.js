@@ -592,7 +592,10 @@ function renderRateRow(sel, noun, field, unit) {
 // One renderer for both breakdowns. `weightFor` returns how much of a row
 // counts toward a key: an equality test for the single-bucket patterns, a
 // lookup into the row's weight map for body parts.
-function renderSeriesRates(spec, { headSel, bodySel, heading, stack, weightFor }) {
+// `unit` travels with the caller because a weighted series is not counting
+// the same thing an unweighted one is: a body-part rate is part-sets per
+// week, and labelling it sets/wk would quietly contradict the chart above it.
+function renderSeriesRates(spec, { headSel, bodySel, heading, stack, weightFor, unit = "sets/wk" }) {
   const dimmed = dimmerFor(spec);
   const windows = rateWindows();
   const present = stack.filter((k) => rows.some((r) => weightFor(r, k) > 0));
@@ -602,7 +605,7 @@ function renderSeriesRates(spec, { headSel, bodySel, heading, stack, weightFor }
   $(headSel).innerHTML =
     `<th>${escapeHtml(heading)}</th>` +
     windows
-      .map((w) => `<th>${escapeHtml(w.label)} <span class="th-unit">sets/wk</span></th>`)
+      .map((w) => `<th>${escapeHtml(w.label)} <span class="th-unit">${escapeHtml(unit)}</span></th>`)
       .join("");
 
   $(bodySel).innerHTML = present
@@ -727,6 +730,7 @@ function render() {
     heading: "Body part",
     stack: BODY_PART_STACK,
     weightFor: (r, k) => r.bodyParts[k] || 0,
+    unit: "part-sets/wk",
   });
 
   renderStacked($("#vol-chart-wrap"), $("#vol-empty"), buckets, tierSpec);
