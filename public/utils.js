@@ -948,15 +948,53 @@ function isSinglesLadderLift(abbreviation, fullName) {
   return classifyFatigueTier(abbreviation, fullName) === "complex";
 }
 
+// A sled is bolted to the machine: if one set of a session was performed on
+// it, every set of that session was. It gets written on the first set and
+// dropped from the rest ("S+540x10, 285.8x10, 285.8x12"), which left the
+// later sets scoring without the carriage they were actually pushing.
+//
+// Scoped to the session on purpose. A sled's weight is a property of one
+// machine, and the same exercise meets different machines: the hack squat
+// carries a 63kg carriage in one month of this log and 40kg in another.
+// Within a day it is the same machine, so a single explicit "S63+" governs
+// the day; across days it is not, so nothing is carried between them.
+//
+// The bar carries the same way, for the same reason: a landmine row written
+// "B+40x8, 8" is not eight reps of nothing on its second set. No session in
+// this log mixes the two kinds, so whichever one it opens with governs it.
+function sessionLoadPrefix(sets) {
+  let prefix = null;
+  for (const raw of sets) {
+    const m = String(raw).trim().match(LOAD_PREFIX_PARTS_RE);
+    if (!m) continue;
+    // An explicit weight wins over a bare "S+" written earlier in the day —
+    // it is only spelled out when it is worth saying.
+    if (m[2]) return m[0];
+    if (!prefix) prefix = m[0];
+  }
+  return prefix;
+}
+
 function resolveWeightCarryover(sets, abbreviation, fullName) {
   const singlesLadder = isSinglesLadderLift(abbreviation, fullName);
+  const sessionPrefix = sessionLoadPrefix(sets);
   let lastWeight = null;
-  return sets.map((raw) => {
+  return sets.map((rawInput) => {
+    // The prefix is split off before any of the weight logic runs and put
+    // back afterwards. Left on, "S+310x16" matches nothing here, so the bare
+    // "16" that follows it inherits no weight at all and resolves to 0.
+    const own = String(rawInput).trim().match(LOAD_PREFIX_RE);
+    const raw = own ? String(rawInput).trim().slice(own[0].length) : rawInput;
+    const carried = own ? own[0] : sessionPrefix;
+    // A set keeps whatever it resolves to; the prefix goes back on only when
+    // there is a weight for it to sit in front of.
+    const withPrefix = (out) =>
+      carried && /^\d/.test(String(out)) ? carried + out : out;
     const value = String(raw).trim();
     const weighted = value.match(/^(\d+(?:\.\d+)?)\s*x/i);
     if (weighted) {
       lastWeight = weighted[1];
-      return raw;
+      return withPrefix(value);
     }
 
     // Olympic lifts: a bare number is a weight lifted for one rep. Decimals
@@ -965,7 +1003,7 @@ function resolveWeightCarryover(sets, abbreviation, fullName) {
       const bareWeight = value.match(/^(\d+(?:\.\d+)?)$/);
       if (bareWeight) {
         lastWeight = bareWeight[1];
-        return `${bareWeight[1]}x1`;
+        return withPrefix(`${bareWeight[1]}x1`);
       }
     }
 
@@ -975,23 +1013,23 @@ function resolveWeightCarryover(sets, abbreviation, fullName) {
       // from — it's bodyweight-only (0 added weight), not unknown.
       if (lastWeight === null) {
         lastWeight = "0";
-        return `0x${value}`;
+        return withPrefix(`0x${value}`);
       }
       const reps = parseInt(bareInt[1], 10);
       const isUnderLoad = parseFloat(lastWeight) > 0;
       if (isUnderLoad && reps > MAX_PLAUSIBLE_REPS_UNDER_LOAD) {
         lastWeight = bareInt[1]; // treat as a new weight, implicitly 1 rep
-        return `${bareInt[1]}x1`;
+        return withPrefix(`${bareInt[1]}x1`);
       }
-      return `${lastWeight}x${value}`;
+      return withPrefix(`${lastWeight}x${value}`);
     }
 
     if (/^\d+\/\d+$/.test(value) || /^\d+\+\d+$/.test(value)) {
       if (lastWeight === null) lastWeight = "0";
-      return `${lastWeight}x${value}`;
+      return withPrefix(`${lastWeight}x${value}`);
     }
 
-    return raw;
+    return rawInput;
   });
 }
 
