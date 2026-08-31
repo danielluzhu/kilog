@@ -771,6 +771,143 @@ function movementPatternFor(entry) {
   if (entry?.movement_pattern) return entry.movement_pattern;
   return classifyMovementPattern(entry?.abbreviation, entry?.full_name);
 }
+// ---------- body part ----------
+// A second way to cut the same sets. The movement pattern above asks what
+// shape the lift is; this asks what it trains. They disagree on purpose: a
+// barbell row and a pull-up are both Pulls, but one is mid-back and the
+// other is lats-and-arms, and a clean is one Full pattern spread across the
+// legs and the back at once.
+//
+// So an exercise maps to WEIGHTS, not to a single bucket. The lift that
+// makes this necessary is the clean: counting it wholly as legs loses the
+// pull, and counting it wholly as back loses the squat under the catch.
+// Every exercise names one primary part scoring a full set, and any number
+// of secondary parts scoring half a set each.
+//
+// Body-part totals therefore run ABOVE the true set count — a set of cleans
+// contributes 1.5 across two parts. That is the intended reading ("how much
+// did this part get worked"), not a bug, which is why the chart carries its
+// own total and never borrows the set total the other charts plot.
+const BODY_PARTS = ["chest", "back", "shoulders", "arms", "legs", "core"];
+
+const BODY_PART_LABELS = {
+  chest: "Chest",
+  back: "Back",
+  shoulders: "Shoulders",
+  arms: "Arms",
+  legs: "Legs",
+  core: "Core",
+  other: "Other",
+};
+
+const SECONDARY_SHARE = 0.5;
+
+// Ordered, first match wins — same discipline as MOVEMENT_PATTERN_RULES, and
+// the same traps. The order-dependent cases, all load-bearing:
+//   · conditioning leads, so "jump rope" doesn't reach the leg rules.
+//   · the Olympic derivatives ("snatch pull", "clean deadlift") must precede
+//     the bare "clean"/"snatch" rules, which would otherwise claim them.
+//   · "clean & jerk" precedes "jerk" so it keeps its leg share.
+//   · "rear delt" and "face pull" precede the row/pulldown rules — posterior
+//     shoulder work, not back work.
+//   · "leg curl" precedes the bare "curl" that lands in arms.
+//   · "close grip"/"skull crusher" precede the bench rules: triceps first.
+//   · "upright row" precedes "row" — it is a shoulder lift.
+//   · "front raise"/"lateral raise" precede "leg raise" losing its "raise".
+const BODY_PART_RULES = [
+  // Conditioning trains legs, but counting a run as leg *sets* alongside
+  // squats would swamp the chart with work that isn't resistance volume.
+  { primary: "other", words: ["run", "jog", "sprint", "hike", "hiit", "erg", "bike", "cycling", "swim", "elliptical", "jump rope", "skip rope", "stair", "treadmill", "conditioning"] },
+
+  // --- Olympic lifts and their derivatives -------------------------------
+  // The pulls are hip-and-back driven with no overhead component.
+  { primary: "legs", secondary: ["back"], words: ["snatch deadlift", "clean deadlift", "snatch pull", "clean pull", "panda pull", "high pull", "hang snatch speed pull", "snatch high pull", "clean high pull"] },
+  // Overhead receiving positions: shoulders carry the lift out.
+  { primary: "shoulders", secondary: ["legs", "back"], words: ["snatch balance", "drop snatch", "overhead squat", "snatch stretching", "tall snatch"] },
+  // Clean & jerk is the whole sport in one rep: legs under the clean,
+  // shoulders over the jerk, back through both.
+  { primary: "legs", secondary: ["shoulders", "back"], words: ["clean & jerk", "clean and jerk", "clean + jerk", "c+j", "snatch"] },
+  { primary: "shoulders", secondary: ["legs"], words: ["jerk", "push press"] },
+  { primary: "legs", secondary: ["back"], words: ["clean"] },
+
+  // --- hinge -------------------------------------------------------------
+  { primary: "back", secondary: ["legs"], words: ["back extension", "hyperextension", "good morning"] },
+  { primary: "legs", secondary: ["back"], words: ["deadlift", "dead lift", "rdl", "romanian", "stiff leg", "stiff-leg", "swing"] },
+  { primary: "legs", words: ["hip thrust", "glute bridge", "glute kick", "kickback", "kick back"] },
+
+  // Knee flexion and extension, ahead of every rule containing "curl".
+  // "Seated Leg Curl" is a hamstring machine, not a biceps exercise, and the
+  // bare "curl" below would take it and its three variants otherwise.
+  { primary: "legs", words: ["leg curl", "hamstring curl", "nordic", "leg extension"] },
+
+  // --- arms, ahead of the presses and pulls they hide inside -------------
+  { primary: "arms", secondary: ["chest"], words: ["close grip", "close-grip", "skull crusher", "skullcrusher", "jm press"] },
+  // "curl" lands here, not with the back work it accompanies: the movement
+  // pattern files a curl under Pulls because of how it is performed, but the
+  // part it trains is the arm.
+  { primary: "arms", words: ["tricep", "pushdown", "push down", "pressdown", "press down", "overhead extension", "preacher", "concentration", "hammer curl", "bicep", "forearm", "wrist curl", "reverse curl", "curl", "dead hang", "deadhang"] },
+
+  // --- shoulders ---------------------------------------------------------
+  { primary: "shoulders", secondary: ["back"], words: ["rear delt", "delt fly", "face pull", "bent-over lateral raise", "bent over lateral raise", "bent-over raise", "upright row"] },
+  { primary: "shoulders", words: ["lateral raise", "lu raise", "front raise", "side raise", "side delt", "delt raise", "around the world", "cuban", "external rotation", "internal rotation", "scapt", "y raise"] },
+  { primary: "shoulders", secondary: ["arms"], words: ["shoulder press", "overhead press", "military press", "arnold", "ohp", "handstand", "pike push"] },
+
+  // --- chest -------------------------------------------------------------
+  { primary: "chest", secondary: ["arms"], words: ["bench press", "chest press", "incline press", "decline press", "push up", "push-up", "pushup", "dip"] },
+  { primary: "chest", words: ["chest fly", "pec deck", "fly", "flye", "crossover"] },
+
+  // --- back --------------------------------------------------------------
+  { primary: "back", secondary: ["chest"], words: ["pullover", "pull over"] },
+  { primary: "back", words: ["shrug", "trap"] },
+  { primary: "back", secondary: ["arms"], words: ["pull up", "pull-up", "pullup", "chin up", "chin-up", "chinup", "pulldown", "pull down", "pull-down", "lat ", "row", "muscle up", "muscle-up"] },
+
+  // --- core, ahead of the leg rules so "leg raise" stays trunk work ------
+  { primary: "core", words: ["plank", "crunch", "sit up", "sit-up", "situp", "ab ", "abs", "ab wheel", "oblique", "russian twist", "cable twist", "torso twist", "trunk twist", "cable rotation", "torso rotation", "trunk rotation", "cross body rotation", "crossbody rotation", "pallof", "woodchop", "wood chop", "dead bug", "hollow", "l-sit", "leg raise", "knee raise", "toes to bar", "rollout", "side bend", "v-up"] },
+
+  // --- legs --------------------------------------------------------------
+  // Squats brace the trunk hard enough to be worth a half set of core.
+  { primary: "legs", secondary: ["core"], words: ["squat", "thruster", "wall sit", "sled push"] },
+  { primary: "legs", words: ["leg press", "lunge", "step up", "step-up", "stepup", "calf", "abduction", "adduction", "box jump", "jump"] },
+];
+
+// When no keyword matches but the exercise has a hand-assigned movement
+// pattern, fall back to what that pattern implies. Coarser than a name match
+// and deliberately so — it keeps a named-but-unrecognised lift out of
+// Unassigned without pretending to know more than the pattern does.
+const PATTERN_BODY_PART_FALLBACK = {
+  full: { primary: "legs", secondary: ["back", "shoulders"] },
+  push: { primary: "chest", secondary: ["shoulders", "arms"] },
+  pulls: { primary: "back", secondary: ["arms"] },
+  squat: { primary: "legs", secondary: ["core"] },
+  hinge: { primary: "legs", secondary: ["back"] },
+  leg: { primary: "legs" },
+  core: { primary: "core" },
+  other: { primary: "other" },
+};
+
+function weightsFromRule(rule) {
+  const w = { [rule.primary]: 1 };
+  for (const s of rule.secondary || []) w[s] = (w[s] || 0) + SECONDARY_SHARE;
+  return w;
+}
+
+// Returns a { part: weight } map, or null when nothing classifies it.
+// Reuses the movement pattern's name handling: a spelled-out abbreviation
+// ("SidePlank") reads as well as a full name, and an all-caps code carries
+// no words to match on.
+function classifyBodyParts(abbreviation, fullName, movementPattern) {
+  const name = ((fullName || "").trim() || nameFromAbbreviation(abbreviation)).toLowerCase();
+  if (name) {
+    for (const rule of BODY_PART_RULES) {
+      if (rule.words.some((w) => matchesPatternWord(name, w))) return weightsFromRule(rule);
+    }
+  }
+  const pattern = movementPattern || classifyMovementPattern(abbreviation, fullName);
+  if (pattern && PATTERN_BODY_PART_FALLBACK[pattern]) {
+    return weightsFromRule(PATTERN_BODY_PART_FALLBACK[pattern]);
+  }
+  return null;
+}
 // ---------- weight carry-over ----------
 // Some rows shorthand a repeated weight: after an explicit "WxR" set, a
 // later bare integer in the same row inherits that same weight as its rep
