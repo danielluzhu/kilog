@@ -150,6 +150,13 @@ function bucketStartFor(day, latestDay, size) {
 // being summed — "setCount" for the raw charts, "wfu" for the weighted one —
 // so the same split (by tier) can be counted two different ways without a
 // second pass over the rows.
+//
+// A `spread` spec is the exception: its field holds a { key: weight } map
+// instead of one key, so a single set can score fractionally against several
+// series at once. Those tallies do NOT sum to the
+// bucket's set total, so a spread spec keeps its own running total under
+// `totalName` — plotting it against `total` would scale every bar to an axis
+// its segments overflow.
 function buildBuckets(seriesSpecs) {
   const inRange = rowsInRange();
   if (inRange.length === 0) return [];
@@ -165,10 +172,21 @@ function buildBuckets(seriesSpecs) {
       b = { start, size, total: 0, wfu: 0, days: new Set() };
       for (const spec of seriesSpecs) {
         b[spec.name] = Object.fromEntries(spec.keys.map((k) => [k, 0]));
+        if (spec.totalName) b[spec.totalName] = 0;
       }
       byStart.set(start, b);
     }
-    for (const spec of seriesSpecs) b[spec.name][r[spec.field]] += r[spec.value || "setCount"];
+    for (const spec of seriesSpecs) {
+      const amount = r[spec.value || "setCount"];
+      if (!spec.spread) {
+        b[spec.name][r[spec.field]] += amount;
+        continue;
+      }
+      for (const [key, weight] of Object.entries(r[spec.field])) {
+        b[spec.name][key] += weight * amount;
+        b[spec.totalName] += weight * amount;
+      }
+    }
     b.total += r.setCount;
     b.wfu += r.wfu;
     b.days.add(r.day);
@@ -414,7 +432,7 @@ function renderLegend(sel, buckets, spec) {
 // movement patterns would just be the same number sliced a way it doesn't
 // come from.
 function renderTable(tbodySel, buckets, spec) {
-  const { seriesName, stack, labelFor, headSel, showWfu } = spec;
+  const { seriesName, stack, labelFor, headSel, showWfu, format = formatSets, totalKey = "total" } = spec;
   const present = stack.filter((k) => buckets.some((b) => (b[seriesName][k] || 0) > 0));
   // The table sits under the chart it describes, so a selection has to reach
   // it too — otherwise the two disagree about what's being looked at.
@@ -434,9 +452,9 @@ function renderTable(tbodySel, buckets, spec) {
       <tr>
         <td>${escapeHtml(bucketLabel(b, { long: true }))}</td>
         ${present
-          .map((k) => `<td${cls(k)}>${b[seriesName][k] || '<span class="muted">—</span>'}</td>`)
+          .map((k) => `<td${cls(k)}>${b[seriesName][k] ? format(b[seriesName][k]) : '<span class="muted">—</span>'}</td>`)
           .join("")}
-        <td><strong>${b.total}</strong></td>
+        <td><strong>${format(b[totalKey])}</strong></td>
         ${showWfu ? `<td>${b.wfu ? formatFatigueUnits(b.wfu) : '<span class="muted">—</span>'}</td>` : ""}
       </tr>`
     )
@@ -497,13 +515,17 @@ function weeksInWindow(key) {
   return Math.max(1, to - from + 1) / 7;
 }
 
-function rateIn(key, field, filter) {
+// `weightOf` lets a row count for a fraction of itself, which is what a body
+// part needs: a set of cleans is a whole set of legs but only half a set of
+// back. Returning 1 (the default) is the plain unweighted count the tier and
+// pattern rows use.
+function rateIn(key, field, filter, weightOf) {
   const weeks = weeksInWindow(key);
   if (!weeks || rows.length === 0) return null;
   const { from, to } = windowBounds(key);
   const total = rows
     .filter((r) => r.day >= from && r.day <= to && (!filter || filter(r)))
-    .reduce((sum, r) => sum + (field === "wfu" ? r.wfu : r.setCount), 0);
+    .reduce((sum, r) => sum + (field === "wfu" ? r.wfu : r.setCount) * (weightOf ? weightOf(r) : 1), 0);
   return total / weeks;
 }
 
@@ -527,31 +549,34 @@ function renderRateRow(sel, noun, field, unit) {
       .join("");
 }
 
-function renderPatternRates(spec) {
+// One renderer for both breakdowns. `weightFor` returns how much of a row
+// counts toward a key: an equality test for the single-bucket patterns, a
+// lookup into the row's weight map for body parts.
+function renderSeriesRates(spec, { headSel, bodySel, heading, stack, weightFor }) {
   const dimmed = dimmerFor(spec);
   const windows = rateWindows();
-  const present = PATTERN_STACK.filter((k) => rows.some((r) => r.pattern === k));
+  const present = stack.filter((k) => rows.some((r) => weightFor(r, k) > 0));
 
   // Rendered rather than written into the markup: the column names carry the
   // actual years, so they change with the calendar.
-  $("#pattern-rate-head").innerHTML =
-    `<th>Pattern</th>` +
+  $(headSel).innerHTML =
+    `<th>${escapeHtml(heading)}</th>` +
     windows
       .map((w) => `<th>${escapeHtml(w.label)} <span class="th-unit">sets/wk</span></th>`)
       .join("");
 
-  $("#pattern-rate-body").innerHTML = present
+  $(bodySel).innerHTML = present
     .map((k) => {
       const cells = windows
         .map((w) => {
-          const rate = rateIn(w.key, "sets", (r) => r.pattern === k);
+          const rate = rateIn(w.key, "sets", null, (r) => weightFor(r, k));
           // The unit rides in the column header here rather than on every
           // cell — 28 repetitions of "sets/wk" is noise, not clarity.
           return `<td>${rate === null ? '<span class="muted">—</span>' : formatRate(rate)}</td>`;
         })
         .join("");
       return `<tr${dimmed && dimmed(k) ? ' class="col-dimmed"' : ""}>
-        <td><i class="vol-swatch ${patternClass(k)}"></i>${escapeHtml(patternLabel(k))}</td>
+        <td><i class="vol-swatch ${spec.classFor(k)}"></i>${escapeHtml(spec.labelFor(k))}</td>
         ${cells}
       </tr>`;
     })
@@ -625,7 +650,13 @@ function render() {
 
   renderRateRow("#vol-rate", "Sets", "sets", "sets/wk");
   renderRateRow("#wfu-rate", "WFU", "wfu", "WFU/wk");
-  renderPatternRates(patternSpec);
+  renderSeriesRates(patternSpec, {
+    headSel: "#pattern-rate-head",
+    bodySel: "#pattern-rate-body",
+    heading: "Pattern",
+    stack: PATTERN_STACK,
+    weightFor: (r, k) => (r.pattern === k ? 1 : 0),
+  });
 
   renderStacked($("#vol-chart-wrap"), $("#vol-empty"), buckets, tierSpec);
   renderStacked($("#muscle-chart-wrap"), $("#muscle-empty"), buckets, patternSpec);
@@ -668,19 +699,23 @@ document.querySelectorAll(".vrange-btn").forEach((btn) => {
 
 // Delegated, because renderLegend replaces the legend's contents on every
 // render and per-button listeners would not survive it.
-$("#muscle-legend").addEventListener("click", (e) => {
-  if (e.target.closest("[data-clear]")) {
-    selectedPatterns.clear();
+function bindSelectableLegend(sel, selection) {
+  $(sel).addEventListener("click", (e) => {
+    if (e.target.closest("[data-clear]")) {
+      selection.clear();
+      render();
+      return;
+    }
+    const btn = e.target.closest(".vol-key-toggle");
+    if (!btn) return;
+    const key = btn.dataset.key;
+    if (selection.has(key)) selection.delete(key);
+    else selection.add(key);
     render();
-    return;
-  }
-  const btn = e.target.closest(".vol-key-toggle");
-  if (!btn) return;
-  const key = btn.dataset.key;
-  if (selectedPatterns.has(key)) selectedPatterns.delete(key);
-  else selectedPatterns.add(key);
-  render();
-});
+  });
+}
+
+bindSelectableLegend("#muscle-legend", selectedPatterns);
 
 $("#custom-days").addEventListener("input", (e) => {
   const n = parseInt(e.target.value, 10);
