@@ -634,6 +634,10 @@ const BODYWEIGHT_KEYWORDS = [
   "pull up", "pull-up", "pullup", "chin up", "chin-up", "chinup", "dip",
   "push up", "push-up", "pushup", "sit up", "sit-up", "situp", "plank",
   "muscle up", "muscle-up",
+  // Ahead of the barbell default that "squat" would otherwise pick up: a
+  // single-leg squat is stood up on one leg, and anything logged before the
+  // "x" is added load held in the hands, not the total on a bar.
+  "single leg squat", "single-leg squat", "pistol squat",
 ];
 const CABLE_KEYWORDS = ["cable", "pulldown", "pull down", "pushdown", "push down", "face pull"];
 const MACHINE_KEYWORDS = [
