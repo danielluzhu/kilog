@@ -461,7 +461,10 @@ function renderLegend(sel, buckets, spec) {
 // movement patterns would just be the same number sliced a way it doesn't
 // come from.
 function renderTable(tbodySel, buckets, spec) {
-  const { seriesName, stack, labelFor, headSel, showWfu, format = formatSets, totalKey = "total" } = spec;
+  const {
+    seriesName, stack, labelFor, headSel, showWfu,
+    format = formatSets, totalKey = "total", totalLabel = "Total",
+  } = spec;
   const present = stack.filter((k) => buckets.some((b) => (b[seriesName][k] || 0) > 0));
   // The table sits under the chart it describes, so a selection has to reach
   // it too — otherwise the two disagree about what's being looked at.
@@ -471,7 +474,7 @@ function renderTable(tbodySel, buckets, spec) {
     $(headSel).innerHTML =
       `<th>Period</th>${present
         .map((k) => `<th${cls(k)}>${escapeHtml(labelFor(k))}</th>`)
-        .join("")}<th>Total</th>` +
+        .join("")}<th>${escapeHtml(totalLabel)}</th>` +
       (showWfu ? `<th title="${escapeHtml(WFU_EXPLAINER)}">WFU</th>` : "");
   }
   $(tbodySel).innerHTML = [...buckets]
@@ -713,6 +716,10 @@ function render() {
     format: formatParts,
     unit: "Part-sets",
     totalText: (v) => `${formatParts(v)} part-sets`,
+    // Not "Total": the column adds part-sets, which is a larger number than
+    // the period's set count and would otherwise read as a contradiction of
+    // the tier table sitting right above it.
+    totalLabel: "Total part-sets",
   };
 
   renderRateRow("#vol-rate", "Sets", "sets", "sets/wk");
