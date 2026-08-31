@@ -1,0 +1,15 @@
+# Runs in the small hours Pacific, after the evening's logging is done: the
+# log's own day boundary is Pacific, so this publishes a finished day rather
+# than one still being written. The machine keeps UTC.
+[Unit]
+Description=Daily publish of new workout log entries
+
+[Timer]
+OnCalendar=*-*-* 10:47:00
+# A missed run (machine asleep or off) fires once on the next boot rather
+# than waiting a full day.
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

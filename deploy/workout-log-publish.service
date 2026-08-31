@@ -1,0 +1,21 @@
+# Publishes newly logged workouts to origin/master once a day.
+# Installed to /etc/systemd/system/ and driven by workout-log-publish.timer.
+[Unit]
+Description=Publish new workout log entries to git
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/workspace
+# git reads the GitHub token through gh's credential helper, which is
+# configured in ubuntu's ~/.gitconfig -- so HOME has to be set explicitly,
+# and /usr/bin has to stay on PATH for gh itself.
+Environment=HOME=/home/ubuntu
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/.bun/bin/bun run /workspace/scripts/commit-new-workouts.ts
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=workout-log-publish
