@@ -91,21 +91,18 @@ try {
   const freshDictRows = freshDb.query("SELECT * FROM exercise_dictionary").all() as any[];
   const newDict = freshDictRows.filter((d) => !oldDict.has(d.abbreviation));
 
-  if (newWorkouts.length === 0) {
-    // Still worth committing if anything else moved (an edit, a rename), but
-    // there is no per-day story to tell about it.
-    const same = Bun.hash(await Bun.file(fresh).arrayBuffer()) === Bun.hash(await Bun.file(TARGET).arrayBuffer());
-    if (same) {
-      log("no change since the last snapshot; nothing to publish");
-      cleanup();
-      process.exit(0);
-    }
-  }
+  // Nothing new to snapshot doesn't mean nothing to push: a commit made by
+  // hand earlier still needs to reach origin, and this job is what keeps the
+  // two in step. So this only skips the snapshot work, and still falls
+  // through to the push at the end.
+  const snapshotUnchanged =
+    Bun.hash(await Bun.file(fresh).arrayBuffer()) === Bun.hash(await Bun.file(TARGET).arrayBuffer());
+  if (snapshotUnchanged) log("snapshot already current; checking for anything unpushed");
 
   // ---------- one commit per workout day ----------
 
-  const days = [...new Set(newWorkouts.map((w) => w.date))].sort();
-  log(`${newWorkouts.length} new workout(s) across ${days.length} day(s)`);
+  const days = snapshotUnchanged ? [] : [...new Set(newWorkouts.map((w) => w.date))].sort();
+  if (days.length) log(`${newWorkouts.length} new workout(s) across ${days.length} day(s)`);
 
   // A new dictionary row belongs with the day that first used it -- logging a
   // new abbreviation is what creates it.
@@ -192,7 +189,7 @@ try {
   // the page-level churn a re-save leaves behind. Committing the real vacuum
   // output also guarantees the published file is exactly what
   // scripts/backup-db.sh produces, rather than something rebuilt here.
-  copyFileSync(fresh, TARGET);
+  if (!snapshotUnchanged) copyFileSync(fresh, TARGET);
   if (git(["status", "--porcelain", "backups/workout.db"])) {
     const counts = freshDb.query("SELECT COUNT(*) c FROM workouts").get() as any;
     const dictNote = newDict.length
