@@ -724,8 +724,32 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 .vol-swatch.vol-s5 { background: var(--s5); } .vol-swatch.vol-s6 { background: var(--s6); }
 .vol-swatch.vol-s7 { background: var(--s7); } .vol-swatch.vol-s8 { background: var(--s8); }
 .vol-swatch.vol-other { background: var(--muted); }
-#muscle-chart-wrap { position: relative; }
-#muscle-chart-wrap svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; }
+
+/* Body parts carry their own palette rather than another slice of --s1..--s8.
+   Both stacks are on the same page, and a colour that means Full in one chart
+   and Chest in the next is worse than no colour convention at all. Ordered
+   chest-back-shoulders-arms-legs-core to match the stack. */
+:root {
+  --bp-chest: #e2695b; --bp-back: #3fa3d1; --bp-shoulders: #e0a327;
+  --bp-arms: #9b7fe0; --bp-legs: #34a877; --bp-core: #d4649f;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bp-chest: #d2513f; --bp-back: #1f8cbd; --bp-shoulders: #b07600;
+    --bp-arms: #7a5bc9; --bp-legs: #1f8f5f; --bp-core: #c04a86;
+  }
+}
+.vol-bp-chest { fill: var(--bp-chest); } .vol-bp-back { fill: var(--bp-back); }
+.vol-bp-shoulders { fill: var(--bp-shoulders); } .vol-bp-arms { fill: var(--bp-arms); }
+.vol-bp-legs { fill: var(--bp-legs); } .vol-bp-core { fill: var(--bp-core); }
+.vol-swatch.vol-bp-chest { background: var(--bp-chest); }
+.vol-swatch.vol-bp-back { background: var(--bp-back); }
+.vol-swatch.vol-bp-shoulders { background: var(--bp-shoulders); }
+.vol-swatch.vol-bp-arms { background: var(--bp-arms); }
+.vol-swatch.vol-bp-legs { background: var(--bp-legs); }
+.vol-swatch.vol-bp-core { background: var(--bp-core); }
+#muscle-chart-wrap, #bodypart-chart-wrap { position: relative; }
+#muscle-chart-wrap svg, #bodypart-chart-wrap svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; }
 /* Fixed-window rates, sitting between the stat tiles and the chart. Smaller
    than a stat tile on purpose: they qualify the totals above rather than
    competing with them. */

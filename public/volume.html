@@ -121,6 +121,35 @@
     </table>
   </section>
 
+  <section class="card">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+      <h2 style="margin-top:0">Volume by body part</h2>
+      <div class="vol-legend" id="bodypart-legend"></div>
+    </div>
+    <p class="muted" style="margin-top:0">
+      The same sets again, split by what they train rather than how they move — the question the
+      movement pattern above can't answer, since a barbell row and a pull-up are both Pulls but
+      one is mid-back and the other is lats and arms.
+      An exercise scores a <strong>full set</strong> to the part it trains most and
+      <strong>half a set</strong> to each part it trains alongside: a bench press is one set of
+      chest and half a set of arms, a clean is one set of legs and half a set of back.
+      Whole-body lifts land in several places at once — a clean &amp; jerk counts a full set of
+      legs plus half a set each of shoulders and back.
+      <strong>Bars are therefore taller than your set count</strong> and are labelled part-sets,
+      not sets; the two charts above are the ones that total your real volume.
+      "Other" is conditioning, which trains legs but isn't resistance volume.
+      <strong>Click a body part in the legend</strong> to pick it out, exactly as above.
+    </p>
+    <div id="bodypart-chart-wrap"></div>
+    <p class="muted" id="bodypart-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
+
+    <h3 class="rate-table-title">Sets per week, by body part</h3>
+    <table class="rate-table">
+      <thead><tr id="bodypart-rate-head"></tr></thead>
+      <tbody id="bodypart-rate-body"></tbody>
+    </table>
+  </section>
+
   <section>
     <h2>Breakdown by tier <span class="muted" style="text-transform:none; font-weight:normal;">(newest first)</span></h2>
     <p class="muted" style="margin-top:0">
@@ -142,6 +171,20 @@
       <table>
         <thead><tr id="muscle-table-head"></tr></thead>
         <tbody id="muscle-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Breakdown by body part <span class="muted" style="text-transform:none; font-weight:normal;">(newest first)</span></h2>
+    <p class="muted" style="margin-top:0">
+      Counted in part-sets: a half means the exercise trains that part alongside another. The
+      total column adds these up, so it runs above the set totals in the tier table.
+    </p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr id="bodypart-table-head"></tr></thead>
+        <tbody id="bodypart-table-body"></tbody>
       </table>
     </div>
   </section>

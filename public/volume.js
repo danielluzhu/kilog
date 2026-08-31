@@ -50,6 +50,26 @@ function patternLabel(key) {
   return MOVEMENT_PATTERN_LABELS[key] ?? key;
 }
 
+// Body parts get their own fixed slot order for the same reason the patterns
+// do. Roughly head to foot, so the stack reads like the body rather than like
+// whichever part happened to be trained most.
+const BODY_PART_SERIES = BODY_PARTS;
+const BODY_PART_STACK = [...BODY_PART_SERIES, OTHER_KEY, UNASSIGNED_KEY];
+
+// A { part: weight } map rather than a single key: one set can score against
+// two parts at once. Unassigned carries the whole set so nothing is silently
+// dropped from the total.
+function bodyPartWeightsOf(row) {
+  const w = classifyBodyParts(row.exercise, row.exerciseName, row.movementPattern);
+  if (!w) return { [UNASSIGNED_KEY]: 1 };
+  return w;
+}
+
+function bodyPartLabel(key) {
+  if (key === UNASSIGNED_KEY) return "Unassigned";
+  return BODY_PART_LABELS[key] ?? key;
+}
+
 // ---------- state ----------
 
 let rows = [];
@@ -71,6 +91,7 @@ async function loadVolume() {
         day: dayNumber(r.date),
         tier,
         pattern: patternSeriesOf(r),
+        bodyParts: bodyPartWeightsOf(r),
         // Weighted volume rides alongside the raw count, never instead of it:
         // the charts stay in sets, WFUs surface in the stat tiles and the
         // tier table.
@@ -232,6 +253,14 @@ function yTicks(max, count = 4) {
 }
 
 const formatSets = (v) => String(Math.round(v));
+
+// Half sets are real here, so the decimal has to survive — but only when it
+// says something. "12" beats "12.0", and floating-point dust from summing
+// halves ("11.999999999") should never reach the page.
+const formatParts = (v) => {
+  const r = Math.round(v * 10) / 10;
+  return Number.isInteger(r) ? String(r) : r.toFixed(1);
+};
 
 // `seriesName` is the key on each bucket holding its per-series tallies;
 // `stack` is the bottom-to-top order; `classFor` maps a series key to the CSS
@@ -486,6 +515,17 @@ function patternClass(key) {
   return idx === -1 ? "vol-other" : `vol-s${idx + 1}`;
 }
 
+// Body parts get their own named colours rather than another slice of the
+// generic series palette: both stacks sit on the same page, and one blue
+// meaning Full above and Chest below would be a trap.
+function bodyPartClass(key) {
+  if (key === UNASSIGNED_KEY) return "vol-unassigned";
+  return BODY_PART_SERIES.includes(key) ? `vol-bp-${key}` : "vol-other";
+}
+
+// Body parts picked out for comparison, exactly as the pattern legend works.
+const selectedBodyParts = new Set();
+
 // ---------- weekly rates ----------
 
 // Three fixed windows, deliberately independent of the range and bucket
@@ -615,6 +655,13 @@ function render() {
     { name: "tier", field: "tier", keys: TIER_SERIES },
     { name: "pattern", field: "pattern", keys: PATTERN_STACK },
     { name: "tierWfu", field: "tier", keys: TIER_SERIES, value: "wfu" },
+    {
+      name: "bodyPart",
+      field: "bodyParts",
+      keys: BODY_PART_STACK,
+      spread: true,
+      totalName: "bodyPartTotal",
+    },
   ]);
 
   renderStats(buckets);
@@ -648,6 +695,23 @@ function render() {
     totalText: (v) => `${formatFatigueUnits(v)} WFU`,
   };
 
+  // The same sets again, cut by what they train rather than how they move.
+  // Bar height is a part-count, not a set count — an exercise scoring against
+  // two parts contributes to both — so it plots its own total and says so in
+  // the axis label.
+  const bodyPartSpec = {
+    seriesName: "bodyPart",
+    stack: BODY_PART_STACK,
+    classFor: bodyPartClass,
+    labelFor: bodyPartLabel,
+    selectable: true,
+    selected: selectedBodyParts,
+    totalKey: "bodyPartTotal",
+    format: formatParts,
+    unit: "Part-sets",
+    totalText: (v) => `${formatParts(v)} part-sets`,
+  };
+
   renderRateRow("#vol-rate", "Sets", "sets", "sets/wk");
   renderRateRow("#wfu-rate", "WFU", "wfu", "WFU/wk");
   renderSeriesRates(patternSpec, {
@@ -657,16 +721,26 @@ function render() {
     stack: PATTERN_STACK,
     weightFor: (r, k) => (r.pattern === k ? 1 : 0),
   });
+  renderSeriesRates(bodyPartSpec, {
+    headSel: "#bodypart-rate-head",
+    bodySel: "#bodypart-rate-body",
+    heading: "Body part",
+    stack: BODY_PART_STACK,
+    weightFor: (r, k) => r.bodyParts[k] || 0,
+  });
 
   renderStacked($("#vol-chart-wrap"), $("#vol-empty"), buckets, tierSpec);
   renderStacked($("#muscle-chart-wrap"), $("#muscle-empty"), buckets, patternSpec);
   renderStacked($("#wfu-chart-wrap"), $("#wfu-empty"), buckets, wfuSpec);
+  renderStacked($("#bodypart-chart-wrap"), $("#bodypart-empty"), buckets, bodyPartSpec);
   renderLegend("#tier-legend", buckets, tierSpec);
   renderLegend("#muscle-legend", buckets, patternSpec);
   renderLegend("#wfu-legend", buckets, wfuSpec);
+  renderLegend("#bodypart-legend", buckets, bodyPartSpec);
 
   renderTable("#vol-table-body", buckets, { ...tierSpec, headSel: "#vol-table-head", showWfu: true });
   renderTable("#muscle-table-body", buckets, { ...patternSpec, headSel: "#muscle-table-head" });
+  renderTable("#bodypart-table-body", buckets, { ...bodyPartSpec, headSel: "#bodypart-table-head" });
 }
 
 // ---------- controls ----------
@@ -715,7 +789,11 @@ function bindSelectableLegend(sel, selection) {
   });
 }
 
+// Two independent selections: picking Legs out of the body-part chart says
+// nothing about which movement patterns you wanted to compare, so the two
+// legends never move each other.
 bindSelectableLegend("#muscle-legend", selectedPatterns);
+bindSelectableLegend("#bodypart-legend", selectedBodyParts);
 
 $("#custom-days").addEventListener("input", (e) => {
   const n = parseInt(e.target.value, 10);
