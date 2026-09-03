@@ -868,3 +868,106 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   padding: 0.05rem 0.5rem;
   white-space: nowrap;
 }
+
+/* ---------- Weekly Routine ---------- */
+/* One card per day. The day's name leads, the session's character follows it
+   as a subtitle, and the cost of the day sits at the far end — the three
+   things you read in that order when deciding whether today is the day. */
+.plan-day-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  margin-bottom: 0.35rem;
+}
+.plan-day-name { margin: 0; font-size: 1.15rem; }
+.plan-day-title { color: var(--fg); font-size: 0.95rem; }
+.plan-day-meta {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.plan-day-note { margin: 0 0 0.9rem; font-size: 0.85rem; }
+/* A rest day is still a day of the plan, not a gap in it — dimmed enough to
+   scan past, present enough to count. */
+.plan-day-rest { opacity: 0.72; }
+.plan-day-rest .plan-day-name { color: var(--muted); }
+
+.plan-table { margin-top: 0.25rem; }
+.plan-col-name { width: 42%; }
+.plan-col-num { width: 8.5rem; font-variant-numeric: tabular-nums; }
+/* The prescribed weight is the one number on the row you act on — everything
+   else is the reasoning behind it. */
+.plan-weight { font-weight: 700; color: var(--accent); white-space: nowrap; }
+.plan-slot-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+  margin-top: 0.2rem;
+}
+
+/* Load level. Reuses the fatigue-tier hues rather than inventing a second
+   colour language: heavy work is the expensive kind, light work isn't. */
+.load-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  margin-left: 0.4rem;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+.load-badge.load-heavy { color: var(--tier-complex); border-color: var(--tier-complex); }
+.load-badge.load-medium { color: var(--tier-compound); border-color: var(--tier-compound); }
+.load-badge.load-light { color: var(--muted); }
+.load-badge.load-technique { color: var(--tier-technique); border-color: var(--tier-technique); }
+
+/* The run/hike sits below the lifting table, separated by a rule, because it
+   is a separate session on that day rather than another exercise in it. */
+.plan-cardio {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--border);
+  font-size: 0.88rem;
+}
+.plan-cardio-activity { font-weight: 600; color: var(--tier-cardio); }
+.plan-cardio .plan-slot-note { flex-basis: 100%; margin-top: 0; }
+
+/* Edit mode. Inputs are sized to their content — a set count needs three
+   characters, an exercise abbreviation needs six — so an editable row stays
+   the same shape as the row it replaced. */
+.plan-day-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.9rem; }
+.plan-edit-row input,
+.plan-edit-row select,
+.plan-cardio-field {
+  font-size: 0.82rem;
+  padding: 0.25rem 0.4rem;
+  margin: 0.15rem 0.25rem 0.15rem 0;
+  width: auto;
+  display: inline-block;
+}
+.plan-num { width: 3.6rem; }
+.plan-ex, .plan-ref, .plan-rest { width: 6.5rem; }
+.plan-group { width: 8rem; }
+.plan-note, .plan-cardio-note { width: 100%; }
+.plan-cardio-field { width: 10rem; }
+.plan-optional { font-size: 0.8rem; color: var(--muted); display: inline-flex; align-items: center; gap: 0.3rem; }
+.plan-optional input { width: auto; margin: 0; }
+
+.plan-grid td:first-child { font-weight: 600; }
+.plan-grid td { font-size: 0.85rem; }
+
+@media (max-width: 640px) {
+  .plan-col-name, .plan-col-num { width: auto; }
+  .plan-day-meta { margin-left: 0; }
+}

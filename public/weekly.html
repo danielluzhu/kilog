@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Weekly Routine</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<header>
+  <h1><a href="/index.html" class="app-icon-link" aria-label="Workout Log home"><img src="/android-chrome-192x192.png" alt="" class="app-icon" /></a> Workout Log</h1>
+  <nav>
+    <a href="/index.html">Log</a>
+    <a href="/weekly.html" class="active">Weekly Routine</a>
+    <a href="/dictionary.html">Exercise Dictionary</a>
+    <a href="/lapse.html">Lapse</a>
+    <a href="/volume.html">Volume</a>
+    <a href="/onerm.html">1RM Calculator</a>
+    <a href="/cardio.html">Runs &amp; Hikes</a>
+    <a href="/prilepin.html">Prilepin's Table</a>
+    <a href="/snatch.html">The Snatch</a>
+  </nav>
+</header>
+
+<main>
+  <p class="muted">
+    A week built around the snatch and the clean &amp; jerk, with the weighted pull-up and
+    weighted dip as the second priority and one or two runs/hikes for aerobic base. Each of
+    those five movements gets a <strong>heavy</strong>, a <strong>medium</strong> and a
+    <strong>light</strong> exposure across the week, so nothing is trained hard twice in a row
+    and nothing goes a week without being touched. Accessories never get a heavy day — that's
+    the point of calling them accessories. Prescribed weights are computed from your own logged
+    estimated 1RMs, and every number on this page is editable.
+  </p>
+
+  <section class="card">
+    <div class="range-bar">
+      <span class="range-bar-label">Week</span>
+      <button type="button" class="chip week-btn" data-week="heavy">Heavy</button>
+      <button type="button" class="chip week-btn" data-week="medium">Medium</button>
+      <button type="button" class="chip week-btn" data-week="light">Light</button>
+      <button type="button" class="chip week-btn" data-week="deload">Deload</button>
+    </div>
+    <div class="range-bar">
+      <span class="range-bar-label">Maxes from</span>
+      <button type="button" class="chip basis-btn" data-basis="recent">Last 120 days</button>
+      <button type="button" class="chip basis-btn" data-basis="all">All time</button>
+    </div>
+    <div class="range-bar" style="margin-bottom:0;">
+      <span class="range-bar-label">Plan</span>
+      <button type="button" class="chip" id="edit-toggle">Customize</button>
+      <button type="button" class="chip" id="plan-export">Copy as JSON</button>
+      <button type="button" class="chip" id="plan-import">Paste JSON</button>
+      <button type="button" class="chip" id="plan-reset">Reset to default</button>
+      <span class="muted" id="plan-dirty" style="font-size:0.8rem;"></span>
+    </div>
+    <p class="muted" id="week-note" style="margin:0.85rem 0 0; font-size:0.85rem;"></p>
+    <div class="status" id="plan-status"></div>
+  </section>
+
+  <section class="card">
+    <div class="stats-row" id="week-stats"></div>
+    <p class="muted" id="week-stats-note" style="margin:1rem 0 0; font-size:0.8rem;"></p>
+  </section>
+
+  <div id="week-days"></div>
+
+  <section class="card">
+    <h2 style="margin-top:0">Why the week is shaped this way</h2>
+    <table class="plan-grid" id="hml-grid">
+      <thead>
+        <tr><th>Movement</th><th>Heavy</th><th>Medium</th><th>Light</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <ul class="muted" style="margin:1rem 0 0; padding-left:1.1rem; line-height:1.6; font-size:0.9rem;">
+      <li><strong>Heavy / medium / light per movement, not per week.</strong> The snatch, the
+        clean &amp; jerk, the squat, the pull-up and the dip each get three exposures — one that
+        pushes the top end, one that does the work, one that keeps the pattern fresh without
+        adding fatigue. Frequency is what drives Olympic technique; intensity is what you
+        rotate. The grid above is built from the plan itself, so an edit that leaves a movement
+        without one of the three shows up as a dash.</li>
+      <li><strong>At least 48h between two heavy exposures of the same pattern.</strong> Heavy
+        snatch Monday, medium Friday, light Saturday. Heavy pull-up and dip Tuesday, medium and
+        light at the back of the week. Heavy clean &amp; jerk lands Friday, four days off the
+        heavy snatch.</li>
+      <li><strong>Two full rest days</strong> — Thursday breaks the week in half right before the
+        heaviest session, and Sunday closes it. Thursday will take an easy hike; it will not take
+        a lift.</li>
+      <li><strong>Squats are back-loaded, not front-loaded.</strong> The heavy front squat sits on
+        the same day as the heavy snatch — one hard leg day, not two — and the back squat comes in
+        at medium after the heavy clean &amp; jerk, when it can't blunt a pull.</li>
+      <li><strong>The runs stay easy.</strong> One conversational 30–40 min run midweek and one
+        longer hike or easy run Saturday. Aerobic base costs nothing if it stays aerobic; intervals
+        on a lifting week compete with the squats.</li>
+      <li><strong>The week type waves across a month.</strong> Heavy → medium → heavy → deload
+        keeps average weekly load near what you've actually been absorbing, instead of running the
+        top week every week.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2 style="margin-top:0">Customizing this page</h2>
+    <p class="muted" style="margin-top:0">
+      <strong>Customize</strong> turns every day into an editable form: change the sets, reps and
+      intensity band, swap an exercise for any abbreviation in the
+      <a href="/dictionary.html">dictionary</a>, drop a slot, add a slot, add a day or make a day
+      a rest day. Edits save to this browser as you make them and survive a reload —
+      <strong>Reset to default</strong> throws them away. <strong>Copy as JSON</strong> and
+      <strong>Paste JSON</strong> move a plan between devices.
+    </p>
+    <p class="muted">
+      Each slot's intensity is a percentage band of an estimated 1RM. By default that's the
+      exercise's own best, but a slot can be pegged to a different lift — the snatch high pull is
+      written as a percentage of the <em>snatch</em>, the pause front squat as a percentage of the
+      <em>front squat</em> — so the accessory follows the lift it serves. Bodyweight movements are
+      prescribed as added weight (<code>+41 kg</code>), matching how they're logged.
+    </p>
+    <p class="muted" style="margin-bottom:0">
+      To change the default that <strong>Reset</strong> restores, edit <code>DEFAULT_PLAN</code> at
+      the top of <code>public/weekly.js</code>.
+    </p>
+  </section>
+</main>
+
+<script src="/utils.js"></script>
+<script src="/weekly.js"></script>
+</body>
+</html>
