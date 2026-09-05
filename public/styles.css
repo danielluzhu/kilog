@@ -964,6 +964,47 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
 .plan-optional { font-size: 0.8rem; color: var(--muted); display: inline-flex; align-items: center; gap: 0.3rem; }
 .plan-optional input { width: auto; margin: 0; }
 
+/* The day's focus strip: which movements the session trains, hardest first.
+   Sits between the heading and the exercise table because it answers the
+   question actually asked on the way to the gym. The load word carries the
+   colour; the movement name stays in the foreground so the strip reads as a
+   list of movements that happen to be graded, not a row of coloured tags. */
+.plan-focus-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+}
+.plan-focus {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.55rem;
+  font-size: 0.8rem;
+  background: var(--surface-2);
+  cursor: help;
+}
+.plan-focus-name { font-weight: 600; }
+.plan-focus-load {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+/* Heavy is the one that has to carry across a scroll, so it gets the border
+   and the tint as well as the word. */
+.plan-focus.load-heavy { border-color: var(--tier-complex); background: color-mix(in srgb, var(--tier-complex) 10%, transparent); }
+.plan-focus.load-heavy .plan-focus-load { color: var(--tier-complex); }
+.plan-focus.load-medium { border-color: color-mix(in srgb, var(--tier-compound) 55%, var(--border)); }
+.plan-focus.load-medium .plan-focus-load { color: var(--tier-compound); }
+.plan-focus.load-light .plan-focus-load { color: var(--muted); }
+.plan-focus.load-light .plan-focus-name { font-weight: 500; }
+.plan-focus.load-technique { border-color: color-mix(in srgb, var(--tier-technique) 55%, var(--border)); }
+.plan-focus.load-technique .plan-focus-load { color: var(--tier-technique); }
+.plan-focus-cardio .plan-focus-name { color: var(--tier-cardio); }
+
 .plan-grid td:first-child { font-weight: 600; }
 .plan-grid td { font-size: 0.85rem; }
 

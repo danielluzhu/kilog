@@ -156,6 +156,20 @@ const WEEK_TYPES = [
 
 const LOAD_LABELS = { heavy: "Heavy", medium: "Medium", light: "Light", technique: "Technique", rest: "Rest" };
 const LOAD_ORDER = ["heavy", "medium", "light", "technique"];
+// How hard a day leans on a movement, for picking the headline load when one
+// focus gets more than one slot in a session. Technique sits below light: a
+// snatch balance primer is the least the snatch is ever asked for.
+const LOAD_RANK = { heavy: 0, medium: 1, light: 2, technique: 3 };
+
+// What a slot counts as when the day is summarised.
+//
+// A slot's `group` is the lift it develops — that's the axis the
+// heavy/medium/light rule runs on, and it deliberately keeps the snatch high
+// pull filed under Snatch rather than under the pattern it looks like.
+// Accessories have no lift to develop, so they fall back to the movement
+// pattern the dictionary already assigns them: Pulls, Push, Hinge, Squat.
+const ACCESSORY_GROUP = "Accessory";
+const CARDIO_FOCUS = "Run / hike";
 
 const RECENT_WINDOW_DAYS = 120;
 const ACTUAL_WINDOW_DAYS = 28;
@@ -173,6 +187,7 @@ const state = {
   basis: "recent",
   editing: false,
   names: {},          // abbreviation -> full name
+  dict: {},           // abbreviation -> the dictionary row (for movement pattern)
   maxes: {},          // abbreviation -> { oneRM, date, sets } | null
   actualWfuPerWeek: null,
   actualDaysPerWeek: null,
@@ -320,6 +335,49 @@ function formatPctBand(slot) {
   return slot.ref ? `${band} of ${slot.ref}` : band;
 }
 
+// ---------- focus ----------
+
+// What a slot counts as in the day strip. See ACCESSORY_GROUP above for why
+// there are two taxonomies rather than one.
+function focusOf(slot) {
+  if (slot.group && slot.group !== ACCESSORY_GROUP) return slot.group;
+  const pattern = movementPatternFor(state.dict[slot.ex]);
+  return pattern ? MOVEMENT_PATTERN_LABELS[pattern] : ACCESSORY_GROUP;
+}
+
+// One entry per movement the day actually trains, carrying the hardest load
+// that movement is asked for and what it costs. A day that squats twice —
+// heavy front squat and a light pause squat — reads as one Squat focus at
+// heavy, because that is what the day does to the legs.
+function dayFocuses(day) {
+  const byFocus = new Map();
+  for (const slot of day.slots || []) {
+    const key = focusOf(slot);
+    const entry = byFocus.get(key) || { focus: key, load: slot.load, sets: 0, wfu: 0, exercises: [] };
+    if ((LOAD_RANK[slot.load] ?? 9) < (LOAD_RANK[entry.load] ?? 9)) entry.load = slot.load;
+    entry.sets += scaledSets(slot);
+    entry.wfu += slotFatigue(slot);
+    entry.exercises.push(slot.ex);
+    byFocus.set(key, entry);
+  }
+  if (day.cardio) {
+    byFocus.set(CARDIO_FOCUS, {
+      focus: CARDIO_FOCUS,
+      load: day.cardio.load || "light",
+      sets: 0,
+      wfu: 0,
+      exercises: [day.cardio.activity || "Cardio"],
+      cardio: true,
+      optional: Boolean(day.cardio.optional),
+    });
+  }
+  // Hardest first, then most expensive: the heavy work is what the day is
+  // for, and it should be the first thing read off the strip.
+  return [...byFocus.values()].sort(
+    (a, b) => (LOAD_RANK[a.load] ?? 9) - (LOAD_RANK[b.load] ?? 9) || b.wfu - a.wfu
+  );
+}
+
 // ---------- fatigue accounting ----------
 // Same weighted fatigue units the Volume page reports, so the plan's cost and
 // the log's cost are the same number and can be compared directly.
@@ -364,6 +422,7 @@ async function loadDictionary() {
   const entries = await res.json();
   registerDictionary(entries);
   state.names = Object.fromEntries(entries.map((e) => [e.abbreviation, e.full_name || ""]));
+  state.dict = Object.fromEntries(entries.map((e) => [e.abbreviation, e]));
   return entries;
 }
 
@@ -614,6 +673,26 @@ function cardioBlock(day, dayIndex) {
   </div>`;
 }
 
+// The day's headline: which movements it trains and how hard. Read before the
+// exercise table, and often instead of it — on the way to the gym the useful
+// question is "what is today", not "what is set three".
+function focusStrip(day) {
+  const focuses = dayFocuses(day);
+  if (!focuses.length) return "";
+  return `<div class="plan-focus-strip">${focuses
+    .map((f) => {
+      const detail = f.cardio
+        ? escapeHtml(f.exercises.join(", ")) + (f.optional ? " · optional" : "")
+        : `${f.sets} ${f.sets === 1 ? "set" : "sets"} · ${escapeHtml(f.exercises.join(", "))}`;
+      return `<span class="plan-focus load-${escapeHtml(f.load)}${f.cardio ? " plan-focus-cardio" : ""}"
+                    title="${escapeHtml(f.focus)} — ${escapeHtml(LOAD_LABELS[f.load] || f.load)} — ${detail}">
+        <span class="plan-focus-name">${escapeHtml(f.focus)}</span>
+        <span class="plan-focus-load">${escapeHtml(LOAD_LABELS[f.load] || f.load)}</span>
+      </span>`;
+    })
+    .join("")}</div>`;
+}
+
 function renderDay(day, dayIndex) {
   const totals = dayTotals(day);
   const isRest = Boolean(day.rest) || (day.slots || []).length === 0;
@@ -650,6 +729,7 @@ function renderDay(day, dayIndex) {
       <span class="plan-day-title">${escapeHtml(day.title || "")}</span>
       <span class="plan-day-meta">${escapeHtml(meta)}</span>
     </div>
+    ${focusStrip(day)}
     ${day.note ? `<p class="muted plan-day-note">${escapeHtml(day.note)}</p>` : ""}
     ${table}
     ${cardioBlock(day, dayIndex)}
