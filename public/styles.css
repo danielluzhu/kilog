@@ -1047,6 +1047,9 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
 .plan-grid-mark-optional { border-style: dashed; opacity: 0.75; }
 /* A rest day's column is empty on purpose; the muted header is what says so. */
 .plan-grid-day-rest { opacity: 0.45; }
+/* Coverage note under the grid. Deliberately not .status.err: it reports the
+   shape of the week, and the week's shape is the lifter's call. */
+.plan-coverage { color: var(--muted); }
 .plan-legend {
   display: flex;
   flex-wrap: wrap;

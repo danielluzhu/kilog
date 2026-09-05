@@ -168,9 +168,14 @@ const LOAD_RANK = { heavy: 0, medium: 1, light: 2, technique: 3 };
 const ACCESSORY_GROUP = "Accessory";
 const CARDIO_FOCUS = "Run / hike";
 
-// Goal movements lead the grid in priority order; everything else follows by
-// how much of the week it actually takes up.
-const FOCUS_ORDER = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
+// The movements the week exists to move. Only these are checked for coverage
+// — an accessory is not owed a heavy day, and saying so about it every load
+// would bury the one line that matters.
+const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
+
+// Grid row order: the goal movements lead, then the named support blocks,
+// then everything else by how much of the week it takes up.
+const FOCUS_ORDER = [...GOAL_FOCUSES, "Press", "Pulls"];
 
 const RECENT_WINDOW_DAYS = 120;
 const ACTUAL_WINDOW_DAYS = 28;
@@ -830,23 +835,57 @@ function renderGrid() {
   renderGridGaps(ordered);
 }
 
-// Names the goal movements missing one of the three exposures, because an
-// empty cell is only obvious once you know which row was supposed to be full.
+// How the week actually covers the goal movements. This is a description,
+// not a verdict: a two-exposure snatch or a second heavy squat day can be a
+// deliberate trade, and a red warning on every load would be the page
+// arguing with a decision that has already been made. It states what the
+// distribution is and leaves the judgement to the reader — the one case it
+// calls a win is full heavy/medium/light coverage, because that is the rule
+// the default was built on.
 function renderGridGaps(ordered) {
-  const gaps = [];
+  const notes = new Map();
+  const note = (text, focus) => {
+    if (!notes.has(text)) notes.set(text, []);
+    notes.get(text).push(focus);
+  };
+
+  let checked = 0;
   for (const row of ordered) {
-    if (!FOCUS_ORDER.includes(row.focus)) continue;
-    const loads = new Set();
-    for (const cell of row.cells) for (const c of cell) loads.add(c.load === "technique" ? "light" : c.load);
-    const missing = ["heavy", "medium", "light"].filter((l) => !loads.has(l));
-    if (missing.length) gaps.push(`${row.focus} has no ${missing.join(" or ")} day`);
+    if (!GOAL_FOCUSES.includes(row.focus)) continue;
+    checked += 1;
+    // Technique work counts as the light exposure — it is the lightest thing
+    // a lift is ever asked for, not a fourth category needing its own day.
+    const loads = [];
+    for (const cell of row.cells) for (const c of cell) loads.push(c.load === "technique" ? "light" : c.load);
+    const heavy = loads.filter((l) => l === "heavy").length;
+    if (heavy > 1) note(`${heavy} heavy days`, row.focus);
+    const missing = ["heavy", "medium", "light"].filter((l) => !loads.includes(l));
+    if (missing.length) note(`no ${missing.join(" or ")} day`, row.focus);
   }
+
   const el = $("#grid-gaps");
   if (!el) return;
-  el.textContent = gaps.length
-    ? `Gaps: ${gaps.join("; ")}.`
-    : "Every goal movement has a heavy, a medium and a light day.";
-  el.className = gaps.length ? "status err" : "status ok";
+
+  if (!checked) {
+    el.textContent = "";
+    el.className = "status";
+    return;
+  }
+  if (!notes.size) {
+    el.textContent = "Every goal movement has a heavy, a medium and a light day.";
+    el.className = "status ok";
+    return;
+  }
+  el.textContent = [...notes.entries()]
+    .map(([text, focuses]) => `${listOf(focuses)}: ${text}`)
+    .join(" · ");
+  el.className = "status plan-coverage";
+}
+
+// "Snatch and Clean & Jerk", "Squat, Pull-up and Dip".
+function listOf(names) {
+  if (names.length <= 1) return names[0] || "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 function renderExerciseOptions() {
