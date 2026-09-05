@@ -104,7 +104,7 @@ const DEFAULT_PLAN = {
           note: "Crisp doubles. Speed under the bar, not another top end." },
         { ex: "CJ", group: "Clean & Jerk", load: "medium", sets: 4, reps: 2, pctLo: 0.72, pctHi: 0.8, rest: "3 min",
           note: "Both halves, every rep." },
-        { ex: "J", group: "Clean & Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ", rest: "2 min",
+        { ex: "J", group: "Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ", rest: "2 min",
           note: "From the rack, so the jerk gets reps the clean isn't paying for. First thing to cut if Friday and Saturday start running together." },
       ],
     },
@@ -175,7 +175,7 @@ const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 
 // Grid row order: the goal movements lead, then the named support blocks,
 // then everything else by how much of the week it takes up.
-const FOCUS_ORDER = [...GOAL_FOCUSES, "Press", "Pulls"];
+const FOCUS_ORDER = [...GOAL_FOCUSES, "Jerk", "Press", "Pulls"];
 
 const RECENT_WINDOW_DAYS = 120;
 const ACTUAL_WINDOW_DAYS = 28;
