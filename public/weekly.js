@@ -13,25 +13,28 @@
 
 // ---------- the default routine ----------
 //
-// Built around two priorities and a constraint:
+// Six training days and one rest day, built around two priorities:
 //
-//   Primary   snatch, clean & jerk — trained three times a week each, because
-//             Olympic lifts are technique under load and frequency is what
-//             moves them. Only one of those three exposures is heavy.
-//   Secondary weighted pull-up, weighted dip — three exposures each as well,
-//             but stacked on the days the bar isn't heavy.
-//   Constraint 5 lifting days, 2 full rest days, 1-2 easy runs/hikes, and a
-//             weekly fatigue cost in the range the log says is actually
-//             being absorbed (see the Volume page's weighted fatigue units).
+//   Primary   snatch, clean & jerk — each gets a heavy day of its own and a
+//             shared medium day on Friday.
+//   Secondary weighted pull-up, weighted dip — one heavy day together on
+//             Tuesday, and light volume on Thursday's bodybuilding session.
 //
-// Every slot's `group` is what the heavy/medium/light grid at the bottom of
-// the page is built from — two slots sharing a group are two exposures of the
-// same movement, and the grid checks that each group gets a heavy, a medium
-// and a light one.
+// The week leads heavy three days running: snatch and front squat Monday,
+// pull-up and dip Tuesday, clean & jerk Wednesday. Thursday is the release
+// valve — a short run and isolation work, the cheapest day of the week.
+// Friday runs all three Olympic lifts at medium, Saturday is a heavy squat
+// with the pulls and the week's volume, and Sunday is off.
 //
-// `ref` pegs a slot's percentages to a different lift: a snatch high pull is
-// prescribed off the snatch, not off its own best pull, so the accessory
-// follows the lift it serves.
+// The squat is the one movement carrying two heavy days (Monday's front
+// squat, Saturday's back squat) with a medium in between. That's a deliberate
+// choice, not an oversight: it costs the snatch and the clean & jerk their
+// third exposure, and the grid at the top of the page says so.
+//
+// Every slot's `group` is what the week grid and the day strips are built
+// from — two slots sharing a group are two exposures of the same movement.
+// `ref` pegs a slot's percentages to a different lift, so the snatch high
+// pull is prescribed off the snatch rather than off its own best pull.
 
 const DEFAULT_PLAN = {
   version: 1,
@@ -39,99 +42,92 @@ const DEFAULT_PLAN = {
     {
       name: "Monday",
       title: "Heavy snatch · heavy front squat",
-      note: "The week's top snatch effort, on the freshest day. One hard leg session, stacked here rather than spread out.",
+      note: "The week's top snatch effort on the freshest day, with the heavy front squat stacked onto it so the legs take one hard session rather than two.",
       slots: [
         { ex: "S", group: "Snatch", load: "heavy", sets: 5, reps: 2, pctLo: 0.82, pctHi: 0.9, rest: "3 min",
           note: "Build to a heavy double. Two misses at the same weight ends the exercise for the day." },
         { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S", rest: "2 min",
           note: "Percentages are of the snatch. Finish the extension; this is not a shrug." },
         { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9, rest: "3 min",
-          note: "Heavy front squat belongs next to the heavy pull, not on its own day." },
-        { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 8, rest: "90 s",
-          note: "Posterior chain, unloaded end of the day." },
+          note: "Doubles, not a grind — this shares the day with the heavy snatch." },
       ],
     },
     {
       name: "Tuesday",
-      title: "Heavy pull-up · heavy dip",
-      note: "The secondary goals get their own hard day, on a day the bar is not heavy.",
+      title: "Heavy pull-up + dip · medium press",
+      note: "The secondary goals get their own hard day, on a day the bar never comes off the rack.",
       slots: [
         { ex: "PLU", group: "Pull-up", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93, rest: "3 min",
           note: "Added weight. Dead hang to chin over the bar, no kip." },
         { ex: "D", group: "Dip", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93, rest: "3 min",
           note: "Added weight. Full depth, controlled turnaround." },
-        { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 6, pctLo: 0.65, pctHi: 0.72, rest: "2 min",
-          note: "Horizontal pulling to balance the vertical work above." },
-        { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15, rest: "60 s",
-          note: "Shoulder health for the overhead positions." },
+        { ex: "SP", group: "Press", load: "medium", sets: 4, reps: 5, pctLo: 0.7, pctHi: 0.78, rest: "2 min",
+          note: "Strict press. The overhead strength the jerk borrows from, trained where it isn't competing with a jerk." },
       ],
-      cardio: { activity: "Run", load: "light", detail: "30-40 min easy",
-        note: "Conversational pace, after the lifting or in the evening. If Monday left the legs flat, trade it for Thursday's hike." },
     },
     {
       name: "Wednesday",
-      title: "Medium clean & jerk · light squat",
-      note: "Volume day for the clean & jerk — the reps that build the lift, at a weight that doesn't cost the week.",
+      title: "Heavy clean & jerk · medium pause front squat",
+      note: "The week's top clean & jerk. Third heavy day running, so nothing here is allowed to turn into a grind.",
       slots: [
-        { ex: "CJ", group: "Clean & Jerk", load: "medium", sets: 4, reps: 2, pctLo: 0.72, pctHi: 0.8, rest: "3 min",
-          note: "Both halves, every rep. Sharp turnover, no grinding." },
-        { ex: "J", group: "Clean & Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ", rest: "2 min",
-          note: "From the rack, so the jerk gets reps the clean isn't paying for." },
+        { ex: "CJ", group: "Clean & Jerk", load: "heavy", sets: 5, reps: 1, pctLo: 0.85, pctHi: 0.93, rest: "3-4 min",
+          note: "Singles. Build to a heavy one; stop on the second miss." },
         { ex: "CHP", group: "Clean & Jerk", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "CJ", rest: "2 min",
           note: "Percentages are of the clean & jerk." },
-        { ex: "PFSQ", group: "Squat", load: "light", sets: 3, reps: 3, pctLo: 0.62, pctHi: 0.7, ref: "FSQ", rest: "2 min",
-          note: "Two seconds in the hole. Position work, not a squat workout." },
-        { ex: "D", group: "Dip", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.66, rest: "90 s",
-          note: "Three days clear of Tuesday's heavy dip and three before Saturday's medium one." },
+        { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ", rest: "2 min",
+          note: "Two seconds in the hole. The legs have squatted heavy 48h ago — keep this at the top of the band only if Monday felt easy." },
       ],
     },
     {
       name: "Thursday",
-      rest: true,
-      title: "Rest",
-      note: "A full day off before the heaviest session of the week. An easy hike is fine here; a lift is not.",
-      slots: [],
-      cardio: { activity: "Hike", load: "light", detail: "60-90 min, flat to rolling", optional: true,
-        note: "Only if Tuesday's run didn't happen, and only easy." },
+      title: "Short run · bodybuilding",
+      note: "The cheapest day of the week and the only one that isn't chasing a number. Runs after three heavy days and before two more.",
+      slots: [
+        { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10, rest: "90 s",
+          note: "Neutral grip, bodyweight, two reps short of failure." },
+        { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62, rest: "90 s" },
+        { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68, rest: "2 min",
+          note: "Horizontal pulling, the one thing the rest of the week never asks for." },
+        { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15, rest: "60 s",
+          note: "Shoulder health for the overhead positions." },
+        { ex: "BC", group: "Accessory", load: "light", sets: 3, reps: 12, rest: "60 s" },
+      ],
+      cardio: { activity: "Run", load: "light", detail: "25-35 min easy",
+        note: "Short and conversational. This is the aerobic touch midweek, not a session that competes with Saturday." },
     },
     {
       name: "Friday",
-      title: "Heavy clean & jerk · medium snatch",
-      note: "The week's top clean & jerk, four days clear of the heavy snatch and one day off rest.",
+      title: "Medium snatch · medium clean & jerk · medium jerk",
+      note: "All three Olympic lifts in one session at a weight that can be made every rep. No maxes — this is the day the technique gets its reps.",
       slots: [
-        { ex: "CJ", group: "Clean & Jerk", load: "heavy", sets: 5, reps: 1, pctLo: 0.85, pctHi: 0.93, rest: "3-4 min",
-          note: "Singles. Build to a heavy one; stop on the second miss." },
         { ex: "S", group: "Snatch", load: "medium", sets: 4, reps: 2, pctLo: 0.75, pctHi: 0.82, rest: "2-3 min",
-          note: "Crisp doubles after the clean & jerk — speed, not another max." },
-        { ex: "SQ", group: "Squat", load: "medium", sets: 3, reps: 4, pctLo: 0.72, pctHi: 0.78, rest: "3 min",
-          note: "Back squat, behind the pulls so it can't blunt them." },
-        { ex: "PLU", group: "Pull-up", load: "medium", sets: 3, reps: 5, pctLo: 0.78, pctHi: 0.83, rest: "2 min",
-          note: "Added weight, well short of failure." },
+          note: "Crisp doubles. Speed under the bar, not another top end." },
+        { ex: "CJ", group: "Clean & Jerk", load: "medium", sets: 4, reps: 2, pctLo: 0.72, pctHi: 0.8, rest: "3 min",
+          note: "Both halves, every rep." },
+        { ex: "J", group: "Clean & Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ", rest: "2 min",
+          note: "From the rack, so the jerk gets reps the clean isn't paying for. First thing to cut if Friday and Saturday start running together." },
       ],
     },
     {
       name: "Saturday",
-      title: "Light technique · medium dip",
-      note: "Positions at a weight that teaches instead of taxing, then the week's aerobic session.",
+      title: "Heavy squat · pulls · volume",
+      note: "The week's second heavy squat, the Olympic pulls, and the volume that pays for all of it — banked directly in front of the rest day.",
       slots: [
-        { ex: "S", group: "Snatch", load: "light", sets: 4, reps: 3, pctLo: 0.6, pctHi: 0.68, rest: "90 s",
-          note: "Every rep a technique rep. Nothing here should feel like a strain." },
-        { ex: "SB", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, ref: "S", rest: "90 s",
-          note: "Snatch balance — receiving position under speed." },
-        { ex: "J", group: "Clean & Jerk", load: "light", sets: 3, reps: 2, pctLo: 0.65, pctHi: 0.72, ref: "CJ", rest: "90 s",
-          note: "From the rack. Split depth and the overhead lockout, at a weight that can't be muscled." },
-        { ex: "D", group: "Dip", load: "medium", sets: 4, reps: 6, pctLo: 0.75, pctHi: 0.8, rest: "2 min" },
-        { ex: "PLU", group: "Pull-up", load: "light", sets: 3, reps: 8, rest: "90 s",
-          note: "Bodyweight only, two reps short of failure." },
+        { ex: "SQ", group: "Squat", load: "heavy", sets: 5, reps: 3, pctLo: 0.8, pctHi: 0.87, rest: "3 min",
+          note: "Back squat, triples. The heaviest legs of the week land the day before a day off." },
+        { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
+          note: "Snatch deadlift, off its own best rather than off the snatch — this pulls far more than the lift does." },
+        { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
+          note: "Clean deadlift, same terms." },
+        { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 10, rest: "90 s",
+          note: "Posterior chain, unloaded end of the day." },
       ],
-      cardio: { activity: "Hike", load: "medium", detail: "60-120 min, or a long easy run",
-        note: "The one session of the week that's allowed to be long. Keep it aerobic." },
     },
     {
       name: "Sunday",
       rest: true,
       title: "Rest",
-      note: "Nothing. The week's second full day off.",
+      note: "The week's only full day off, and it follows the heaviest legs of the week on purpose.",
       slots: [],
     },
   ],
