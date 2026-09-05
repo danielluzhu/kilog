@@ -1005,8 +1005,55 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
 .plan-focus.load-technique .plan-focus-load { color: var(--tier-technique); }
 .plan-focus-cardio .plan-focus-name { color: var(--tier-cardio); }
 
-.plan-grid td:first-child { font-weight: 600; }
-.plan-grid td { font-size: 0.85rem; }
+/* Week-at-a-glance grid. Seven day columns don't fit a phone, so the table
+   scrolls inside its own box rather than pushing the page sideways. */
+.plan-grid-scroll { overflow-x: auto; }
+.plan-grid { min-width: 34rem; }
+.plan-grid th, .plan-grid td { padding: 0.5rem 0.4rem; }
+.plan-grid-focus { font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
+.plan-grid-day { text-align: center; }
+.plan-grid-cell { text-align: center; }
+/* One mark per exercise, coloured by that slot's own load — a day that squats
+   heavy and pause-squats light shows both, rather than averaging into one. */
+.plan-grid-mark {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  padding: 0.12rem 0.4rem;
+  margin: 0.1rem 0.1rem 0 0;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.plan-grid-mark.load-heavy {
+  background: var(--tier-complex);
+  color: var(--accent-fg);
+}
+.plan-grid-mark.load-medium {
+  background: color-mix(in srgb, var(--tier-compound) 18%, transparent);
+  border-color: var(--tier-compound);
+  color: var(--tier-compound);
+}
+.plan-grid-mark.load-light {
+  border-color: var(--border);
+  color: var(--muted);
+}
+.plan-grid-mark.load-technique {
+  border-color: var(--tier-technique);
+  color: var(--tier-technique);
+}
+/* An optional session is planned but not owed — dashed, so it reads as a
+   placeholder next to the solid marks around it. */
+.plan-grid-mark-optional { border-style: dashed; opacity: 0.75; }
+/* A rest day's column is empty on purpose; the muted header is what says so. */
+.plan-grid-day-rest { opacity: 0.45; }
+.plan-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.9rem;
+}
 
 @media (max-width: 640px) {
   .plan-col-name, .plan-col-num { width: auto; }

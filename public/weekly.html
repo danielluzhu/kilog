@@ -68,23 +68,39 @@
     <p class="muted" id="week-stats-note" style="margin:1rem 0 0; font-size:0.8rem;"></p>
   </section>
 
+  <section class="card">
+    <h2 style="margin-top:0">The week at a glance</h2>
+    <p class="muted" style="margin-top:0">
+      One row per movement, one column per day. Colour is how hard that day asks for it, so the
+      heavy work — and the space between two heavy exposures of the same pattern — is visible
+      without reading a single set.
+    </p>
+    <div class="plan-grid-scroll">
+      <table class="plan-grid" id="hml-grid">
+        <thead><tr><th>Movement</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="plan-legend">
+      <span class="plan-grid-mark load-heavy">Heavy</span>
+      <span class="plan-grid-mark load-medium">Medium</span>
+      <span class="plan-grid-mark load-light">Light</span>
+      <span class="plan-grid-mark load-technique">Technique</span>
+    </div>
+    <div class="status" id="grid-gaps"></div>
+  </section>
+
   <div id="week-days"></div>
 
   <section class="card">
     <h2 style="margin-top:0">Why the week is shaped this way</h2>
-    <table class="plan-grid" id="hml-grid">
-      <thead>
-        <tr><th>Movement</th><th>Heavy</th><th>Medium</th><th>Light</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
     <ul class="muted" style="margin:1rem 0 0; padding-left:1.1rem; line-height:1.6; font-size:0.9rem;">
       <li><strong>Heavy / medium / light per movement, not per week.</strong> The snatch, the
         clean &amp; jerk, the squat, the pull-up and the dip each get three exposures — one that
         pushes the top end, one that does the work, one that keeps the pattern fresh without
         adding fatigue. Frequency is what drives Olympic technique; intensity is what you
-        rotate. The grid above is built from the plan itself, so an edit that leaves a movement
-        without one of the three shows up as a dash.</li>
+        rotate. The grid at the top of the page is built from the plan itself, so an edit that
+        leaves a movement without one of the three is called out under it.</li>
       <li><strong>At least 48h between two heavy exposures of the same pattern.</strong> Heavy
         snatch Monday, medium Friday, light Saturday. Heavy pull-up and dip Tuesday, medium and
         light at the back of the week. Heavy clean &amp; jerk lands Friday, four days off the

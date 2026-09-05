@@ -168,8 +168,13 @@ const LOAD_RANK = { heavy: 0, medium: 1, light: 2, technique: 3 };
 // pull filed under Snatch rather than under the pattern it looks like.
 // Accessories have no lift to develop, so they fall back to the movement
 // pattern the dictionary already assigns them: Pulls, Push, Hinge, Squat.
+// The two taxonomies together are what the day strip and the week grid read.
 const ACCESSORY_GROUP = "Accessory";
 const CARDIO_FOCUS = "Run / hike";
+
+// Goal movements lead the grid in priority order; everything else follows by
+// how much of the week it actually takes up.
+const FOCUS_ORDER = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 
 const RECENT_WINDOW_DAYS = 120;
 const ACTUAL_WINDOW_DAYS = 28;
@@ -337,8 +342,8 @@ function formatPctBand(slot) {
 
 // ---------- focus ----------
 
-// What a slot counts as in the day strip. See ACCESSORY_GROUP above for why
-// there are two taxonomies rather than one.
+// What a slot counts as in the day strip and the week grid. See
+// ACCESSORY_GROUP above for why there are two taxonomies rather than one.
 function focusOf(slot) {
   if (slot.group && slot.group !== ACCESSORY_GROUP) return slot.group;
   const pattern = movementPatternFor(state.dict[slot.ex]);
@@ -745,40 +750,107 @@ function renderDays() {
   $("#week-days").innerHTML = html + addDay;
 }
 
-// The heavy/medium/light grid is derived from the plan rather than written
-// out, so a customized week is checked against the same rule the default was
-// built on: every movement gets all three.
+// The week at a glance: one row per movement, one column per day, so where
+// the heavy work sits — and how far apart two heavy exposures of the same
+// pattern are — is a thing you see rather than a thing you count.
+//
+// Derived from the plan rather than written out, so a customised week is held
+// to the same rule the default was built on: every goal movement gets a
+// heavy, a medium and a light exposure, and a gap shows up as an empty cell.
 function renderGrid() {
-  const groups = new Map();
-  for (const day of state.plan.days) {
+  const days = state.plan.days;
+  const rows = new Map();
+
+  const rowFor = (focus) => {
+    if (!rows.has(focus)) rows.set(focus, { focus, cells: days.map(() => []), wfu: 0 });
+    return rows.get(focus);
+  };
+
+  // Each abbreviation is coloured by its own slot's load rather than by the
+  // day's headline for that focus: a day that squats heavy and pause-squats
+  // light should show both, not average them into one mark.
+  days.forEach((day, i) => {
     for (const slot of day.slots || []) {
-      const key = slot.group || labelOf(slot.ex);
-      if (!groups.has(key)) groups.set(key, { heavy: [], medium: [], light: [], technique: [] });
-      const bucket = groups.get(key)[slot.load];
-      if (bucket) bucket.push(`${day.name.slice(0, 3)} ${slot.ex}`);
+      const row = rowFor(focusOf(slot));
+      row.wfu += slotFatigue(slot);
+      row.cells[i].push({ ex: slot.ex, load: slot.load });
     }
-  }
-  for (const day of state.plan.days) {
-    if (!day.cardio) continue;
-    const key = "Run / hike";
-    if (!groups.has(key)) groups.set(key, { heavy: [], medium: [], light: [], technique: [] });
-    const bucket = groups.get(key)[day.cardio.load] || groups.get(key).light;
-    bucket.push(`${day.name.slice(0, 3)} ${day.cardio.activity}`);
-  }
+    if (day.cardio) {
+      rowFor(CARDIO_FOCUS).cells[i].push({
+        ex: day.cardio.activity || "Cardio",
+        load: day.cardio.load || "light",
+        optional: Boolean(day.cardio.optional),
+      });
+    }
+  });
 
-  const cell = (entries) =>
-    entries.length ? escapeHtml(entries.join(", ")) : '<span class="muted">—</span>';
+  const ordered = [...rows.values()].sort((a, b) => {
+    const ai = FOCUS_ORDER.indexOf(a.focus);
+    const bi = FOCUS_ORDER.indexOf(b.focus);
+    if (ai !== bi) return (ai < 0 ? FOCUS_ORDER.length : ai) - (bi < 0 ? FOCUS_ORDER.length : bi);
+    if (a.focus === CARDIO_FOCUS) return 1;
+    if (b.focus === CARDIO_FOCUS) return -1;
+    return b.wfu - a.wfu;
+  });
 
-  $("#hml-grid").querySelector("tbody").innerHTML = [...groups.entries()]
+  const table = $("#hml-grid");
+  table.querySelector("thead").innerHTML = `<tr>
+    <th>Movement</th>
+    ${days
+      .map((d) => {
+        const resting = Boolean(d.rest) || !(d.slots || []).length;
+        return `<th class="plan-grid-day${resting ? " plan-grid-day-rest" : ""}"${
+          resting ? ' title="rest day"' : ""
+        }>${escapeHtml(d.name.slice(0, 3))}</th>`;
+      })
+      .join("")}
+  </tr>`;
+
+  table.querySelector("tbody").innerHTML = ordered
     .map(
-      ([name, loads]) => `<tr>
-        <td>${escapeHtml(name)}</td>
-        <td>${cell(loads.heavy)}</td>
-        <td>${cell(loads.medium)}</td>
-        <td>${cell([...loads.light, ...loads.technique])}</td>
+      (row) => `<tr>
+        <td class="plan-grid-focus">${escapeHtml(row.focus)}</td>
+        ${row.cells
+          .map(
+            (cell) =>
+              `<td class="plan-grid-cell">${
+                cell.length
+                  ? cell
+                      .map(
+                        (c) =>
+                          `<span class="plan-grid-mark load-${escapeHtml(c.load || "light")}${
+                            c.optional ? " plan-grid-mark-optional" : ""
+                          }"${c.optional ? ' title="optional"' : ""}>${escapeHtml(c.ex)}</span>`
+                      )
+                      .join("")
+                  : ""
+              }</td>`
+          )
+          .join("")}
       </tr>`
     )
     .join("");
+
+  renderGridGaps(ordered);
+}
+
+// Names the goal movements missing one of the three exposures, because an
+// empty cell is only obvious once you know which row was supposed to be full.
+function renderGridGaps(ordered) {
+  const gaps = [];
+  for (const row of ordered) {
+    if (!FOCUS_ORDER.includes(row.focus)) continue;
+    const loads = new Set();
+    for (const cell of row.cells) for (const c of cell) loads.add(c.load === "technique" ? "light" : c.load);
+    const missing = ["heavy", "medium", "light"].filter((l) => !loads.has(l));
+    if (missing.length) gaps.push(`${row.focus} has no ${missing.join(" or ")} day`);
+  }
+  const el = $("#grid-gaps");
+  if (!el) return;
+  el.textContent = gaps.length
+    ? `Gaps: ${gaps.join("; ")}.`
+    : "Every goal movement has a heavy, a medium and a light day.";
+  el.className = gaps.length ? "status err" : "status ok";
 }
 
 function renderExerciseOptions() {
