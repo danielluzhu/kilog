@@ -589,7 +589,15 @@ function fatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTier(ab
       ? FATIGUE_MULTIPLIERS.cleanAndJerk
       : FATIGUE_MULTIPLIERS.olympic;
   }
-  if (isOlympicVariant(abbreviation, fullName)) return FATIGUE_MULTIPLIERS.olympic;
+  // The Olympic bump corrects the *automatic* tier, so it must not fire over
+  // a tier that was set by hand. classifyFatigueTier has always promised a
+  // hand-set value wins; before this it won the chart band and lost the cost,
+  // so a snatch high pull filed as Compound in the dictionary still billed at
+  // the Olympic rate. A tier that differs from the automatic one came from
+  // somewhere deliberate — the dictionary override, or a caller that read one
+  // off its own rows — and is the last word on what a set costs.
+  const handSet = tier !== autoFatigueTier(abbreviation, fullName);
+  if (!handSet && isOlympicVariant(abbreviation, fullName)) return FATIGUE_MULTIPLIERS.olympic;
   if (tier === "compound") return FATIGUE_MULTIPLIERS.compound;
   return FATIGUE_MULTIPLIERS.isolation;
 }
