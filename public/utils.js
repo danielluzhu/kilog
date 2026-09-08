@@ -423,7 +423,13 @@ function describeLiftCategory(abbreviation, fullName) {
 // (single muscle, lowest fatigue cost). Every exercise falls into exactly
 // one tier — anything that isn't a recognized complex or compound lift
 // defaults to isolation.
-const COMPLEX_LIFT_KEYS = new Set(["snatch", "clean", "jerk"]);
+// The lifts that cost a complex: pulled from the floor at speed and caught.
+// The jerk is not one of them — it starts in the rack, so the whole pull is
+// missing and the dip is a partial-range leg action. Heaviest loads in the
+// sport and highest skill, but per set it recovers like a compound, and per
+// set is what this scale counts. A clean & jerk still tiers complex off its
+// "clean" half, and still bills double.
+const COMPLEX_LIFT_KEYS = new Set(["snatch", "clean"]);
 
 // abbreviation -> tier, for exercises whose tier was set by hand. Populated
 // from the dictionary API by each page via registerDictionary().
@@ -471,6 +477,8 @@ function autoFatigueTier(abbreviation, fullName) {
     if (abbreviationMentions(abbreviation, CARDIO_KEYWORDS)) return "cardio";
     if (abbreviationMentions(abbreviation, TECHNIQUE_KEYWORDS)) return "technique";
   }
+
+  if (isOlympicPull(abbreviation, fullName)) return "compound";
 
   const lift = classifyLift(abbreviation, fullName);
   if (lift && COMPLEX_LIFT_KEYS.has(lift.key)) return "complex";
@@ -554,24 +562,33 @@ function isCleanAndJerk(abbreviation, fullName) {
   return /^[PH]?CJ$/.test(abbr);
 }
 
-// Olympic work the tier system reads as something else. Two shapes:
+// A pull or deadlift off an Olympic lift: snatch/clean high pulls, snatch and
+// clean deadlifts. The name reads as the lift it is named for, so without
+// this a "Clean High Pull" tiers complex off the word "clean" and bills like
+// a clean. It isn't one. There is no turnover, no catch and no squatting out
+// of the receive — it is a heavy pull, which is what Compound means.
 //
-//   Pulls — a snatch or clean pull/deadlift lands in the Compound tier off
-//   the word "deadlift", which is right for tiering but wrong for fatigue:
-//   it's pulled from the floor at speed off the same setup as the lift.
-//
-//   Complexes — "Snatch + Overhead Squat", "Clean + Front Squat" tier as
-//   whichever half the classifier matched first, but a complex built on an
-//   Olympic lift costs what that lift costs.
+// Ahead of the complex check in autoFatigueTier, and after the technique one,
+// so a "pause clean pull" stays a drill.
+function isOlympicPull(abbreviation, fullName) {
+  const name = (fullName || "").toLowerCase();
+  if (!name) return false;
+  if (!/snatch|clean|jerk/.test(name)) return false;
+  return /pull|deadlift|dead lift/.test(name);
+}
+
+// A complex built on an Olympic lift — "Snatch + Overhead Squat", "Clean +
+// Front Squat". These tier as whichever half the classifier matched first
+// (usually the squat), but they contain the whole lift and cost what it
+// costs. The one thing the Olympic bump still exists for.
 //
 // Technique drills are settled before this is ever consulted, so a light
 // "Snatch Balance" primer can't be dragged up to the Olympic rate by it.
 function isOlympicVariant(abbreviation, fullName) {
   const name = (fullName || "").toLowerCase();
   if (!name) return false;
-  const olympic = /snatch|clean|jerk/.test(name);
-  if (!olympic) return false;
-  return /pull|deadlift|dead lift/.test(name) || name.includes("+");
+  if (!/snatch|clean|jerk/.test(name)) return false;
+  return name.includes("+");
 }
 
 // Fatigue cost of one counted set of this exercise. `tier` is an escape hatch
@@ -617,8 +634,9 @@ function formatFatigueUnits(units) {
 // Shown wherever a WFU number appears, so the weighting is never a mystery
 // number the reader has to take on faith.
 const WFU_EXPLAINER =
-  "Weighted fatigue units: counted sets x 2 (clean & jerk), x1.5 (snatch, clean, jerk, pulls), " +
-  "x1 (compound, technique), x0.4 (isolation). Steady-state cardio doesn't score; intervals do, at x1.";
+  "Weighted fatigue units: counted sets x 2 (clean & jerk), x1.5 (snatch, clean, and complexes " +
+  "built on them), x1 (jerk, Olympic pulls, other compounds, technique), x0.4 (isolation). " +
+  "Steady-state cardio doesn't score; intervals do, at x1.";
 
 // ---------- Prilepin's table ----------
 // Classic Soviet-weightlifting volume guidance by intensity. The first and
