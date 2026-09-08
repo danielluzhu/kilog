@@ -570,9 +570,16 @@ function isCleanAndJerk(abbreviation, fullName) {
 //
 // Ahead of the complex check in autoFatigueTier, and after the technique one,
 // so a "pause clean pull" stays a drill.
+// The panda pull is named after nobody's lift, so it needs saying by hand:
+// it is a snatch pull with an upright row finish, and it was tiering as
+// Isolation off the word "pull" alone — 24 logged sets priced at 0.4 when
+// they are pulled from the floor at snatch weights.
+const NAMED_OLYMPIC_PULLS = ["panda pull"];
+
 function isOlympicPull(abbreviation, fullName) {
   const name = (fullName || "").toLowerCase();
   if (!name) return false;
+  if (NAMED_OLYMPIC_PULLS.some((w) => name.includes(w))) return true;
   if (!/snatch|clean|jerk/.test(name)) return false;
   return /pull|deadlift|dead lift/.test(name);
 }
