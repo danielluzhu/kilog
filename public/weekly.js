@@ -22,14 +22,15 @@
 //
 // The week leads heavy three days running: snatch and front squat Monday,
 // pull-up and dip Tuesday, clean & jerk Wednesday. Thursday is the release
-// valve — a short run and isolation work, the cheapest day of the week.
+// valve — isolation work and nothing else, the cheapest day of the week.
 // Friday runs all three Olympic lifts at medium and finishes on the heavy
-// back squat, Saturday is the pulls and the week's volume, and Sunday is off.
+// back squat, Saturday is the pulls, the week's volume and the run, and
+// Sunday is off.
 //
 // Tuesday and Thursday both cost zero legs and zero CNS — one is upper-body
-// only, the other is a run and isolation work — so the leg load actually
-// alternates on, off, on, off, on, on, rest however heavy those two days
-// look in fatigue units.
+// only, the other is isolation work — so the leg load actually alternates on,
+// off, on, off, on, on, rest however heavy those two days look in fatigue
+// units.
 //
 // The squat is the one movement carrying two heavy days (Monday's front
 // squat, Friday's back squat) with the pause front squat medium between them
@@ -88,8 +89,8 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Thursday",
-      title: "Short run · bodybuilding",
-      note: "The cheapest day of the week and the only one that isn't chasing a number. Runs after three heavy days and before two more.",
+      title: "Bodybuilding",
+      note: "The cheapest day of the week and the only one that isn't chasing a number. It sits after three heavy days and before two more, and it asks nothing of the legs.",
       slots: [
         { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10, rest: "90 s",
           note: "Neutral grip, bodyweight, two reps short of failure." },
@@ -100,8 +101,6 @@ const DEFAULT_PLAN = {
           note: "Shoulder health for the overhead positions." },
         { ex: "BC", group: "Accessory", load: "light", sets: 3, reps: 12, rest: "60 s" },
       ],
-      cardio: { activity: "Run", load: "light", detail: "25-35 min easy",
-        note: "Short and conversational. This is the aerobic touch midweek, not a session that competes with Saturday." },
     },
     {
       name: "Friday",
@@ -120,8 +119,8 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Saturday",
-      title: "Pulls · volume",
-      note: "The Olympic pulls and the volume that pays for the week — banked directly in front of the rest day. Nothing squats here: Friday took the legs, and this is what's left to do with them.",
+      title: "Pulls · volume · run",
+      note: "The Olympic pulls, the volume that pays for the week and the run — banked directly in front of the rest day. Nothing squats here: Friday took the legs, and this is what's left to do with them.",
       slots: [
         { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
           note: "Snatch deadlift, off its own best rather than off the snatch — this pulls far more than the lift does." },
@@ -130,6 +129,8 @@ const DEFAULT_PLAN = {
         { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 10, rest: "90 s",
           note: "Posterior chain, unloaded end of the day." },
       ],
+      cardio: { activity: "Run", load: "light", detail: "25-35 min easy",
+        note: "Short and conversational, after the pulls or on its own later in the day. The week's aerobic touch, banked against the rest day rather than spent in the middle of the heavy stretch." },
     },
     {
       name: "Sunday",
