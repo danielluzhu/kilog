@@ -252,7 +252,9 @@ function render() {
       <td class="col-abbrev"><a class="exercise-link" href="/lapse.html?exercise=${encodeURIComponent(
         e.abbreviation
       )}" title="Open this exercise in Lapse">${escapeHtml(e.abbreviation)}</a></td>
-      <td><input type="text" class="name-input" value="${escapeHtml(e.full_name)}" placeholder="(not set)" /></td>
+      <td><input type="text" class="name-input" value="${escapeHtml(e.full_name)}" placeholder="(not set)"${
+        e.full_name ? ` title="${escapeHtml(e.full_name)}"` : ""
+      } /></td>
       <td>${typeCell}</td>
       <td>${equipmentCell}</td>
       <td>${fatigueCell}</td>

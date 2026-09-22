@@ -140,6 +140,11 @@ main {
   margin: 0 auto;
   padding: 1.75rem 1.5rem 4rem;
 }
+/* 980px is a reading width, and it suits every page here but one. The
+   Dictionary is a twelve-column table, and at 980 the browser has to take
+   the overflow out of whichever column will yield — which is Full name, the
+   only one anybody types into. */
+main.wide { max-width: 1400px; }
 
 /* Section headings are labels, not headlines — the numbers under them are
    what carries size on this site. */
@@ -294,6 +299,13 @@ th {
 }
 #dict-body tr:nth-child(even) { background: var(--row-alt); }
 
+/* Below the width the columns need, the table scrolls sideways in its own
+   box rather than squeezing Full name back down to nothing. The page itself
+   never scrolls horizontally. */
+.table-scroll { overflow-x: auto; }
+#dict-table { min-width: 1200px; }
+#dict-table th, #dict-table td { padding: 0.5rem 0.45rem; }
+
 /* Dictionary column sizing. Without explicit widths the two text
    columns size to their content: the long "Abbreviation" header claims space
    its mostly-short values don't need, while the Full name input — the field
@@ -301,12 +313,22 @@ th {
    whole sentences, so that column wraps instead of forcing the table wide. */
 /* Scoped to the cell: on the header the same rule broke "ABBREVIATION"
    across two lines once the tracking widened. */
-.col-abbrev { width: 13%; }
+.col-abbrev { width: 8.5rem; }
 td.col-abbrev { overflow-wrap: anywhere; }
-.col-name { width: 26%; }
-.col-tag { width: 10%; }
-.col-num { width: 4.5rem; }
-.col-date { width: 7rem; white-space: nowrap; }
+/* Deliberately unsized: every other column is fixed, so the one column whose
+   content is unbounded and edited in place gets all the width left over
+   instead of being the one that pays for the others. */
+.col-name { width: auto; min-width: 16rem; }
+/* Sized like the other in-table editors rather than like a form field: the
+   0.7rem form padding was costing this box two characters at each end. */
+.col-name .name-input { padding: 0.35rem 0.5rem; font-size: 0.88rem; }
+.col-tag { width: 6.5rem; }
+/* Wider than the two pill columns beside it: this one holds a dropdown whose
+   longest option is "Isolation (auto)", and a clipped option label is worse
+   than a wide column. */
+.col-fatigue { width: 8.5rem; }
+.col-num { width: 4rem; }
+.col-date { width: 6.5rem; white-space: nowrap; }
 .col-pattern { width: 7rem; }
 /* Shared by the Fatigue and Muscle columns: an inline dropdown that reads as
    a tag until it's touched. Hand-set reads as committed; an auto value stays
@@ -329,12 +351,12 @@ td.col-abbrev { overflow-wrap: anywhere; }
 .fatigue-select.fatigue-technique { color: var(--tier-technique); }
 .fatigue-select.fatigue-cardio { color: var(--tier-cardio); }
 .fatigue-select.is-set { border-color: currentColor; font-weight: 600; }
-.col-sled { width: 5.5rem; }
+.col-sled { width: 5rem; }
 .col-sled .sled-input { width: 100%; padding: 0.25rem 0.35rem; font-size: 0.85rem; text-align: right; }
 /* The WFU rate reads as a number, not a tag, so it's a box rather than a
    dropdown — but it keeps the tag columns' auto-vs-hand-set language: a
    greyed placeholder is the tier's rate, an accented value was typed. */
-.col-wfu { width: 5rem; }
+.col-wfu { width: 4.5rem; }
 .col-wfu .wfu-input {
   width: 100%;
   padding: 0.25rem 0.35rem;
@@ -352,7 +374,18 @@ td.col-abbrev { overflow-wrap: anywhere; }
   gap: 0.6rem;
 }
 .rate-grid label { margin: 0; font-size: 0.8rem; }
-.rate-grid .rate-note { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.15rem; }
+/* Sentence text inside a <label>, which is uppercase small-caps by default
+   here — that treatment is for field names, not for a sentence. */
+.rate-grid .rate-note {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  line-height: 1.35;
+}
 .rate-grid input {
   width: 100%;
   padding: 0.25rem 0.35rem;
