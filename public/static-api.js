@@ -119,6 +119,7 @@
     try {
       if (path === "dictionary") return json(await load("dictionary"));
       if (path === "volume") return json(await load("volume"));
+      if (path === "fatigue-rates") return json(await load("fatigue-rates"));
       if (path === "workouts") return listWorkouts(url.searchParams);
       if (path === "cardio") return listCardio(url.searchParams);
 

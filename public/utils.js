@@ -535,7 +535,9 @@ const FATIGUE_TIER_LABELS = {
 // an empty day. Steady-state conditioning stays at 0 — a hike logged as "mile"
 // isn't the kind of work this is measuring at all. Intervals are the exception
 // to that, genuinely repeated hard efforts, and take the baseline too.
-const FATIGUE_MULTIPLIERS = {
+// The built-in rates, and the only copy of them anywhere — the server stores
+// nothing but the ones that have been changed.
+const DEFAULT_FATIGUE_MULTIPLIERS = {
   cleanAndJerk: 2,
   olympic: 1.5,
   compound: 1,
@@ -544,6 +546,34 @@ const FATIGUE_MULTIPLIERS = {
   intervals: 1,
   uncounted: 0,
 };
+
+// Display order and names for the Dictionary's "Default WFU per set" panel,
+// which is where these get edited. Kept beside the numbers so a new rate
+// can't be added without deciding what to call it.
+const FATIGUE_RATE_NAMES = Object.keys(DEFAULT_FATIGUE_MULTIPLIERS);
+const FATIGUE_RATE_LABELS = {
+  cleanAndJerk: "Clean & jerk",
+  olympic: "Snatch, clean, jerk",
+  compound: "Compound",
+  isolation: "Isolation",
+  technique: "Technique",
+  intervals: "Intervals",
+  uncounted: "Steady-state cardio",
+};
+const FATIGUE_RATE_NOTES = {
+  cleanAndJerk: "Two maximal efforts inside one set.",
+  olympic: "One maximal effort — pulls inherit their lift's rate.",
+  compound: "The baseline: heavy axially-loaded lifts.",
+  isolation: "Single-muscle accessory work.",
+  technique: "Light drills still cost a set performed.",
+  intervals: "Genuinely repeated hard efforts.",
+  uncounted: "Not the kind of work this measures.",
+};
+
+// The rates actually in force: the built-ins with any hand-set ones laid
+// over the top. Rewritten by registerFatigueRates(), which is why this is a
+// `let` — every scoring path reads it through the same object.
+let FATIGUE_MULTIPLIERS = { ...DEFAULT_FATIGUE_MULTIPLIERS };
 
 // Ceiling on a hand-typed rate, matching the server's. The tier rates run 0
 // to 2, so anything much above that is a slipped decimal point ("15" for
@@ -679,11 +709,52 @@ function formatFatigueUnits(units) {
 
 // Shown wherever a WFU number appears, so the weighting is never a mystery
 // number the reader has to take on faith.
-const WFU_EXPLAINER =
-  "Weighted fatigue units: counted sets x 2 (clean & jerk), x1.5 (snatch, clean, and complexes " +
-  "built on them), x1 (jerk, Olympic pulls, other compounds, technique), x0.4 (isolation). " +
-  "Steady-state cardio doesn't score; intervals do, at x1. An exercise given its own rate in " +
-  "the Dictionary is billed at that rate instead.";
+// Read off the live rates rather than written out, so editing a rate in the
+// Dictionary can't leave every tooltip on the site quoting the old number.
+// Compound and technique get their own clause even though they start equal:
+// the whole point of the panel is that they need not stay that way.
+function buildWfuExplainer() {
+  const x = (name) => `x${formatFatigueUnits(FATIGUE_MULTIPLIERS[name])}`;
+  return (
+    `Weighted fatigue units: counted sets ${x("cleanAndJerk")} (clean & jerk), ` +
+    `${x("olympic")} (snatch, clean, and complexes built on them), ` +
+    `${x("compound")} (jerk, Olympic pulls, other compounds), ${x("technique")} (technique), ` +
+    `${x("isolation")} (isolation). Steady-state cardio scores ${x("uncounted")}, ` +
+    `intervals ${x("intervals")}. Those rates, and any one exercise's own, are set in the ` +
+    "Dictionary."
+  );
+}
+
+let WFU_EXPLAINER = buildWfuExplainer();
+
+// Lays the hand-set rates from /api/fatigue-rates over the built-in ones.
+// Anything missing, out of range or not a known rate is ignored rather than
+// allowed to poison a total: a bad row should cost you one custom number,
+// not every WFU on the page.
+function registerFatigueRates(overrides) {
+  FATIGUE_MULTIPLIERS = { ...DEFAULT_FATIGUE_MULTIPLIERS };
+  for (const name of FATIGUE_RATE_NAMES) {
+    const raw = overrides?.[name];
+    if (raw === null || raw === undefined || raw === "") continue;
+    const rate = Number(raw);
+    if (Number.isFinite(rate) && rate >= 0 && rate <= MAX_FATIGUE_MULTIPLIER) {
+      FATIGUE_MULTIPLIERS[name] = rate;
+    }
+  }
+  WFU_EXPLAINER = buildWfuExplainer();
+}
+
+// Fetched by every page that shows a WFU number, before the first render.
+// A failure leaves the built-in rates standing, which is the same table the
+// page would have used before any of this existed.
+async function loadFatigueRates() {
+  try {
+    const res = await fetch("/api/fatigue-rates");
+    if (res.ok) registerFatigueRates(await res.json());
+  } catch {
+    // offline or read-only export without the file — defaults stand
+  }
+}
 
 // ---------- Prilepin's table ----------
 // Classic Soviet-weightlifting volume guidance by intensity. The first and

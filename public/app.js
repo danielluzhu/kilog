@@ -396,4 +396,4 @@ $("#search").addEventListener("input", (e) => {
 });
 
 loadDictionaryOptions();
-refreshLog();
+loadFatigueRates().then(refreshLog);

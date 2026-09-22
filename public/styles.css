@@ -344,6 +344,24 @@ td.col-abbrev { overflow-wrap: anywhere; }
 }
 .col-wfu .wfu-input.is-set { color: var(--fg); border-color: var(--accent); font-weight: 600; }
 
+/* The tier rate panel: one narrow box per rate, wrapping rather than
+   scrolling, so all seven stay visible on a phone. */
+.rate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.6rem;
+}
+.rate-grid label { margin: 0; font-size: 0.8rem; }
+.rate-grid .rate-note { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.15rem; }
+.rate-grid input {
+  width: 100%;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.85rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rate-grid input.is-set { color: var(--fg); border-color: var(--accent); font-weight: 600; }
+
 tr.day-header-row td {
   background: var(--row-alt);
   font-weight: 600;

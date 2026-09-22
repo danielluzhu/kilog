@@ -40,6 +40,16 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_cardio_date ON cardio_sessions(date);
+
+  -- What one counted set costs in weighted fatigue units, per fatigue rate
+  -- (the Dictionary's "Default WFU per set" panel). Only rates that have
+  -- been changed have a row: a missing one means the built-in default in
+  -- public/utils.js still stands, so the defaults have exactly one home and
+  -- "reset this rate" is a delete rather than a second copy of the number.
+  CREATE TABLE IF NOT EXISTS fatigue_rates (
+    name TEXT PRIMARY KEY,
+    multiplier REAL NOT NULL
+  );
 `);
 
 // Columns added after the tables above were first created — CREATE TABLE IF

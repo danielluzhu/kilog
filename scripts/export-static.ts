@@ -81,6 +81,7 @@ try {
   const dictionary = (await get("/api/dictionary")) as { abbreviation: string }[];
   await write("api/dictionary.json", dictionary);
   await write("api/volume.json", await get("/api/volume"));
+  await write("api/fatigue-rates.json", await get("/api/fatigue-rates"));
 
   // ---------- paginated endpoints, exported whole ----------
 

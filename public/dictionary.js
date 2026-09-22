@@ -11,6 +11,11 @@ function formatLastUsed(iso) {
 let entries = [];
 const selected = new Set();
 
+// The hand-set tier rates, exactly as the API holds them: only the ones that
+// have been changed. The built-in numbers stay in utils.js, and the inputs
+// show them as placeholders.
+let rateOverrides = {};
+
 async function loadDictionary() {
   const res = await fetch("/api/dictionary");
   entries = await res.json();
@@ -18,7 +23,96 @@ async function loadDictionary() {
   render();
 }
 
+async function loadRates() {
+  const res = await fetch("/api/fatigue-rates");
+  rateOverrides = await res.json();
+  registerFatigueRates(rateOverrides);
+  renderRates();
+}
+
 buildFilterOptions();
+
+// ---------- default WFU per set ----------
+
+function renderRates() {
+  $("#rate-grid").innerHTML = FATIGUE_RATE_NAMES.map((name) => {
+    const set = rateOverrides[name] !== null && rateOverrides[name] !== undefined;
+    return `<label>
+        ${escapeHtml(FATIGUE_RATE_LABELS[name])}
+        <input type="text" inputmode="decimal" class="rate-input${set ? " is-set" : ""}"
+               data-rate="${escapeHtml(name)}"
+               value="${escapeHtml(set ? rateOverrides[name] : "")}"
+               placeholder="${escapeHtml(formatFatigueUnits(DEFAULT_FATIGUE_MULTIPLIERS[name]))}" />
+        <span class="rate-note">${escapeHtml(FATIGUE_RATE_NOTES[name])}</span>
+      </label>`;
+  }).join("");
+
+  $("#rate-grid")
+    .querySelectorAll(".rate-input")
+    .forEach((input) => {
+      input.addEventListener("change", () => saveRate(input.dataset.rate, input.value.trim()));
+    });
+}
+
+async function saveRate(name, raw) {
+  const status = $("#rates-status");
+  const n = Number(raw);
+  if (raw !== "" && !(Number.isFinite(n) && n >= 0 && n <= MAX_FATIGUE_MULTIPLIER)) {
+    status.textContent = `A rate must be a number between 0 and ${MAX_FATIGUE_MULTIPLIER}, or blank for the built-in one.`;
+    status.className = "status err";
+    renderRates();
+    return;
+  }
+
+  const res = await fetch("/api/fatigue-rates", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, multiplier: raw === "" ? null : n }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    status.textContent = data.error || "Could not save that rate";
+    status.className = "status err";
+    renderRates();
+    return;
+  }
+
+  if (raw === "") delete rateOverrides[name];
+  else rateOverrides[name] = n;
+  registerFatigueRates(rateOverrides);
+
+  status.textContent =
+    raw === ""
+      ? `${FATIGUE_RATE_LABELS[name]} is back to ${formatFatigueUnits(
+          DEFAULT_FATIGUE_MULTIPLIERS[name]
+        )} WFU per set.`
+      : `${FATIGUE_RATE_LABELS[name]} now costs ${formatFatigueUnits(n)} WFU per set.`;
+  status.className = "status ok";
+
+  renderRates();
+  // Every row's placeholder is a rate that just moved.
+  render();
+}
+
+$("#rates-reset-btn").addEventListener("click", async () => {
+  const changed = FATIGUE_RATE_NAMES.filter((n) => rateOverrides[n] !== undefined);
+  if (!changed.length) return;
+  if (!confirm(`Put ${changed.length} changed rate${changed.length === 1 ? "" : "s"} back to the built-in numbers?`))
+    return;
+  for (const name of changed) {
+    await fetch("/api/fatigue-rates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, multiplier: null }),
+    });
+  }
+  rateOverrides = {};
+  registerFatigueRates(rateOverrides);
+  $("#rates-status").textContent = "Every rate is back to its built-in number.";
+  $("#rates-status").className = "status ok";
+  renderRates();
+  render();
+});
 
 function sortEntries(list, mode) {
   const copy = [...list];
@@ -474,4 +568,4 @@ $("#import-btn").addEventListener("click", async () => {
   await loadDictionary();
 });
 
-loadDictionary();
+loadRates().then(loadDictionary);

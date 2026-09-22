@@ -1093,6 +1093,7 @@ async function init() {
   wireEvents();
   render();
 
+  await loadFatigueRates();
   await loadDictionary();
   renderExerciseOptions();
   await Promise.all([loadMaxes(), loadActualLoad()]);

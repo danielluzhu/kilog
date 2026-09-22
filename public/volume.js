@@ -819,4 +819,4 @@ $("#vrange-this-year").textContent = `This year (${currentYear()})`;
 $("#vrange-last-year").textContent = `Last year (${currentYear() - 1})`;
 
 markActive();
-loadVolume();
+loadFatigueRates().then(loadVolume);

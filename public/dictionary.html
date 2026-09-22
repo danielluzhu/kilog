@@ -47,6 +47,19 @@
   </section>
 
   <section class="card">
+    <h2 style="margin-top:0">Default WFU per set</h2>
+    <p class="muted" style="margin-top:0">
+      What one counted set of each kind of work costs, before any exercise's own rate in the
+      table below. Blank uses the built-in number shown as the placeholder.
+    </p>
+    <div id="rate-grid" class="rate-grid"></div>
+    <div style="margin-top:0.75rem">
+      <button type="button" id="rates-reset-btn">Reset all to built-in</button>
+    </div>
+    <div class="status" id="rates-status"></div>
+  </section>
+
+  <section class="card">
     <h2 style="margin-top:0">Bulk upload</h2>
     <p class="muted" style="margin-top:0">
       Upload a CSV or TSV file with two columns (<code>abbreviation,full name</code>), or paste

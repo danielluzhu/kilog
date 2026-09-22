@@ -458,6 +458,56 @@ function upsertDictionaryEntry(body: any) {
   return { abbreviation, fullName, sledWeightKg, movementPattern, fatigueTier, fatigueMultiplier };
 }
 
+// ---------- fatigue rates ----------
+// The per-set WFU cost of each kind of work. The built-in numbers live in
+// public/utils.js and are not duplicated here: this table only ever holds
+// the ones that have been changed, so the response is a sparse patch the
+// client lays over its own defaults.
+
+const FATIGUE_RATE_NAMES = [
+  "cleanAndJerk",
+  "olympic",
+  "compound",
+  "isolation",
+  "technique",
+  "intervals",
+  "uncounted",
+];
+
+function listFatigueRates() {
+  const rows = db.query("SELECT name, multiplier FROM fatigue_rates").all() as {
+    name: string;
+    multiplier: number;
+  }[];
+  return Object.fromEntries(rows.map((r) => [r.name, r.multiplier]));
+}
+
+// `multiplier` of null (or "") deletes the row, which puts the rate back to
+// its built-in value — the same "clear the box to hand it back" contract the
+// per-exercise rate uses.
+function setFatigueRate(body: any) {
+  const name = String(body?.name ?? "").trim();
+  if (!FATIGUE_RATE_NAMES.includes(name))
+    throw new Error(`name must be one of: ${FATIGUE_RATE_NAMES.join(", ")}`);
+
+  const raw = body?.multiplier;
+  if (raw === null || raw === undefined || String(raw).trim() === "") {
+    db.prepare("DELETE FROM fatigue_rates WHERE name = ?").run(name);
+    return { name, multiplier: null };
+  }
+
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) throw new Error("multiplier must be a non-negative number");
+  if (n > MAX_FATIGUE_MULTIPLIER)
+    throw new Error(`multiplier must be at most ${MAX_FATIGUE_MULTIPLIER}`);
+
+  db.prepare(
+    `INSERT INTO fatigue_rates (name, multiplier) VALUES (?, ?)
+     ON CONFLICT(name) DO UPDATE SET multiplier = excluded.multiplier`
+  ).run(name, n);
+  return { name, multiplier: n };
+}
+
 function bulkUpsertDictionary(body: any) {
   const entries: { abbreviation: string; fullName: string }[] = Array.isArray(body?.entries)
     ? body.entries
@@ -831,6 +881,13 @@ const server = Bun.serve({
       if (cardioMatch && req.method === "DELETE") {
         deleteCardio(Number(cardioMatch[1]));
         return json({ ok: true });
+      }
+
+      if (pathname === "/api/fatigue-rates" && req.method === "GET") {
+        return json(listFatigueRates());
+      }
+      if (pathname === "/api/fatigue-rates" && req.method === "POST") {
+        return json(setFatigueRate(await req.json()));
       }
 
       if (pathname === "/api/dictionary" && req.method === "GET") {
