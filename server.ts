@@ -291,6 +291,7 @@ function listVolume() {
     .query(
       `SELECT w.date, w.exercise, d.full_name AS exerciseName,
               d.movement_pattern AS movementPattern, d.fatigue_tier AS fatigueTier,
+              d.fatigue_multiplier AS fatigueMultiplier,
               GROUP_CONCAT(s.value, char(31)) AS setValues
        FROM workouts w
        LEFT JOIN sets s ON s.workout_id = w.id
@@ -319,6 +320,7 @@ function listDictionary() {
          d.sled_weight_kg,
          d.movement_pattern,
          d.fatigue_tier,
+         d.fatigue_multiplier,
          COUNT(w.id) as usage_count,
          MAX(w.date) as last_used,
          -- A sled set is "S+..." or "S25+..." — the second form names the
@@ -376,6 +378,26 @@ function parseFatigueTier(body: any): string | null | undefined {
   return v;
 }
 
+// The WFU cost of one counted set, overriding whatever the tier would price
+// it at. Same present-vs-absent contract as the fields above: `undefined`
+// leaves it alone, `null` hands the exercise back to its tier's rate.
+//
+// The tier rates run 0 to 2, so the ceiling is deliberately low: 15 typed
+// for 1.5 would otherwise quietly bill one set as a whole session.
+const MAX_FATIGUE_MULTIPLIER = 10;
+
+function parseFatigueMultiplier(body: any): number | null | undefined {
+  if (!(body && Object.prototype.hasOwnProperty.call(body, "fatigueMultiplier"))) return undefined;
+  const raw = body.fatigueMultiplier;
+  if (raw === null || String(raw).trim() === "") return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0)
+    throw new Error("fatigueMultiplier must be a non-negative number");
+  if (n > MAX_FATIGUE_MULTIPLIER)
+    throw new Error(`fatigueMultiplier must be at most ${MAX_FATIGUE_MULTIPLIER}`);
+  return n;
+}
+
 function upsertDictionaryEntry(body: any) {
   const typedAbbreviation = String(body?.abbreviation ?? "").trim();
   // Same present-vs-absent contract as every other field here: omitting
@@ -393,6 +415,7 @@ function upsertDictionaryEntry(body: any) {
   const sledWeightKg = parseSledWeight(body);
   const movementPattern = parseMovementPattern(body);
   const fatigueTier = parseFatigueTier(body);
+  const fatigueMultiplier = parseFatigueMultiplier(body);
 
   db.prepare(
     `INSERT INTO exercise_dictionary (abbreviation, full_name) VALUES (?, ?)
@@ -425,8 +448,14 @@ function upsertDictionaryEntry(body: any) {
       abbreviation
     );
   }
+  if (fatigueMultiplier !== undefined) {
+    db.prepare("UPDATE exercise_dictionary SET fatigue_multiplier = ? WHERE abbreviation = ?").run(
+      fatigueMultiplier,
+      abbreviation
+    );
+  }
 
-  return { abbreviation, fullName, sledWeightKg, movementPattern, fatigueTier };
+  return { abbreviation, fullName, sledWeightKg, movementPattern, fatigueTier, fatigueMultiplier };
 }
 
 function bulkUpsertDictionary(body: any) {

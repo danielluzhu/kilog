@@ -435,6 +435,12 @@ const COMPLEX_LIFT_KEYS = new Set(["snatch", "clean"]);
 // from the dictionary API by each page via registerDictionary().
 let FATIGUE_OVERRIDES = {};
 
+// abbreviation -> WFU cost per set, for exercises priced by hand in the
+// Exercise Dictionary. Same source and lifecycle as FATIGUE_OVERRIDES, but
+// kept separate: a tier is a bucket the charts colour by, a rate is only
+// ever what a set costs, and an exercise can have one without the other.
+let FATIGUE_MULTIPLIER_OVERRIDES = {};
+
 // Conditioning. Checked first: a "row erg" or "bike sprint" is cardio, not
 // the rowing or squatting the keywords would otherwise suggest.
 const CARDIO_KEYWORDS = [
@@ -539,6 +545,11 @@ const FATIGUE_MULTIPLIERS = {
   uncounted: 0,
 };
 
+// Ceiling on a hand-typed rate, matching the server's. The tier rates run 0
+// to 2, so anything much above that is a slipped decimal point ("15" for
+// 1.5) rather than a considered number.
+const MAX_FATIGUE_MULTIPLIER = 10;
+
 const INTERVAL_KEYWORDS = ["interval", "hiit", "tabata", "fartlek", "sprint", "repeat"];
 
 function isIntervalConditioning(abbreviation, fullName) {
@@ -598,10 +609,10 @@ function isOlympicVariant(abbreviation, fullName) {
   return name.includes("+");
 }
 
-// Fatigue cost of one counted set of this exercise. `tier` is an escape hatch
-// for callers that already know it (the Volume page reads the dictionary's
-// override off its own rows rather than through registerDictionary).
-function fatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTier(abbreviation, fullName)) {
+// Fatigue cost of one counted set, as the exercise's tier and name imply it
+// — ignoring any rate set by hand. The Exercise Dictionary shows this as the
+// placeholder in its WFU column, the same way it shows the auto tier.
+function autoFatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTier(abbreviation, fullName)) {
   if (tier === "technique") return FATIGUE_MULTIPLIERS.technique;
   if (tier === "cardio") {
     return isIntervalConditioning(abbreviation, fullName)
@@ -626,6 +637,34 @@ function fatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTier(ab
   return FATIGUE_MULTIPLIERS.isolation;
 }
 
+// Fatigue cost of one counted set of this exercise, which is what every WFU
+// total is built out of.
+//
+// A rate typed into the Exercise Dictionary is the last word — ahead of the
+// tier, the Olympic bump and the cardio zero alike. The tiers price a set by
+// what its *kind* of movement usually costs, and that is a generalisation:
+// an exercise that is genuinely harder or cheaper than its bucket can now
+// just say so, instead of being filed under the wrong tier to get the number
+// right (which then miscolours every chart that bands by tier).
+//
+// Both remaining arguments are escape hatches for callers that already hold
+// the dictionary row and don't go through registerDictionary() — the Volume
+// page reads the tier and the rate straight off its own /api/volume rows.
+function fatigueMultiplier(
+  abbreviation,
+  fullName,
+  tier = classifyFatigueTier(abbreviation, fullName),
+  override = FATIGUE_MULTIPLIER_OVERRIDES[abbreviation]
+) {
+  // Not a truthiness test: an exercise priced at 0 means it, and must not
+  // fall through to its tier's rate.
+  if (override !== null && override !== undefined && override !== "") {
+    const rate = Number(override);
+    if (Number.isFinite(rate) && rate >= 0) return rate;
+  }
+  return autoFatigueMultiplier(abbreviation, fullName, tier);
+}
+
 // A missed set produced no reps, so it produces no fatigue units either —
 // the set count this multiplies is already the countsAsSet one.
 function fatigueUnitsFor(sets, abbreviation, fullName) {
@@ -643,7 +682,8 @@ function formatFatigueUnits(units) {
 const WFU_EXPLAINER =
   "Weighted fatigue units: counted sets x 2 (clean & jerk), x1.5 (snatch, clean, and complexes " +
   "built on them), x1 (jerk, Olympic pulls, other compounds, technique), x0.4 (isolation). " +
-  "Steady-state cardio doesn't score; intervals do, at x1.";
+  "Steady-state cardio doesn't score; intervals do, at x1. An exercise given its own rate in " +
+  "the Exercise Dictionary is billed at that rate instead.";
 
 // ---------- Prilepin's table ----------
 // Classic Soviet-weightlifting volume guidance by intensity. The first and
@@ -1123,12 +1163,17 @@ let SLED_WEIGHTS = {};
 function registerDictionary(entries) {
   SLED_WEIGHTS = {};
   FATIGUE_OVERRIDES = {};
+  FATIGUE_MULTIPLIER_OVERRIDES = {};
   for (const e of entries || []) {
     if (!e) continue;
     if (e.sled_weight_kg !== null && e.sled_weight_kg !== undefined) {
       SLED_WEIGHTS[e.abbreviation] = Number(e.sled_weight_kg);
     }
     if (e.fatigue_tier) FATIGUE_OVERRIDES[e.abbreviation] = e.fatigue_tier;
+    // Not a truthiness test: 0 is a legitimate rate ("this never counts").
+    if (e.fatigue_multiplier !== null && e.fatigue_multiplier !== undefined) {
+      FATIGUE_MULTIPLIER_OVERRIDES[e.abbreviation] = Number(e.fatigue_multiplier);
+    }
   }
 }
 

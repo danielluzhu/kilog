@@ -95,7 +95,7 @@ async function loadVolume() {
         // Weighted volume rides alongside the raw count, never instead of it:
         // the charts stay in sets, WFUs surface in the stat tiles and the
         // tier table.
-        wfu: r.setCount * fatigueMultiplier(r.exercise, r.exerciseName, tier),
+        wfu: r.setCount * fatigueMultiplier(r.exercise, r.exerciseName, tier, r.fatigueMultiplier),
       };
     })
     // A malformed date can't be placed on a timeline; dropping it beats

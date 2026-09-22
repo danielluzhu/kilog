@@ -69,3 +69,11 @@ if (!dictColumns.some((c) => c.name === "fatigue_tier")) {
   // NULL means "not overridden" — the client falls back to autoFatigueTier().
   db.exec("ALTER TABLE exercise_dictionary ADD COLUMN fatigue_tier TEXT");
 }
+if (!dictColumns.some((c) => c.name === "fatigue_multiplier")) {
+  // What one counted set of this exercise costs in weighted fatigue units.
+  // NULL means "not overridden" — the client falls back to the rate its tier
+  // implies (autoFatigueMultiplier in public/utils.js). 0 is a real value
+  // (an exercise deliberately priced at nothing), which is why this can't be
+  // stored as a 0-means-unset number.
+  db.exec("ALTER TABLE exercise_dictionary ADD COLUMN fatigue_multiplier REAL");
+}

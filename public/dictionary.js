@@ -122,6 +122,27 @@ function render() {
           ).join("")}
         </select>`;
 
+      // The rate this exercise's sets are billed at. Blank shows what its
+      // tier prices it at and follows the tier from then on; a number here
+      // outranks the tier, so the placeholder is what "clear this" gets you.
+      const autoMultiplier = autoFatigueMultiplier(e.abbreviation, e.full_name, effectiveTier);
+      const hasMultiplier = e.fatigue_multiplier !== null && e.fatigue_multiplier !== undefined;
+      const wfuCell = `<input type="text" inputmode="decimal" class="wfu-input${
+        hasMultiplier ? " is-set" : ""
+      }" value="${escapeHtml(hasMultiplier ? e.fatigue_multiplier : "")}" placeholder="${escapeHtml(
+        formatFatigueUnits(autoMultiplier)
+      )}" title="${
+        hasMultiplier
+          ? `Set by hand: every counted set bills ${formatFatigueUnits(
+              Number(e.fatigue_multiplier)
+            )} WFU. Clear the box to go back to ${formatFatigueUnits(autoMultiplier)} from the ${
+              FATIGUE_TIER_LABELS[effectiveTier]
+            } tier.`
+          : `From the ${FATIGUE_TIER_LABELS[effectiveTier]} tier: ${formatFatigueUnits(
+              autoMultiplier
+            )} WFU per counted set. Type a number to price this exercise yourself.`
+      }" />`;
+
       // Only offered where a sled is plausible — an input on every one of the
       // 400+ rows would be noise. Blank means "use the default". This is the
       // fallback for sets logged as a plain "S+"; a set that names its own
@@ -141,6 +162,7 @@ function render() {
       <td>${typeCell}</td>
       <td>${equipmentCell}</td>
       <td>${fatigueCell}</td>
+      <td class="col-wfu">${wfuCell}</td>
       <td class="col-pattern">${patternCell}</td>
       <td class="col-sled">${sledCell}</td>
       <td class="muted">${e.usage_count}</td>
@@ -188,6 +210,25 @@ function render() {
       sel.classList.toggle("is-set", !!sel.value);
     });
   });
+  tbody.querySelectorAll(".wfu-input").forEach((input) => {
+    input.addEventListener("change", async () => {
+      const abbreviation = input.closest("tr").dataset.abbrev;
+      const raw = input.value.trim();
+      const n = Number(raw);
+      if (raw !== "" && !(Number.isFinite(n) && n >= 0 && n <= MAX_FATIGUE_MULTIPLIER)) {
+        input.value = "";
+        alert(
+          `WFU per set must be a number between 0 and ${MAX_FATIGUE_MULTIPLIER} ` +
+            "(or blank to use the fatigue tier's rate)."
+        );
+        return;
+      }
+      await saveFatigueMultiplier(abbreviation, raw === "" ? null : n);
+      // Re-rendered rather than patched in place: the cell's title and
+      // placeholder both describe the rate that is now in force.
+      render();
+    });
+  });
   tbody.querySelectorAll(".sled-input").forEach((input) => {
     input.addEventListener("change", async () => {
       const row = input.closest("tr");
@@ -224,6 +265,20 @@ async function saveSledWeight(abbreviation, sledWeightKg) {
     body: JSON.stringify({ abbreviation, sledWeightKg }),
   });
   if (existing) existing.sled_weight_kg = sledWeightKg;
+  registerDictionary(entries);
+}
+
+// `fatigueMultiplier` of null clears the hand-set rate and falls back to the
+// one the fatigue tier implies. Registered back into the shared lookup so
+// anything else on the page scores with the new rate immediately.
+async function saveFatigueMultiplier(abbreviation, fatigueMultiplier) {
+  const existing = entries.find((e) => e.abbreviation === abbreviation);
+  await fetch("/api/dictionary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ abbreviation, fatigueMultiplier }),
+  });
+  if (existing) existing.fatigue_multiplier = fatigueMultiplier;
   registerDictionary(entries);
 }
 

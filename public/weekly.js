@@ -493,7 +493,9 @@ async function loadActualLoad() {
       const when = parseDateParts(row.date);
       if (!when || when < cutoff) continue;
       const tier = row.fatigueTier || classifyFatigueTier(row.exercise, row.exerciseName);
-      const units = row.setCount * fatigueMultiplier(row.exercise, row.exerciseName, tier);
+      const units =
+        row.setCount *
+        fatigueMultiplier(row.exercise, row.exerciseName, tier, row.fatigueMultiplier);
       wfu += units;
       if (units > 0) days.add(row.date);
     }

@@ -331,6 +331,18 @@ td.col-abbrev { overflow-wrap: anywhere; }
 .fatigue-select.is-set { border-color: currentColor; font-weight: 600; }
 .col-sled { width: 5.5rem; }
 .col-sled .sled-input { width: 100%; padding: 0.25rem 0.35rem; font-size: 0.85rem; text-align: right; }
+/* The WFU rate reads as a number, not a tag, so it's a box rather than a
+   dropdown — but it keeps the tag columns' auto-vs-hand-set language: a
+   greyed placeholder is the tier's rate, an accented value was typed. */
+.col-wfu { width: 5rem; }
+.col-wfu .wfu-input {
+  width: 100%;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.85rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.col-wfu .wfu-input.is-set { color: var(--fg); border-color: var(--accent); font-weight: 600; }
 
 tr.day-header-row td {
   background: var(--row-alt);
