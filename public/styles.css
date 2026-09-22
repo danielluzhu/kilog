@@ -297,6 +297,22 @@ th {
   letter-spacing: 0.1em;
   border-bottom-color: var(--muted);
 }
+/* Reference prose that earns its place on the page but not the reader's
+   attention every visit: closed, a disclosure is one line the eye skips. */
+.note-card { padding-top: 0.9rem; padding-bottom: 0.9rem; }
+.note-card > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  list-style-position: outside;
+}
+.note-card > summary:hover { color: var(--fg); }
+.note-card[open] > summary { margin-bottom: 0.4rem; }
+.note-card[open] { padding-bottom: 1.25rem; }
+
 #dict-body tr:nth-child(even) { background: var(--row-alt); }
 
 /* Below the width the columns need, the table scrolls sideways in its own

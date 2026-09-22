@@ -29,16 +29,6 @@
 </header>
 
 <main>
-  <p class="muted">
-    Six training days and one rest day, built around the snatch and the clean &amp; jerk, with
-    the weighted pull-up and weighted dip second. The week leads heavy three days running —
-    snatch Monday, pull-up and dip Tuesday, clean &amp; jerk and front squat Wednesday — then
-    Thursday drops to a short run and bodybuilding, Friday runs all three Olympic lifts at
-    medium, and Saturday takes a heavy back squat with the pulls and the week's volume straight
-    into Sunday off. Prescribed weights are computed from your own logged estimated 1RMs, and every
-    number on this page is editable.
-  </p>
-
   <section class="card">
     <div class="range-bar">
       <span class="range-bar-label">Week</span>
@@ -71,11 +61,6 @@
 
   <section class="card">
     <h2 style="margin-top:0">The week at a glance</h2>
-    <p class="muted" style="margin-top:0">
-      One row per movement, one column per day. Colour is how hard that day asks for it, so the
-      heavy work — and the space between two heavy exposures of the same pattern — is visible
-      without reading a single set.
-    </p>
     <div class="plan-grid-scroll">
       <table class="plan-grid" id="hml-grid">
         <thead><tr><th>Movement</th></tr></thead>
@@ -93,8 +78,8 @@
 
   <div id="week-days"></div>
 
-  <section class="card">
-    <h2 style="margin-top:0">Why the week is shaped this way</h2>
+  <details class="card note-card">
+    <summary>Why the week is shaped this way</summary>
     <ul class="muted" style="margin:1rem 0 0; padding-left:1.1rem; line-height:1.6; font-size:0.9rem;">
       <li><strong>Each goal lift owns a day.</strong> The snatch has Monday, the pull-up and dip
         have Tuesday, the clean &amp; jerk has Wednesday, the back squat has Saturday. Nothing
@@ -128,10 +113,10 @@
         keeps average weekly load near what you've actually been absorbing, instead of running the
         top week every week.</li>
     </ul>
-  </section>
+  </details>
 
-  <section class="card">
-    <h2 style="margin-top:0">Customizing this page</h2>
+  <details class="card note-card">
+    <summary>Customizing this page</summary>
     <p class="muted" style="margin-top:0">
       <strong>Customize</strong> turns every day into an editable form: change the sets, reps and
       intensity band, swap an exercise for any abbreviation in the
@@ -151,7 +136,7 @@
       To change the default that <strong>Reset</strong> restores, edit <code>DEFAULT_PLAN</code> at
       the top of <code>public/weekly.js</code>.
     </p>
-  </section>
+  </details>
 </main>
 
 <script src="/utils.js"></script>

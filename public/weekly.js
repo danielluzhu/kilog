@@ -561,8 +561,9 @@ function renderStats() {
     .join("");
 
   const note = $("#week-stats-note");
+  note.title = WFU_EXPLAINER;
   if (state.actualWfuPerWeek === null) {
-    note.textContent = WFU_EXPLAINER;
+    note.textContent = "";
     return;
   }
   const planned = weekTotals().wfu;
@@ -582,7 +583,7 @@ function renderStats() {
       `That's within ${Math.round(Math.abs(ratio - 1) * 100)}% of your recent average — a load you're ` +
       `already absorbing, redistributed across the week.`;
   }
-  note.textContent = `${verdict} ${WFU_EXPLAINER}`;
+  note.textContent = verdict;
 }
 
 function loadBadge(load) {
