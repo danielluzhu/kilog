@@ -294,7 +294,7 @@ th {
 }
 #dict-body tr:nth-child(even) { background: var(--row-alt); }
 
-/* Exercise Dictionary column sizing. Without explicit widths the two text
+/* Dictionary column sizing. Without explicit widths the two text
    columns size to their content: the long "Abbreviation" header claims space
    its mostly-short values don't need, while the Full name input — the field
    actually being edited — gets squeezed. A few legacy "abbreviations" are
@@ -408,7 +408,7 @@ tr.day-header-row:first-child td { padding-top: 0.5rem; }
 }
 
 /* Used both as a plain span (Lapse history, where a click opens the day panel
-   in place) and as an anchor (Exercise Dictionary, where it navigates) — the
+   in place) and as an anchor (Dictionary, where it navigates) — the
    anchor needs its default colour and underline suppressed to match. */
 .date-link { cursor: pointer; border-bottom: 1px dashed var(--muted); color: inherit; text-decoration: none; }
 .date-link:hover { color: var(--accent); border-bottom-color: var(--accent); }

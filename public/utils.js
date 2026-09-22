@@ -267,7 +267,7 @@ function weightForReps(oneRM, reps) {
 // Used to (a) decide which exercises get their top set highlighted with an
 // estimated 1RM, (b) restrict Lapse to compound lifts, and (c) flag
 // an exercise as a *variation* of its category (e.g. "Front Squat" is a squat
-// variation; plain "Squat" is the base movement). The Exercise Dictionary
+// variation; plain "Squat" is the base movement). The Dictionary
 // full name is the primary signal for all three — fill one in to control
 // exactly how an exercise is classified; a small set of very common
 // abbreviations is the fallback for exercises that haven't been named yet.
@@ -406,7 +406,7 @@ function isCompoundLift(abbreviation, fullName) {
   return classifyLift(abbreviation, fullName) !== null;
 }
 
-// Human-readable badge text for the Exercise Dictionary's "Type" column,
+// Human-readable badge text for the Dictionary's "Type" column,
 // e.g. "Squat", "Squat variation", "Snatch variation". Returns null if this
 // isn't a tracked compound lift.
 function describeLiftCategory(abbreviation, fullName) {
@@ -436,7 +436,7 @@ const COMPLEX_LIFT_KEYS = new Set(["snatch", "clean"]);
 let FATIGUE_OVERRIDES = {};
 
 // abbreviation -> WFU cost per set, for exercises priced by hand in the
-// Exercise Dictionary. Same source and lifecycle as FATIGUE_OVERRIDES, but
+// Dictionary. Same source and lifecycle as FATIGUE_OVERRIDES, but
 // kept separate: a tier is a bucket the charts colour by, a rate is only
 // ever what a set costs, and an exercise can have one without the other.
 let FATIGUE_MULTIPLIER_OVERRIDES = {};
@@ -469,7 +469,7 @@ function abbreviationMentions(abbreviation, keywords) {
 }
 
 // The tier this exercise's name and category imply, ignoring any override.
-// The Exercise Dictionary shows this as the "Auto" option.
+// The Dictionary shows this as the "Auto" option.
 function autoFatigueTier(abbreviation, fullName) {
   const name = (fullName || "").toLowerCase();
   if (name && CARDIO_KEYWORDS.some((w) => name.includes(w))) return "cardio";
@@ -610,7 +610,7 @@ function isOlympicVariant(abbreviation, fullName) {
 }
 
 // Fatigue cost of one counted set, as the exercise's tier and name imply it
-// — ignoring any rate set by hand. The Exercise Dictionary shows this as the
+// — ignoring any rate set by hand. The Dictionary shows this as the
 // placeholder in its WFU column, the same way it shows the auto tier.
 function autoFatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTier(abbreviation, fullName)) {
   if (tier === "technique") return FATIGUE_MULTIPLIERS.technique;
@@ -640,7 +640,7 @@ function autoFatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTie
 // Fatigue cost of one counted set of this exercise, which is what every WFU
 // total is built out of.
 //
-// A rate typed into the Exercise Dictionary is the last word — ahead of the
+// A rate typed into the Dictionary is the last word — ahead of the
 // tier, the Olympic bump and the cardio zero alike. The tiers price a set by
 // what its *kind* of movement usually costs, and that is a generalisation:
 // an exercise that is genuinely harder or cheaper than its bucket can now
@@ -683,7 +683,7 @@ const WFU_EXPLAINER =
   "Weighted fatigue units: counted sets x 2 (clean & jerk), x1.5 (snatch, clean, and complexes " +
   "built on them), x1 (jerk, Olympic pulls, other compounds, technique), x0.4 (isolation). " +
   "Steady-state cardio doesn't score; intervals do, at x1. An exercise given its own rate in " +
-  "the Exercise Dictionary is billed at that rate instead.";
+  "the Dictionary is billed at that rate instead.";
 
 // ---------- Prilepin's table ----------
 // Classic Soviet-weightlifting volume guidance by intensity. The first and

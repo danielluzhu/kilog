@@ -116,7 +116,7 @@ function renderTitle(abbreviation, fullName) {
 }
 
 // ---------- fatigue tier ----------
-// The same override the Exercise Dictionary offers, surfaced on the exercise
+// The same override the Dictionary offers, surfaced on the exercise
 // you're actually looking at: the tier drives how a set is weighted (WFU) and
 // whether bare numbers read as a singles ladder, so it's worth being able to
 // fix it without leaving the page. Blank hands the exercise back to the
@@ -1343,7 +1343,7 @@ const presetDate = presetParams.get("date");
 
 if (presetExercise) {
   $("#exercise-select").value = presetExercise;
-  // `?date=` (used by the Exercise Dictionary's "last used" link) opens that
+  // `?date=` (used by the Dictionary's "last used" link) opens that
   // session's day panel once the history table exists to jump into.
   loadHistory(presetExercise).then(() => {
     if (!presetDate) return;
