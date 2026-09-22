@@ -20,24 +20,24 @@
 //   Secondary weighted pull-up, weighted dip — one heavy day together on
 //             Tuesday, and light volume on Thursday's bodybuilding session.
 //
-// The week leads heavy three days running: snatch Monday, pull-up and dip
-// Tuesday, clean & jerk and front squat Wednesday. Thursday is the release
+// The week leads heavy three days running: snatch and front squat Monday,
+// pull-up and dip Tuesday, clean & jerk Wednesday. Thursday is the release
 // valve — a short run and isolation work, the cheapest day of the week.
-// Friday runs all three Olympic lifts at medium, Saturday is a heavy back
-// squat with the pulls and the week's volume, and Sunday is off.
+// Friday runs all three Olympic lifts at medium and finishes on the heavy
+// back squat, Saturday is the pulls and the week's volume, and Sunday is off.
 //
 // Tuesday and Thursday both cost zero legs and zero CNS — one is upper-body
 // only, the other is a run and isolation work — so the leg load actually
 // alternates on, off, on, off, on, on, rest however heavy those two days
 // look in fatigue units.
 //
-// The squat is the one movement carrying two heavy days (Wednesday's front
-// squat, Saturday's back squat) with a medium in between. That's a deliberate
-// choice, not an oversight: it costs the snatch and the clean & jerk their
-// third exposure, and the grid at the top of the page says so. The two land
-// three and four days apart, which is the reason the heavy front squat sits
-// on the clean day rather than on Monday — from Saturday's back squat, Monday
-// is only about forty hours away.
+// The squat is the one movement carrying two heavy days (Monday's front
+// squat, Friday's back squat) with the pause front squat medium between them
+// on Wednesday. That's a deliberate choice, not an oversight: it costs the
+// snatch and the clean & jerk their third exposure, and the grid at the top of
+// the page says so. The three land two days apart each and the weekend squats
+// nothing, so the longest gap in the rotation is the one that runs into the
+// rest day — Friday's back squat to Monday's front squat, a full three days.
 //
 // Every slot's `group` is what the week grid and the day strips are built
 // from — two slots sharing a group are two exposures of the same movement.
@@ -49,15 +49,15 @@ const DEFAULT_PLAN = {
   days: [
     {
       name: "Monday",
-      title: "Heavy snatch · medium pause front squat",
-      note: "The week's top snatch effort on the freshest day, and a day about one lift — the squat here is a position tool, not a second session.",
+      title: "Heavy snatch · heavy front squat",
+      note: "The week's top snatch effort on the freshest day, with the heavy front squat behind it. Two heavy lifts share the day, in that order: the snatch is the one that needs the freshness, the squat is the one that can wait.",
       slots: [
         { ex: "S", group: "Snatch", load: "heavy", sets: 5, reps: 2, pctLo: 0.82, pctHi: 0.9, rest: "3 min",
           note: "Build to a heavy double. Two misses at the same weight ends the exercise for the day." },
         { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S", rest: "2 min",
           note: "Percentages are of the snatch. Finish the extension; this is not a shrug." },
-        { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ", rest: "2 min",
-          note: "Two seconds in the hole. Position work to finish the snatch day, held at a weight that leaves Wednesday's heavy front squat intact." },
+        { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9, rest: "3 min",
+          note: "Doubles, last. The week's heavy front squat on its freshest legs — three days clear of Friday's back squat behind it." },
       ],
     },
     {
@@ -75,15 +75,15 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Wednesday",
-      title: "Heavy clean & jerk · heavy front squat",
-      note: "The week's top clean & jerk with the heavy front squat behind it — the highest-intensity day of the week. If the cleans start suffering, the front squat is what comes down, not the clean & jerk.",
+      title: "Heavy clean & jerk · pause front squat",
+      note: "The week's top clean & jerk, with the pause front squat behind it as position work rather than a second heavy squat. If the cleans start suffering, the squat is what comes down, not the clean & jerk.",
       slots: [
         { ex: "CJ", group: "Clean & Jerk", load: "heavy", sets: 5, reps: 1, pctLo: 0.85, pctHi: 0.93, rest: "3-4 min",
           note: "Singles. Build to a heavy one; stop on the second miss." },
         { ex: "CHP", group: "Clean & Jerk", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "CJ", rest: "2 min",
           note: "Percentages are of the clean & jerk." },
-        { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9, rest: "3 min",
-          note: "Doubles, behind the clean & jerk. You front squat your way out of every clean, so the heavy version belongs on the day it serves — second, because it is the clean that has to be fresh." },
+        { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ", rest: "2 min",
+          note: "Two seconds in the hole, percentages of the front squat. You front squat your way out of every clean, so the position work belongs on the day it serves — held at a weight that leaves Friday's back squat intact." },
       ],
     },
     {
@@ -105,24 +105,24 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Friday",
-      title: "Medium snatch · medium clean & jerk · medium jerk",
-      note: "All three Olympic lifts in one session at a weight that can be made every rep. No maxes — this is the day the technique gets its reps.",
+      title: "Medium Olympic lifts · heavy back squat",
+      note: "All three Olympic lifts in one session at a weight that can be made every rep, then the heaviest legs of the week. No maxes on the bar overhead — this is the day the technique gets its reps and the squat gets its top set.",
       slots: [
         { ex: "S", group: "Snatch", load: "medium", sets: 4, reps: 2, pctLo: 0.75, pctHi: 0.82, rest: "2-3 min",
           note: "Crisp doubles. Speed under the bar, not another top end." },
         { ex: "CJ", group: "Clean & Jerk", load: "medium", sets: 4, reps: 2, pctLo: 0.72, pctHi: 0.8, rest: "3 min",
           note: "Both halves, every rep." },
         { ex: "J", group: "Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ", rest: "2 min",
-          note: "From the rack, so the jerk gets reps the clean isn't paying for. First thing to cut if Friday and Saturday start running together." },
+          note: "From the rack, so the jerk gets reps the clean isn't paying for. First thing to cut if the squat behind it is what's suffering." },
+        { ex: "SQ", group: "Squat", load: "heavy", sets: 5, reps: 3, pctLo: 0.8, pctHi: 0.87, rest: "3 min",
+          note: "Back squat, triples, last. The heaviest legs of the week, with only the pulls and a rest day behind them." },
       ],
     },
     {
       name: "Saturday",
-      title: "Heavy squat · pulls · volume",
-      note: "The week's second heavy squat, the Olympic pulls, and the volume that pays for all of it — banked directly in front of the rest day.",
+      title: "Pulls · volume",
+      note: "The Olympic pulls and the volume that pays for the week — banked directly in front of the rest day. Nothing squats here: Friday took the legs, and this is what's left to do with them.",
       slots: [
-        { ex: "SQ", group: "Squat", load: "heavy", sets: 5, reps: 3, pctLo: 0.8, pctHi: 0.87, rest: "3 min",
-          note: "Back squat, triples. The heaviest legs of the week land the day before a day off." },
         { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
           note: "Snatch deadlift, off its own best rather than off the snatch — this pulls far more than the lift does." },
         { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
@@ -135,7 +135,7 @@ const DEFAULT_PLAN = {
       name: "Sunday",
       rest: true,
       title: "Rest",
-      note: "The week's only full day off, and it follows the heaviest legs of the week on purpose.",
+      note: "The week's only full day off, and it follows the two days that ask the most of the legs on purpose.",
       slots: [],
     },
   ],
