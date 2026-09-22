@@ -28,24 +28,6 @@
 </header>
 
 <main>
-  <p class="muted">
-    Map the shorthand codes used in the log (e.g. <code>FSQ</code>) to their full exercise names
-    (e.g. <code>Front Squat</code>). Entries with no name yet were found in the imported log and
-    are waiting to be filled in. The <strong>Type</strong> column flags compound lifts and, when
-    the name says more than just the base movement (e.g. "Front Squat", "Tall Snatch"), marks
-    them as a variation. The <strong>Equipment</strong> column distinguishes bodyweight (pull-ups,
-    dips — including weighted), free weight (barbell/dumbbell/kettlebell), cable, and machine
-    exercises. The <strong>Fatigue</strong> column buckets by rough systemic cost per set: Complex
-    (snatch and clean — pulled from the floor at speed and caught, the most fatiguing thing per
-    set), Compound (squats, deadlifts, presses, the jerk, and the Olympic pulls), or Isolation
-    (single-muscle accessory work). The <strong>WFU/set</strong> column is what one counted set
-    of the exercise costs in weighted fatigue units — the number every WFU total on the Log,
-    Volume and Weekly Routine pages is built from. It normally follows the fatigue tier (x2 for
-    a clean &amp; jerk, x1.5 snatch/clean, x1 compound and technique, x0.4 isolation, x0 for
-    steady-state cardio); type a number to price one exercise yourself when its tier prices it
-    wrong, and clear the box to hand it back.
-  </p>
-
   <section class="card">
     <h2 style="margin-top:0">Add / update one entry</h2>
     <form id="add-entry-form" class="row" style="align-items:flex-end">
@@ -132,10 +114,10 @@
           <th style="width:1.5rem;"></th>
           <th class="col-abbrev">Abbreviation</th>
           <th class="col-name">Full name</th>
-          <th class="col-tag">Type</th>
-          <th class="col-tag">Equipment</th>
-          <th class="col-tag">Fatigue</th>
-          <th class="col-wfu" title="Weighted fatigue units per counted set. Blank uses the rate the Fatigue tier implies; type a number to price this exercise yourself.">WFU/set</th>
+          <th class="col-tag" title="Compound lift, and whether the name says more than the base movement (&quot;Front Squat&quot;, &quot;Tall Snatch&quot;) — a variation.">Type</th>
+          <th class="col-tag" title="Bodyweight (pull-ups, dips — including weighted), free weight (barbell/dumbbell/kettlebell), cable, or machine. Read off the full name.">Equipment</th>
+          <th class="col-tag" title="Rough systemic cost per set: Complex (snatch and clean — pulled from the floor at speed and caught), Compound (squats, deadlifts, presses, the jerk, the Olympic pulls), Isolation (single-muscle accessory work), Technique, Cardio. Auto-detected from the name; pick one to override.">Fatigue</th>
+          <th class="col-wfu" title="Weighted fatigue units per counted set — what every WFU total on the Log, Volume and Weekly Routine pages is built from. Blank uses the rate the Fatigue tier implies; type a number to price this exercise yourself.">WFU/set</th>
           <th class="col-pattern" title="Movement pattern. Auto-detected from the full name; pick one to override.">Pattern</th>
           <th class="col-sled" title="Starting/carriage weight for sled machines, added on top of what's plated">Sled kg</th>
           <th class="col-num">Uses</th>
