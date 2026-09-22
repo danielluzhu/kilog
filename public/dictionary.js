@@ -118,6 +118,16 @@ function sortEntries(list, mode) {
   const copy = [...list];
   if (mode === "alpha") {
     copy.sort((a, b) => a.abbreviation.localeCompare(b.abbreviation, undefined, { sensitivity: "base" }));
+  } else if (mode === "recent") {
+    // Most recent first. ISO dates sort as strings, and a never-used entry's
+    // empty string sorts below every real date, which puts the exercises
+    // that have never been logged at the bottom where they belong.
+    copy.sort(
+      (a, b) =>
+        (b.last_used || "").localeCompare(a.last_used || "") ||
+        b.usage_count - a.usage_count ||
+        a.abbreviation.localeCompare(b.abbreviation, undefined, { sensitivity: "base" })
+    );
   } else {
     copy.sort(
       (a, b) =>
