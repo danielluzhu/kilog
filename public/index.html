@@ -16,6 +16,7 @@
   <h1><a href="/index.html" class="app-icon-link" aria-label="Workout Log home"><img src="/android-chrome-192x192.png" alt="" class="app-icon" /></a> Workout Log</h1>
   <nav>
     <a href="/index.html" class="active">Log</a>
+    <a href="/bulk.html">Bulk Upload</a>
     <a href="/weekly.html">Weekly Routine</a>
     <a href="/dictionary.html">Dictionary</a>
     <a href="/lapse.html">Lapse</a>
@@ -51,38 +52,10 @@
         <button type="submit" class="primary">Save workout</button>
       </div>
     </form>
-  </section>
-
-  <section class="card">
-    <h2 style="margin-top:0">Bulk upload</h2>
-    <p class="muted" style="margin-top:0">
-      Write the date once, then one line per exercise below it:
+    <p class="muted" style="margin:0.9rem 0 0; font-size:0.85rem;">
+      A whole session, or a backlog of them, goes in at
+      <a href="/bulk.html">Bulk Upload</a>.
     </p>
-    <pre class="muted" style="margin:0 0 0.75rem; font-size:0.85rem;">2026-07-30
-FSQ 135x5, 140x5, 145x3
-BP 95x8, 100x6</pre>
-    <p class="muted" style="margin-top:0">
-      A spreadsheet-style row (<code>date, exercise, set1, set2, ...</code>) also works, and
-      either style can be mixed in the same paste. Sets can be separated by a comma, a tab, or
-      just a space — all three are treated the same. Unrecognized exercise abbreviations are
-      added to the dictionary automatically, same as logging one at a time.
-    </p>
-    <p class="muted" style="margin-top:0">
-      A set can name the equipment's own weight, added on top of what's plated:
-      <code>S+61x12</code> is a machine's sled plus 61kg, <code>S25+61x12</code> spells out a
-      25kg sled for machines that differ from the exercise's usual one, and
-      <code>B+30x8</code> is the <!-- kept in step with BARBELL_WEIGHT_KG in utils.js -->20kg
-      barbell plus 30kg, for landmine work.
-    </p>
-    <label for="workout-csv-file">Upload file (.csv / .tsv / .txt)</label>
-    <input type="file" id="workout-csv-file" accept=".csv,.tsv,.txt" />
-    <div style="margin:0.75rem 0; text-align:center; color:var(--muted); font-size:0.8rem;">or paste below</div>
-    <label for="workout-csv-text">Paste rows</label>
-    <textarea id="workout-csv-text" rows="6" placeholder="2026-07-30&#10;FSQ 135x5, 140x5, 145x3&#10;BP 95x8, 100x6"></textarea>
-    <div style="margin-top:0.75rem">
-      <button id="workout-import-btn" class="primary">Import</button>
-    </div>
-    <div class="status" id="workout-import-status"></div>
   </section>
 
   <section>

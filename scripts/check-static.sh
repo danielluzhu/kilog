@@ -39,6 +39,7 @@ check() {
 
 check "/"               'entries across [0-9]+ days' "index — log renders"
 check "/index.html"     '20[0-9]{2}-[0-9]{2}-[0-9]{2}' "index — dates present"
+check "/bulk.html"      'workout-csv-text' "bulk — import form"
 check "/weekly.html"    '[0-9]+.[0-9]+ kg' "weekly — prescribed weights"
 check "/dictionary.html" '<tr' "dictionary — rows"
 check "/volume.html"    '<svg|<canvas|chart' "volume — chart"
