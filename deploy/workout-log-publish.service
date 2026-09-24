@@ -1,5 +1,9 @@
-# Publishes newly logged workouts to origin/master once a day.
-# Installed to /etc/systemd/system/ and driven by workout-log-publish.timer.
+# Publishes newly logged workouts to origin/master.
+#
+# Installed to /etc/systemd/system/ and driven by two units:
+# workout-log-publish.path, which fires as soon as an entry is written, and
+# workout-log-publish.timer, which sweeps up once a day whatever the watch
+# missed (machine asleep, a commit made by hand, a run that aborted).
 [Unit]
 Description=Publish new workout log entries to git
 After=network-online.target
@@ -15,7 +19,12 @@ WorkingDirectory=/workspace
 # and /usr/bin has to stay on PATH for gh itself.
 Environment=HOME=/home/ubuntu
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+# The path unit fires mid-session, so the run first waits for the database to
+# go quiet -- a session publishes once, when it is over, not once per set.
+ExecStartPre=/workspace/scripts/wait-for-quiet-db.sh
 ExecStart=/home/ubuntu/.bun/bin/bun run /workspace/scripts/commit-new-workouts.ts
+# Long enough for that wait (30 min at the outside) and the publish behind it.
+TimeoutStartSec=2700
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=workout-log-publish

@@ -1,0 +1,19 @@
+# Publishes new entries as they are logged, rather than waiting for the next
+# run of workout-log-publish.timer.
+# Installed to /etc/systemd/system/ alongside the service it triggers.
+[Unit]
+Description=Watch the workout log for new entries
+After=workout-log.service
+
+[Path]
+# SQLite runs the log in WAL mode and the server holds both files open for its
+# whole life, so a finished write never closes them -- PathModified (IN_MODIFY)
+# is what actually fires here, where PathChanged (IN_CLOSE_WRITE) would not.
+# The -wal file takes every write; workout.db itself only moves on a
+# checkpoint, and is watched so a checkpoint alone is enough to trigger.
+PathModified=/workspace/data/workout.db-wal
+PathModified=/workspace/data/workout.db
+Unit=workout-log-publish.service
+
+[Install]
+WantedBy=paths.target
