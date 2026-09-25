@@ -194,9 +194,27 @@ const CARDIO_FOCUS = "Run / hike";
 // would bury the one line that matters.
 const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 
+// The grid is a coarser view than the day strips: it answers "where does this
+// movement sit in the week", so two focuses that never appear apart are one
+// row, and a pattern row that only repeats what a named row above it already
+// shows is left out.
+//
+// The pull-up and the dip are trained together on every day either of them
+// appears, so one row says as much as two. Push and Hinge are dropped
+// outright: the pressing is already on the Press and Dip rows, and the
+// hinging on the Pulls and Squat rows — a second row of the same marks is
+// noise, not information. Both still count everywhere else on the page.
+const GRID_ROW_ALIASES = { "Pull-up": "Pull-up + Dip", Dip: "Pull-up + Dip" };
+const GRID_HIDDEN_FOCUSES = new Set(["Push", "Hinge"]);
+const gridRowFor = (focus) => GRID_ROW_ALIASES[focus] || focus;
+
 // Grid row order: the goal movements lead, then the named support blocks,
 // then everything else by how much of the week it takes up.
-const FOCUS_ORDER = [...GOAL_FOCUSES, "Jerk", "Press", "Pulls"];
+const FOCUS_ORDER = [...new Set([...GOAL_FOCUSES, "Jerk", "Press", "Pulls"].map(gridRowFor))];
+
+// The goal movements as the grid rows them up, for the coverage line beneath
+// it: the merged pull-up/dip row is checked once, not twice.
+const GRID_GOAL_ROWS = [...new Set(GOAL_FOCUSES.map(gridRowFor))];
 
 const RECENT_WINDOW_DAYS = 120;
 const ACTUAL_WINDOW_DAYS = 28;
@@ -796,7 +814,9 @@ function renderGrid() {
   // light should show both, not average them into one mark.
   days.forEach((day, i) => {
     for (const slot of day.slots || []) {
-      const row = rowFor(focusOf(slot));
+      const focus = focusOf(slot);
+      if (GRID_HIDDEN_FOCUSES.has(focus)) continue;
+      const row = rowFor(gridRowFor(focus));
       row.wfu += slotFatigue(slot);
       row.cells[i].push({ ex: slot.ex, load: slot.load });
     }
@@ -875,13 +895,20 @@ function renderGridGaps(ordered) {
 
   let checked = 0;
   for (const row of ordered) {
-    if (!GOAL_FOCUSES.includes(row.focus)) continue;
+    if (!GRID_GOAL_ROWS.includes(row.focus)) continue;
     checked += 1;
     // Technique work counts as the light exposure — it is the lightest thing
     // a lift is ever asked for, not a fourth category needing its own day.
+    // Heavy is counted in days, not in marks: the pull-up and the dip share a
+    // row and land on the same day, and a day that squats heavy twice is still
+    // one heavy day.
     const loads = [];
-    for (const cell of row.cells) for (const c of cell) loads.push(c.load === "technique" ? "light" : c.load);
-    const heavy = loads.filter((l) => l === "heavy").length;
+    let heavy = 0;
+    for (const cell of row.cells) {
+      const onTheDay = cell.map((c) => (c.load === "technique" ? "light" : c.load));
+      if (onTheDay.includes("heavy")) heavy += 1;
+      loads.push(...onTheDay);
+    }
     if (heavy > 1) note(`${heavy} heavy days`, row.focus);
     const missing = ["heavy", "medium", "light"].filter((l) => !loads.includes(l));
     if (missing.length) note(`no ${missing.join(" or ")} day`, row.focus);
