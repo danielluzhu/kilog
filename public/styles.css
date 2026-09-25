@@ -284,7 +284,10 @@ input[type="file"]::file-selector-button {
 input[type="file"]::file-selector-button:hover { border-color: var(--muted); }
 
 .row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-.row > div { flex: 1; min-width: 140px; }
+/* Bottom-aligned so the inputs line up with each other however tall the
+   labels above them are — "Exercise (abbreviation)" wraps to two lines long
+   before "Date" does. */
+.row > div { flex: 1; min-width: 140px; display: flex; flex-direction: column; justify-content: flex-end; }
 
 #sets-list { margin-bottom: 0.75rem; }
 .sets-editor-root { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
@@ -1196,4 +1199,22 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
 @media (max-width: 640px) {
   .plan-col-name, .plan-col-num { width: auto; }
   .plan-day-meta { margin-left: 0; }
+
+  /* On a phone the entry form's labels were costing more height than the
+     fields they label, and the date and the exercise each took a line of
+     their own. Letting them shrink below their content width puts them back
+     on one line; the rest is trimming the chrome around the inputs. */
+  #add-form .row { gap: 0.5rem; margin-bottom: 0.6rem; }
+  /* 120px is the floor that keeps a date input from clipping its own year:
+     two of them fit side by side from about 375px up, and stack below that
+     rather than truncate. */
+  #add-form .row > div { min-width: 120px; }
+  #add-form label { font-size: 0.65rem; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
+  #add-form input[type="text"], #add-form input[type="date"] { padding: 0.45rem 0.55rem; }
+
+  /* The set rows sit in the same column as the fields above them, so the
+     number and the delete button are kept as narrow as they can be read at. */
+  .set-input-row { gap: 0.35rem; }
+  .set-input-row span { width: 1.6rem; font-size: 0.8rem; }
+  .set-input-row button { padding-left: 0.6rem; padding-right: 0.6rem; }
 }
