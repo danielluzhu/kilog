@@ -80,7 +80,7 @@ const ASSIGNMENTS: Record<string, string> = {
   RDF: "pulls",       // Rear Delt Fly
   DRDF: "pulls",      // Dumbell Rear Delt Fly
   BOLR: "pulls",      // Bent-over Lateral Raise — rear delt, not a press
-  HC: "pulls",        // Hammer Curl
+  HCu: "pulls",       // Hammer Curl (HC is the hang clean)
   IDC: "pulls",       // Incline Dumbbell Curl
   BC: "pulls",        // Bicep Curl
   PC: "pulls",        // Preacher Curl

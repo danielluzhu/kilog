@@ -132,7 +132,7 @@ const DEFAULT_PLAN = {
           note: "Neutral grip, bodyweight, two reps short of failure." },
         { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62 },
         { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 10, note: "Unloaded." },
-        { ex: "HC", group: "Accessory", load: "light", sets: 3, reps: 12,
+        { ex: "HCu", group: "Accessory", load: "light", sets: 3, reps: 12,
           note: "Arms and rear delts from here down — swap freely, nothing in this block has to be these three." },
         { ex: "TCPD", group: "Accessory", load: "light", sets: 3, reps: 12 },
         { ex: "RDF", group: "Accessory", load: "light", sets: 3, reps: 15 },
