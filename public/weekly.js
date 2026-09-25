@@ -112,7 +112,6 @@ const DEFAULT_PLAN = {
           note: "Strict press again, lighter and for reps — the volume behind Tuesday's harder set of fives. Overhead work is the one thing the jerk can always use more of." },
         { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15, rest: "60 s",
           note: "Shoulder health for the overhead positions." },
-        { ex: "BC", group: "Accessory", load: "light", sets: 3, reps: 12, rest: "60 s" },
       ],
     },
     {
