@@ -21,13 +21,13 @@
 //             shared medium day on Friday, and a light technique dose on
 //             Tuesday and again on Thursday.
 //   Secondary weighted pull-up, weighted dip — one heavy day together on
-//             Tuesday, and light volume at the end of Friday.
+//             Tuesday, and light volume on Saturday.
 //
 // The week leads heavy three days running: snatch and front squat Monday,
 // pull-up and dip Tuesday, clean & jerk Wednesday. Thursday is the row and
 // the two Olympic pulls. Friday runs all three Olympic lifts at medium and
-// finishes on the heavy back squat and the bodyweight volume, Saturday is an
-// easy run and one accessory, and Sunday is off.
+// finishes on the heavy back squat, Saturday is the bodyweight volume and the
+// run, and Sunday is off.
 //
 // Tuesday is the only day that costs the legs nothing at all. From Wednesday
 // they work four days running — the pause front squat, Thursday's pulls,
@@ -110,8 +110,8 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Friday",
-      title: "Medium Olympic lifts · heavy back squat · upper volume",
-      note: "The longest day of the week, and the last one that costs anything.",
+      title: "Medium Olympic lifts · heavy back squat",
+      note: "The last heavy day of the week: three lifts at a weight that can be made every rep, then the top set of squats.",
       slots: [
         { ex: "S", group: "Snatch", load: "medium", sets: 4, reps: 2, pctLo: 0.75, pctHi: 0.82,
           note: "Speed under the bar, not another top end." },
@@ -121,16 +121,16 @@ const DEFAULT_PLAN = {
           note: "From the rack. First thing to cut if the squat behind it is what's suffering." },
         { ex: "SQ", group: "Squat", load: "heavy", sets: 5, reps: 3, pctLo: 0.8, pctHi: 0.87,
           note: "Back squat." },
-        { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10,
-          note: "Neutral grip, bodyweight, two reps short of failure." },
-        { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62 },
       ],
     },
     {
       name: "Saturday",
-      title: "Run · posterior chain",
-      note: "Everything the week costs has been paid by the time it starts.",
+      title: "Bodyweight volume · run",
+      note: "Nothing heavy and nothing on a clock — the volume the hard days had no room for, in front of the rest day.",
       slots: [
+        { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10,
+          note: "Neutral grip, bodyweight, two reps short of failure." },
+        { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62 },
         { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 10, note: "Unloaded." },
       ],
       cardio: { activity: "Run", load: "light", detail: "25-35 min easy" },
