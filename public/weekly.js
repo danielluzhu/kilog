@@ -95,8 +95,8 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Thursday",
-      title: "Technique touch · row and Olympic pulls",
-      note: "The row and the two Olympic pulls, behind the same light doses Tuesday opens with. Nothing here is a top-end effort, but the pulls make it real work — it is no longer the cheap day in the middle of the week.",
+      title: "Technique touch · row and Olympic pulls · press volume",
+      note: "The row, the two Olympic pulls and a second lighter press, behind the same light doses Tuesday opens with. Nothing here is a top-end effort, but the pulls make it real work — it is no longer the cheap day in the middle of the week.",
       slots: [
         { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, rest: "90 s",
           note: "Light and fast, before the pulls, while the back is still fresh. Positions and speed under the bar, never load." },
@@ -108,6 +108,8 @@ const DEFAULT_PLAN = {
           note: "Snatch deadlift, off its own best rather than off the snatch — this pulls far more than the lift does." },
         { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
           note: "Clean deadlift, same terms." },
+        { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68, rest: "90 s",
+          note: "Strict press again, lighter and for reps — the volume behind Tuesday's harder set of fives. Overhead work is the one thing the jerk can always use more of." },
         { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15, rest: "60 s",
           note: "Shoulder health for the overhead positions." },
         { ex: "BC", group: "Accessory", load: "light", sets: 3, reps: 12, rest: "60 s" },
