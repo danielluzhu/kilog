@@ -990,10 +990,24 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
 
 /* Major-lift top-set highlighting */
 .set-value { cursor: help; border-bottom: 1px dotted var(--muted); }
+/* Two marks that mean two different things: the accent is the best estimated
+   1RM (a formula's opinion), the solid green rule is the heaviest weight that
+   was actually on the bar. A set that is both keeps the accent colour and
+   takes the solid rule, so it reads as one set carrying two claims rather
+   than as a third state. */
 .top-set {
   font-weight: 700;
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+.top-weight {
+  font-weight: 700;
+  color: var(--ok);
+  border-bottom: 1px solid var(--ok);
+}
+.top-set.top-weight {
+  color: var(--accent);
+  border-bottom: 2px solid var(--ok);
 }
 .orm-badge {
   display: inline-block;

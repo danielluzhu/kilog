@@ -1615,6 +1615,16 @@ function topScorableSetOf(sets, abbreviation, fullName) {
   return best;
 }
 
+// The heaviest set of one session, ranked on the weight that was on the bar
+// rather than on what it estimates to. Ties keep the earlier set.
+function heaviestScorableSetOf(sets, abbreviation, fullName) {
+  let best = null;
+  for (const s of scoreSets(sets, abbreviation, fullName)) {
+    if (s && (!best || s.weight > best.weight)) best = s;
+  }
+  return best;
+}
+
 // Heaviest actual weight moved — ranked by raw `weight`, not estimated 1RM,
 // so a 225x1 and a 225x3 tie on "heaviest weight moved" even though their
 // Epley 1RMs differ. Reported all-time and within the trailing 365- and
@@ -1786,15 +1796,27 @@ function describeScoredSet(s) {
 }
 
 // Renders a workout's set list as HTML: every individually-scorable set
-// carries a hover tooltip with its OWN estimated 1RM (not just the
-// session's best), and the single best set is additionally bolded.
+// carries a hover tooltip with its OWN estimated 1RM (not just the session's
+// best), and two sets are called out by name — the best estimated 1RM and the
+// heaviest weight actually moved.
+//
+// They are two different claims and often two different sets: a 125x3 can
+// estimate higher than a 134x1 that was genuinely heavier on the bar. Marking
+// only the estimate would bury the one number that isn't a formula's opinion,
+// so both are marked, and when one set is both it says so once.
 function setsHtmlWithHover(sets, abbreviation, fullName) {
   if (!sets || sets.length === 0) return '<span class="muted">—</span>';
 
   const scored = scoreSets(sets, abbreviation, fullName);
   let topIdx = -1;
+  let heaviestIdx = -1;
   scored.forEach((s, i) => {
-    if (s && (topIdx === -1 || s.oneRM > scored[topIdx].oneRM)) topIdx = i;
+    if (!s) return;
+    if (topIdx === -1 || s.oneRM > scored[topIdx].oneRM) topIdx = i;
+    // Ranked on the weight that was on the bar, so a 3-rep set never outranks
+    // a heavier single the way its estimate does. Ties keep the first set,
+    // which is the one done fresher.
+    if (heaviestIdx === -1 || s.weight > scored[heaviestIdx].weight) heaviestIdx = i;
   });
 
   return sets
@@ -1802,8 +1824,16 @@ function setsHtmlWithHover(sets, abbreviation, fullName) {
       const s = scored[i];
       const text = renderSetLabel(raw, abbreviation);
       if (!s) return text;
-      const cls = i === topIdx ? "set-value top-set" : "set-value";
-      return `<span class="${cls}" title="${escapeHtml(describeScoredSet(s))}">${text}</span>`;
+      const isTop = i === topIdx;
+      const isHeaviest = i === heaviestIdx;
+      const cls = ["set-value", isTop ? "top-set" : "", isHeaviest ? "top-weight" : ""]
+        .filter(Boolean)
+        .join(" ");
+      const marks = [];
+      if (isTop) marks.push("best estimated 1RM of this session");
+      if (isHeaviest) marks.push("heaviest weight moved this session");
+      const title = [describeScoredSet(s), ...marks].join(" — ");
+      return `<span class="${cls}" title="${escapeHtml(title)}">${text}</span>`;
     })
     .join(", ");
 }

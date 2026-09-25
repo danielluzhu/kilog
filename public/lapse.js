@@ -342,10 +342,21 @@ function renderHistoryTable(history, abbreviation, fullName) {
     .reverse()
     .map((h) => {
       const top = topScorableSetOf(h.sets, abbreviation, fullName);
+      const heaviest = heaviestScorableSetOf(h.sets, abbreviation, fullName);
       const setsHtml = setsHtmlWithHover(h.sets, abbreviation, fullName);
 
-      const topCell = top
-        ? `${escapeHtml(top.resolvedRaw ?? top.raw)} <span class="orm-badge" title="${escapeHtml(describeScoredSet(top))}">~${formatOneRM(top)} 1RM</span>`
+      // Two columns because they are two different claims. The weight column
+      // is what was on the bar; the 1RM column is what a formula makes of it,
+      // and on a day of heavy singles they are the same set.
+      const weightCell = heaviest
+        ? `<span class="set-value top-weight" title="${escapeHtml(describeScoredSet(heaviest))}">${escapeHtml(
+            heaviest.resolvedRaw ?? heaviest.raw
+          )}</span>`
+        : '<span class="muted">—</span>';
+      const ormCell = top
+        ? `<span class="orm-badge" title="${escapeHtml(describeScoredSet(top))} — from ${escapeHtml(
+            top.resolvedRaw ?? top.raw
+          )}">~${formatOneRM(top)}</span>`
         : '<span class="muted">—</span>';
 
       // The session holding the all-time heaviest lift gets called out in
@@ -379,7 +390,8 @@ function renderHistoryTable(history, abbreviation, fullName) {
           formatDate(h.date)
         )}</span></td>
         <td class="cell-sets">${setsHtml}${viaBadge}${recordBadge}</td>
-        <td class="cell-top">${topCell}</td>
+        <td class="cell-top">${weightCell}</td>
+        <td class="cell-top">${ormCell}</td>
         <td class="actions">${actionCell}</td>
       </tr>`;
     })
