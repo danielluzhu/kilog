@@ -132,7 +132,16 @@ try {
 
   for (const day of days) {
     const ws = newWorkouts.filter((w) => w.date === day);
-    const dictForDay = [...firstUse.entries()].filter(([, d]) => d === day).map(([a]) => a);
+    // A workout can name an exercise the dictionary has no row for. The
+    // server writes one when the workout is created, but rows get merged away
+    // or deleted afterwards while the workouts keep the name they were logged
+    // under -- and the log has six such names in it. There is nothing to carry
+    // into the commit for those, and assuming otherwise used to abort the run
+    // and, with it, every publish after the day one was logged.
+    const dictForDay = [...firstUse.entries()]
+      .filter(([, d]) => d === day)
+      .map(([a]) => a)
+      .filter((a) => freshDictRows.some((d) => d.abbreviation === a));
 
     const db = new Database(work);
     for (const ab of dictForDay) {
