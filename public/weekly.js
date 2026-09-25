@@ -2,7 +2,9 @@
 //
 // The page renders a plan object: days, each holding slots, each slot naming
 // an exercise, a load level (heavy/medium/light/technique), sets, reps and an
-// intensity band expressed as a percentage of an estimated 1RM. The actual
+// intensity band expressed as a percentage of an estimated 1RM. Rest is not
+// prescribed: it is the lifter's to judge, and a number here would only be a
+// guess dressed up as an instruction. The actual
 // kilograms are never written down here — they are computed from the log, so
 // the plan tracks the lifter instead of going stale the week after it's
 // written.
@@ -53,101 +55,91 @@ const DEFAULT_PLAN = {
     {
       name: "Monday",
       title: "Heavy snatch · heavy front squat",
-      note: "The week's top snatch effort on the freshest day, with the heavy front squat behind it. Two heavy lifts share the day, in that order: the snatch is the one that needs the freshness, the squat is the one that can wait.",
+      note: "Two heavy lifts on one day, in that order: the squat is the one that can afford to go second.",
       slots: [
-        { ex: "S", group: "Snatch", load: "heavy", sets: 5, reps: 2, pctLo: 0.82, pctHi: 0.9, rest: "3 min",
-          note: "Build to a heavy double. Two misses at the same weight ends the exercise for the day." },
-        { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S", rest: "2 min",
-          note: "Percentages are of the snatch. Finish the extension; this is not a shrug." },
-        { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9, rest: "3 min",
-          note: "Doubles, last. The week's heavy front squat on its freshest legs — three days clear of Friday's back squat behind it." },
+        { ex: "S", group: "Snatch", load: "heavy", sets: 5, reps: 2, pctLo: 0.82, pctHi: 0.9,
+          note: "Two misses at the same weight ends the exercise for the day." },
+        { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S",
+          note: "Finish the extension; this is not a shrug." },
+        { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9 },
       ],
     },
     {
       name: "Tuesday",
       title: "Technique touch · heavy pull-up + dip · medium press",
-      note: "The secondary goals get their own hard day, on a day nothing heavy comes off the floor — with light snatch and clean & jerk doses in front of it, where they are cheapest.",
+      note: "The secondary goals get their own hard day, on a day nothing heavy comes off the floor.",
       slots: [
-        { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, rest: "90 s",
-          note: "Light and fast, first thing. Positions and speed under the bar — nothing here should feel like a lift, and nothing here should leave a mark on the day behind it." },
-        { ex: "CJ", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6, rest: "90 s",
-          note: "Same terms as the snatch above it. A touch on the lift between the hard days, not a session." },
-        { ex: "PLU", group: "Pull-up", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93, rest: "3 min",
-          note: "Added weight. Dead hang to chin over the bar, no kip." },
-        { ex: "D", group: "Dip", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93, rest: "3 min",
-          note: "Added weight. Full depth, controlled turnaround." },
-        { ex: "SP", group: "Press", load: "medium", sets: 4, reps: 5, pctLo: 0.7, pctHi: 0.78, rest: "2 min",
-          note: "Strict press. The overhead strength the jerk borrows from, trained where it isn't competing with a jerk." },
+        { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6,
+          note: "Positions and speed under the bar; nothing here should feel like a lift." },
+        { ex: "CJ", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6 },
+        { ex: "PLU", group: "Pull-up", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
+          note: "Dead hang to chin over the bar, no kip." },
+        { ex: "D", group: "Dip", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
+          note: "Full depth, controlled turnaround." },
+        { ex: "SP", group: "Press", load: "medium", sets: 4, reps: 5, pctLo: 0.7, pctHi: 0.78,
+          note: "Strict press." },
       ],
     },
     {
       name: "Wednesday",
       title: "Heavy clean & jerk · pause front squat",
-      note: "The week's top clean & jerk, with the pause front squat behind it as position work rather than a second heavy squat. If the cleans start suffering, the squat is what comes down, not the clean & jerk.",
+      note: "If the cleans start suffering, the squat is what comes down, not the clean & jerk.",
       slots: [
-        { ex: "CJ", group: "Clean & Jerk", load: "heavy", sets: 5, reps: 1, pctLo: 0.85, pctHi: 0.93, rest: "3-4 min",
-          note: "Singles. Build to a heavy one; stop on the second miss." },
-        { ex: "CHP", group: "Clean & Jerk", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "CJ", rest: "2 min",
-          note: "Percentages are of the clean & jerk." },
-        { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ", rest: "2 min",
-          note: "Two seconds in the hole, percentages of the front squat. You front squat your way out of every clean, so the position work belongs on the day it serves — held at a weight that leaves Friday's back squat intact." },
+        { ex: "CJ", group: "Clean & Jerk", load: "heavy", sets: 5, reps: 1, pctLo: 0.85, pctHi: 0.93,
+          note: "Stop on the second miss." },
+        { ex: "CHP", group: "Clean & Jerk", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "CJ" },
+        { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ",
+          note: "Two seconds in the hole." },
       ],
     },
     {
       name: "Thursday",
       title: "Technique touch · row and Olympic pulls · press volume",
-      note: "The row, the two Olympic pulls and a second lighter press, behind the same light doses Tuesday opens with. Nothing here is a top-end effort, but the pulls make it real work — it is no longer the cheap day in the middle of the week.",
+      note: "No top-end effort anywhere on it, but the pulls make it real work.",
       slots: [
-        { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, rest: "90 s",
-          note: "Light and fast, before the pulls, while the back is still fresh. Positions and speed under the bar, never load." },
-        { ex: "CJ", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6, rest: "90 s",
-          note: "Same terms as the snatch above it. The week's second touch on each lift, and the cheapest one on the board." },
-        { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68, rest: "2 min",
-          note: "Horizontal pulling, the one thing the rest of the week never asks for." },
-        { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
-          note: "Snatch deadlift, off its own best rather than off the snatch — this pulls far more than the lift does." },
-        { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88, rest: "2-3 min",
-          note: "Clean deadlift, same terms." },
-        { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68, rest: "90 s",
-          note: "Strict press again, lighter and for reps — the volume behind Tuesday's harder set of fives. Overhead work is the one thing the jerk can always use more of." },
-        { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15, rest: "60 s",
-          note: "Shoulder health for the overhead positions." },
+        { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6,
+          note: "Positions and speed under the bar, never load." },
+        { ex: "CJ", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6 },
+        { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68 },
+        { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88 },
+        { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88 },
+        { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68,
+          note: "Strict press." },
+        { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15 },
       ],
     },
     {
       name: "Friday",
       title: "Medium Olympic lifts · heavy back squat · upper volume",
-      note: "All three Olympic lifts in one session at a weight that can be made every rep, then the heaviest legs of the week, then the bodyweight volume to finish. No maxes on the bar overhead — this is the day the technique gets its reps and the squat gets its top set. The longest day of the week, and the last one that costs anything.",
+      note: "The longest day of the week, and the last one that costs anything.",
       slots: [
-        { ex: "S", group: "Snatch", load: "medium", sets: 4, reps: 2, pctLo: 0.75, pctHi: 0.82, rest: "2-3 min",
-          note: "Crisp doubles. Speed under the bar, not another top end." },
-        { ex: "CJ", group: "Clean & Jerk", load: "medium", sets: 4, reps: 2, pctLo: 0.72, pctHi: 0.8, rest: "3 min",
+        { ex: "S", group: "Snatch", load: "medium", sets: 4, reps: 2, pctLo: 0.75, pctHi: 0.82,
+          note: "Speed under the bar, not another top end." },
+        { ex: "CJ", group: "Clean & Jerk", load: "medium", sets: 4, reps: 2, pctLo: 0.72, pctHi: 0.8,
           note: "Both halves, every rep." },
-        { ex: "J", group: "Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ", rest: "2 min",
-          note: "From the rack, so the jerk gets reps the clean isn't paying for. First thing to cut if the squat behind it is what's suffering." },
-        { ex: "SQ", group: "Squat", load: "heavy", sets: 5, reps: 3, pctLo: 0.8, pctHi: 0.87, rest: "3 min",
-          note: "Back squat, triples. The heaviest legs of the week, with only an easy run and a rest day behind them." },
-        { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10, rest: "90 s",
-          note: "Neutral grip, bodyweight, two reps short of failure. Nothing that follows costs the legs anything, which is why the volume sits at the end of this day." },
-        { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62, rest: "90 s" },
+        { ex: "J", group: "Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ",
+          note: "From the rack. First thing to cut if the squat behind it is what's suffering." },
+        { ex: "SQ", group: "Squat", load: "heavy", sets: 5, reps: 3, pctLo: 0.8, pctHi: 0.87,
+          note: "Back squat." },
+        { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10,
+          note: "Neutral grip, bodyweight, two reps short of failure." },
+        { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62 },
       ],
     },
     {
       name: "Saturday",
       title: "Run · posterior chain",
-      note: "The easiest day that isn't a rest day: an easy run and one unloaded movement for the back of the legs, banked directly in front of Sunday. Everything the week costs has been paid by the time it starts.",
+      note: "Everything the week costs has been paid by the time it starts.",
       slots: [
-        { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 10, rest: "90 s",
-          note: "Posterior chain, unloaded. The only strength work left on the week." },
+        { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 10, note: "Unloaded." },
       ],
-      cardio: { activity: "Run", load: "light", detail: "25-35 min easy",
-        note: "Short and conversational, on the emptiest day on the board. The week's aerobic touch, banked against the rest day rather than spent in the middle of the heavy stretch." },
+      cardio: { activity: "Run", load: "light", detail: "25-35 min easy" },
     },
     {
       name: "Sunday",
       rest: true,
       title: "Rest",
-      note: "The week's only full day off, at the end of four straight days that ask something of the legs.",
+      note: "At the end of four straight days that ask something of the legs.",
       slots: [],
     },
   ],
@@ -635,7 +627,7 @@ function maxNote(slot) {
 function slotRowRead(slot) {
   const load = prescribedLoad(slot);
   const weight = formatLoad(load);
-  const detail = [maxNote(slot), slot.rest ? `rest ${slot.rest}` : "", slot.note || ""]
+  const detail = [maxNote(slot), slot.note || ""]
     .filter(Boolean)
     .join(" · ");
   return `<tr>
@@ -685,8 +677,6 @@ function slotRowEdit(slot, dayIndex, slotIndex) {
              value="${escapeHtml(slot.ref || "")}" placeholder="% of" aria-label="Percent of which lift" />
     </td>
     <td class="plan-col-num">
-      <input type="text" class="plan-rest" ${at} data-field="rest"
-             value="${escapeHtml(slot.rest || "")}" placeholder="rest" aria-label="Rest" />
       <button type="button" class="chip plan-remove" ${at}>Remove</button>
     </td>
   </tr>`;
@@ -754,7 +744,7 @@ function renderDay(day, dayIndex) {
   const table = rows
     ? `<table class="plan-table">
         <thead><tr><th>Exercise</th><th class="plan-col-num">Sets</th><th class="plan-col-num">Intensity</th><th class="plan-col-num">${
-          state.editing ? "Rest" : "Weight"
+          state.editing ? "" : "Weight"
         }</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`

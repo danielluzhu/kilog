@@ -1109,7 +1109,7 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   display: inline-block;
 }
 .plan-num { width: 3.6rem; }
-.plan-ex, .plan-ref, .plan-rest { width: 6.5rem; }
+.plan-ex, .plan-ref { width: 6.5rem; }
 .plan-group { width: 8rem; }
 .plan-note, .plan-cardio-note { width: 100%; }
 .plan-cardio-field { width: 10rem; }
