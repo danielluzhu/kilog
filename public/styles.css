@@ -1241,10 +1241,16 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
      their own. Letting them shrink below their content width puts them back
      on one line; the rest is trimming the chrome around the inputs. */
   #add-form .row { gap: 0.5rem; margin-bottom: 0.6rem; }
-  /* 120px is the floor that keeps a date input from clipping its own year:
-     two of them fit side by side from about 375px up, and stack below that
-     rather than truncate. */
-  #add-form .row > div { min-width: 120px; }
+  /* The date is a fixed-width value and the exercise is a name being typed
+     into, so they don't split the row evenly: the date takes only the 140px
+     it needs to show its own year, and the exercise takes the rest. Below
+     about 375px there isn't room for both and they stack. */
+  #add-form .row > div { min-width: 7rem; }
+  #add-form .row > div:first-child { flex: 0 0 7.6rem; min-width: 7.6rem; }
+  /* The date's own text and picker button are what set its floor, so they
+     come down with it — the box is a value being read, not typed into. */
+  #add-form input[type="date"] { font-size: 0.85rem; padding-left: 0.5rem; padding-right: 0.3rem; }
+  #add-form input[type="date"]::-webkit-calendar-picker-indicator { margin-left: 0; padding: 0; }
   #add-form label { font-size: 0.65rem; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
   #add-form input[type="text"], #add-form input[type="date"] { padding: 0.45rem 0.55rem; }
 
