@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="./static-api.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Workout Log</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+<link rel="shortcut icon" href="./favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+<link rel="manifest" href="./site.webmanifest" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header>
+  <h1><a href="./index.html" class="app-icon-link" aria-label="Workout Log home"><img src="./android-chrome-192x192.png" alt="" class="app-icon" /></a> Workout Log</h1>
+  <nav>
+    <a href="./index.html" class="active">Log</a>
+    <a href="./weekly.html">Routine</a>
+    <a href="./lapse.html">Lapse</a>
+    <a href="./volume.html">Volume</a>
+    <details class="nav-more">
+      <summary>More</summary>
+      <div class="nav-more-items">
+        <a href="./dictionary.html">Dictionary</a>
+        <a href="./bulk.html">Bulk Upload</a>
+        <a href="./onerm.html">1RM Calculator</a>
+        <a href="./cardio.html">Runs & Hikes</a>
+        <a href="./prilepin.html">Prilepin's Table</a>
+        <a href="./snatch.html">The Snatch</a>
+      </div>
+    </details>
+  </nav>
+</header>
+
+<main>
+  <section class="card card-entry">
+    <h2 style="margin-top:0">Log a workout</h2>
+    <form id="add-form">
+      <div class="row">
+        <div>
+          <label for="date">Date</label>
+          <input type="date" id="date" required />
+        </div>
+        <div>
+          <label for="exercise">Exercise</label>
+          <input type="text" id="exercise" list="exercise-options" placeholder="e.g. FSQ" required />
+          <datalist id="exercise-options"></datalist>
+        </div>
+      </div>
+
+      <label>Sets</label>
+      <div id="sets-list"></div>
+
+      <div class="status" id="add-status"></div>
+      <div class="add-actions">
+        <button type="submit" class="primary">Save workout</button>
+      </div>
+    </form>
+    <p class="muted" style="margin:0.7rem 0 0; font-size:0.85rem;">
+      Or <a href="./bulk.html">bulk upload</a>.
+    </p>
+  </section>
+
+  <section>
+    <div class="toolbar">
+      <h2 style="margin:0">History</h2>
+      <input type="text" id="search" placeholder="Filter by exercise or date..." />
+      <span class="muted" id="count"></span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Exercise</th><th>Sets</th><th></th></tr>
+      </thead>
+      <tbody id="log-body"></tbody>
+    </table>
+    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+      <button id="load-more">Load more</button>
+    </div>
+  </section>
+</main>
+
+<script src="./utils.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
