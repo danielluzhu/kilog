@@ -1512,7 +1512,10 @@ function buildSetsEditor(values = [], { startingLoadKind = null } = {}) {
   reset(values);
   wrap.classList.toggle("sled-hidden", !loadKind);
 
-  return { el: root, addRow, values: values_, reset, setStartingLoadKind };
+  // `addButton` is handed out so a caller can move the button somewhere of
+  // its own — the log form puts it in the row with Save — while every other
+  // surface leaves it where it is, under the rows it adds to.
+  return { el: root, addButton: addBtn, addRow, values: values_, reset, setStartingLoadKind };
 }
 
 // ---------- scoring a single set for 1RM purposes ----------

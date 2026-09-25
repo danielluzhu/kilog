@@ -6,8 +6,12 @@ const setsList = $("#sets-list");
 const dateInput = $("#date");
 dateInput.value = todayIso();
 
-const setsEditor = buildSetsEditor(["", "", ""]);
+// One row to start: most entries are typed as a single "135x5x3" or pasted
+// as a whole session, and rows that are wanted are one button away.
+const setsEditor = buildSetsEditor([""]);
 setsList.appendChild(setsEditor.el);
+// The two things done at the end of an entry sit at the two ends of one row.
+$(".add-actions").prepend(setsEditor.addButton);
 
 let dictionary = [];
 
@@ -68,7 +72,7 @@ $("#add-form").addEventListener("submit", async (e) => {
     status.textContent = "Saved!";
     status.className = "status ok";
     $("#exercise").value = "";
-    setsEditor.reset(["", "", ""]);
+    setsEditor.reset([""]);
     dateInput.value = date; // keep date for logging multiple exercises same day
 
     await loadDictionaryOptions();
