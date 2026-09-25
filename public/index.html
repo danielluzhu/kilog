@@ -34,7 +34,7 @@
 </header>
 
 <main>
-  <section class="card">
+  <section class="card card-entry">
     <h2 style="margin-top:0">Log a workout</h2>
     <form id="add-form">
       <div class="row">
@@ -43,7 +43,7 @@
           <input type="date" id="date" required />
         </div>
         <div>
-          <label for="exercise">Exercise (abbreviation)</label>
+          <label for="exercise">Exercise</label>
           <input type="text" id="exercise" list="exercise-options" placeholder="e.g. FSQ" required />
           <datalist id="exercise-options"></datalist>
         </div>
@@ -53,11 +53,11 @@
       <div id="sets-list"></div>
 
       <div class="status" id="add-status"></div>
-      <div style="margin-top:0.75rem">
+      <div class="add-actions">
         <button type="submit" class="primary">Save workout</button>
       </div>
     </form>
-    <p class="muted" style="margin:0.9rem 0 0; font-size:0.85rem;">
+    <p class="muted" style="margin:0.7rem 0 0; font-size:0.85rem;">
       A whole session, or a backlog of them, goes in at
       <a href="/bulk.html">Bulk Upload</a>.
     </p>

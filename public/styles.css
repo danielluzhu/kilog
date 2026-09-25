@@ -289,9 +289,25 @@ input[type="file"]::file-selector-button:hover { border-color: var(--muted); }
    before "Date" does. */
 .row > div { flex: 1; min-width: 140px; display: flex; flex-direction: column; justify-content: flex-end; }
 
-#sets-list { margin-bottom: 0.75rem; }
-.sets-editor-root { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
-.sets-editor { display: flex; flex-direction: column; gap: 0.5rem; align-self: stretch; }
+/* The entry card is all form and no prose: it is used standing up, between
+   sets, so every row it can lose off its height is one less scroll to the
+   Save button. Everything here is scoped to that card so the reading cards
+   on the other pages keep their more generous spacing. */
+.card-entry { padding-top: 1.05rem; padding-bottom: 1.15rem; }
+.card-entry h2 { margin-bottom: 0.5rem; }
+#add-form .row { margin-bottom: 0.55rem; }
+#add-form label { margin-bottom: 0.25rem; }
+#add-form input[type="text"], #add-form input[type="date"] { padding: 0.45rem 0.65rem; }
+/* Reserving a line for a message the form isn't showing cost more height
+   than the message ever does; it takes its space when it has something to
+   say and the button moves down a line. */
+#add-status { margin-top: 0.35rem; }
+#add-status:empty { display: none; }
+.add-actions { margin-top: 0.55rem; }
+
+#sets-list { margin-bottom: 0.5rem; }
+.sets-editor-root { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
+.sets-editor { display: flex; flex-direction: column; gap: 0.35rem; align-self: stretch; }
 .set-input-row { display: flex; gap: 0.5rem; align-items: center; }
 .set-input-row span { width: 2.5rem; color: var(--muted); font-size: 0.85rem; }
 .set-input-row button { flex-shrink: 0; }
