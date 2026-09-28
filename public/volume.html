@@ -123,10 +123,12 @@
     <p class="muted" id="muscle-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
 
     <h3 class="rate-table-title">Sets per week, by pattern</h3>
-    <table class="rate-table">
-      <thead><tr id="pattern-rate-head"></tr></thead>
-      <tbody id="pattern-rate-body"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="rate-table">
+        <thead><tr id="pattern-rate-head"></tr></thead>
+        <tbody id="pattern-rate-body"></tbody>
+      </table>
+    </div>
   </section>
 
   <section class="card">
@@ -152,10 +154,12 @@
     <p class="muted" id="bodypart-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
 
     <h3 class="rate-table-title">Part-sets per week, by body part</h3>
-    <table class="rate-table">
-      <thead><tr id="bodypart-rate-head"></tr></thead>
-      <tbody id="bodypart-rate-body"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="rate-table">
+        <thead><tr id="bodypart-rate-head"></tr></thead>
+        <tbody id="bodypart-rate-body"></tbody>
+      </table>
+    </div>
   </section>
 
   <section>
@@ -168,15 +172,17 @@
       Steady-state cardio doesn't score; intervals count at x1. A set logged with no completed
       reps counts nowhere on this page.
     </p>
-    <table>
-      <thead><tr id="vol-table-head"></tr></thead>
-      <tbody id="vol-table-body"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr id="vol-table-head"></tr></thead>
+        <tbody id="vol-table-body"></tbody>
+      </table>
+    </div>
   </section>
 
   <section>
     <h2>Breakdown by movement pattern <span class="muted" style="text-transform:none; font-weight:normal;">(newest first)</span></h2>
-    <div style="overflow-x:auto;">
+    <div class="table-scroll">
       <table>
         <thead><tr id="muscle-table-head"></tr></thead>
         <tbody id="muscle-table-body"></tbody>
@@ -190,7 +196,7 @@
       Counted in part-sets: a half means the exercise trains that part alongside another. The
       total column adds these up, so it runs above the set totals in the tier table.
     </p>
-    <div style="overflow-x:auto;">
+    <div class="table-scroll">
       <table>
         <thead><tr id="bodypart-table-head"></tr></thead>
         <tbody id="bodypart-table-body"></tbody>

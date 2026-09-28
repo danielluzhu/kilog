@@ -245,9 +245,10 @@ function startEdit(tr) {
   const exercise = tr.dataset.exercise;
   const sets = JSON.parse(tr.dataset.sets || "[]");
 
+  tr.classList.add("edit-row");
   tr.innerHTML = `
     <td>
-      <div style="display:flex; gap:0.4rem;">
+      <div class="edit-fields" style="display:flex; gap:0.4rem;">
         <input type="date" class="edit-date" value="${escapeHtml(date)}" title="Date" style="max-width:9.5rem" />
         <input type="text" class="edit-exercise" value="${escapeHtml(exercise)}" title="Exercise" />
       </div>

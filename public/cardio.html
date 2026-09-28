@@ -100,12 +100,14 @@
       <input type="text" id="search" placeholder="Filter by activity, date, or notes..." />
       <span class="muted" id="count"></span>
     </div>
-    <table>
-      <thead>
-        <tr><th>Date</th><th>Activity</th><th>Distance</th><th>Duration</th><th>Pace</th><th>Elevation</th><th>Notes</th><th></th></tr>
-      </thead>
-      <tbody id="cardio-body"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Activity</th><th>Distance</th><th>Duration</th><th>Pace</th><th>Elevation</th><th>Notes</th><th></th></tr>
+        </thead>
+        <tbody id="cardio-body"></tbody>
+      </table>
+    </div>
     <div style="margin-top:1rem; display:flex; gap:0.5rem;">
       <button id="load-more">Load more</button>
     </div>

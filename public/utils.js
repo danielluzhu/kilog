@@ -1871,3 +1871,10 @@ function setsHtmlWithHover(sets, abbreviation, fullName) {
     })
     .join(", ");
 }
+
+// The More menu floats over the page, so a tap anywhere outside it closes it
+// the way any dropdown does, rather than leaving it covering the content.
+document.addEventListener("click", (evt) => {
+  const menu = document.querySelector(".nav-more[open]");
+  if (menu && !menu.contains(evt.target)) menu.open = false;
+});

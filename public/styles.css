@@ -595,7 +595,10 @@ tr.day-panel-row td { background: var(--row-alt); padding: 0.9rem 0.6rem; border
 .toolbar input[type="text"] { max-width: 260px; }
 
 .muted { color: var(--muted); }
-.actions { display: flex; gap: 0.4rem; }
+/* A table cell stays a table cell: as a flex box it dropped out of the row,
+   and its bottom rule stopped lining up with the rest of the row's. */
+.actions { white-space: nowrap; }
+.actions > * + * { margin-left: 0.4rem; }
 .status { font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.1em; }
 .status.ok { color: var(--ok); }
 .status.err { color: var(--danger); }
@@ -1259,4 +1262,174 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   .set-input-row { gap: 0.35rem; }
   .set-input-row span { width: 1.6rem; font-size: 0.8rem; }
   .set-input-row button { padding-left: 0.6rem; padding-right: 0.6rem; }
+}
+
+/* ---------- Phone ---------- */
+/* One rule holds this whole block together: nothing may be wider than the
+   screen. A single over-wide table used to widen the layout viewport, so
+   the phone zoomed that page out and every page came up at a different
+   scale. Wide tables scroll inside their own .table-scroll box; everything
+   else is made to fit. */
+@media (max-width: 640px) {
+  header { padding: 0.7rem 1rem 0.6rem; }
+  main { padding: 1.25rem 1rem 3rem; }
+  .card { padding: 1.1rem 1rem; }
+
+  /* The nav is a fixed row of five equal tabs, so no page's tabs sit
+     anywhere different from another's, and opening More can't reflow it.
+     The menu drops down across the full header width instead of wrapping
+     in beside its button. Tabs and chips are thumb targets here. */
+  header { position: relative; }
+  nav { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.2rem; }
+  nav a, .nav-more > summary { padding: 0.55rem 0.25rem; font-size: 0.88rem; text-align: center; white-space: nowrap; }
+  .nav-more { position: static; }
+  .nav-more-items {
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: calc(100% - 0.2rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.2rem;
+    padding: 0.4rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lift);
+  }
+  .nav-more-items a { padding: 0.65rem 0.75rem; text-align: left; }
+  .chip, .range-bar .chip { padding: 0.45rem 0.8rem; font-size: 0.85rem; }
+  button { min-height: 2.5rem; }
+  button.small { min-height: 2.25rem; padding: 0.3rem 0.65rem; }
+  .vol-key-toggle, .vol-key-clear { min-height: 0; padding: 0.3rem 0.6rem; }
+
+  /* iOS zooms into any field whose text is under 16px when it takes focus,
+     and doesn't zoom back out — the most common way a page ends up at the
+     wrong scale. */
+  input[type="text"], input[type="number"], input[type="date"], input:not([type]),
+  select, textarea { font-size: 16px; }
+  #add-form input[type="text"], #add-form input[type="date"] { font-size: 16px; }
+
+  .toolbar input[type="text"] { max-width: none; flex: 1 1 100%; }
+
+  table { font-size: 0.85rem; }
+  th, td { padding: 0.5rem 0.4rem; }
+  th { letter-spacing: 0.06em; }
+  /* A scrolled table keeps its columns legible instead of wrapping each
+     header a word to a line. */
+  .table-scroll th { white-space: nowrap; }
+  .table-scroll { margin: 0 -1rem; padding: 0 1rem; }
+
+  /* Stat tiles two to a row, each growing to fill it, so a row of five
+     figures reads as a block rather than a ragged run of lone numbers. A
+     figure never breaks across lines: one too long for half the row (a
+     date) takes the whole row instead. */
+  .stats-row { gap: 1rem 1.25rem; }
+  .stat { flex: 1 1 8.5rem; }
+  .stat-value { font-size: 1.75rem; white-space: nowrap; }
+
+  .rate-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem 1rem; }
+  .rate-row-label { grid-column: 1 / -1; }
+
+  .vol-legend { gap: 0.4rem 0.75rem; margin-bottom: 0.9rem; }
+
+  .exercise-title { font-size: 1.5rem; }
+
+  /* Tooltips wrap on a phone rather than running past the screen edge. */
+  .chart-tooltip { white-space: normal; width: max-content; max-width: min(18rem, 80vw); }
+
+  /* Lapse history: five columns don't fit a phone, so each session becomes
+     a small block — date and Edit on top, the sets across the full width,
+     then the two figures the set list is judged by, each labelled. */
+  .history-table thead { display: none; }
+  .history-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-table td { border-bottom: none; padding: 0.2rem 0.4rem; }
+  .history-table td:first-child { grid-column: 1 / 3; grid-row: 1; font-weight: 600; }
+  .history-table td.actions { grid-column: 3; grid-row: 1; text-align: right; }
+  .history-table td.cell-sets, .history-table td.cell-sets-edit { grid-column: 1 / -1; }
+  .history-table td.cell-top::before {
+    content: "Top weight";
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .history-table td.cell-top + td.cell-top::before { content: "Best 1RM"; }
+  /* An edited row has no figures yet; its placeholder cell says nothing. */
+  .history-table td.cell-sets-edit + td.muted { display: none; }
+  .history-table tr.day-panel-row { display: block; padding: 0; }
+  .history-table tr.day-panel-row td { display: block; }
+
+  /* Log history rows are laid out as grids rather than table rows, so a
+     row being edited can drop its columns and stack — date and exercise,
+     then the sets at full width, then Save — where three table columns left
+     each of them a sliver. Read-only rows keep the same three columns. */
+  .log-table thead { display: none; }
+  .log-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) auto;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-table td { border-bottom: none; }
+  .log-table tr.day-header-row td { grid-column: 1 / -1; }
+  .log-table tr.edit-row { grid-template-columns: minmax(0, 1fr); padding: 0.4rem 0; }
+  tr.edit-row td { padding: 0.25rem 0.4rem; }
+  tr.edit-row .edit-fields input[type="date"] { flex: 0 0 auto; }
+  tr.edit-row .edit-fields input[type="text"] { flex: 1 1 0; min-width: 0; }
+  tr.edit-row td.actions { text-align: right; }
+
+  /* Routine day tables: the exercise takes the row, and the three numbers
+     sit under it in one line — "4 × 2   78–86%   60–66 kg" reads without
+     its column headers. */
+  .plan-table thead { display: none; }
+  .plan-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .plan-table td { border-bottom: none; padding: 0.1rem 0; }
+  .plan-table td.plan-col-name { flex-basis: 100%; }
+  .plan-table td.plan-weight { margin-left: auto; }
+  .plan-edit-row td { flex-basis: 100%; }
+  /* Sized as on desktop — at 16px an unsized field is 20 characters wide,
+     and every one of them took a line to itself. */
+  .plan-edit-row .plan-ex, .plan-edit-row .plan-ref { width: 5.5rem; }
+  .plan-edit-row .plan-group { width: 6.5rem; }
+  .plan-edit-row .plan-num { width: 3.4rem; }
+  .plan-edit-row .plan-note { width: 100%; }
+  .plan-edit-row td:nth-child(2)::before,
+  .plan-edit-row td:nth-child(3)::before {
+    display: inline-block;
+    width: 4.9rem;
+    font-size: 0.66rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .plan-edit-row td:nth-child(2)::before { content: "Sets × reps"; }
+  .plan-edit-row td:nth-child(3)::before { content: "Intensity"; }
+
+  /* The week grid scrolls inside the card, edge to edge, with the movement
+     names pinned so a scrolled-over column is never read against no row. */
+  .plan-grid-scroll { margin: 0 -1rem; padding: 0 1rem; }
+  .plan-grid { min-width: 30rem; }
+  .plan-grid th:first-child, .plan-grid td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--bg);
+  }
+
+  /* The day editor's four columns become two rows. */
+  .day-panel-item-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
 }
