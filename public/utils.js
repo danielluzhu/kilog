@@ -23,6 +23,37 @@ function formatShortDate(iso) {
   return formatDate(iso, { month: "short", day: "numeric" });
 }
 
+// ---------- charts ----------
+// Charts are drawn in SVG user units equal to screen pixels. A fixed 760-wide
+// viewBox scaled down to a 340px phone shrank the 10px axis labels to about
+// four, so each chart takes its drawing width from the box it's mounted in.
+function chartWidth(wrap, max = 760) {
+  const w = Math.round(wrap.clientWidth || max);
+  return Math.max(280, Math.min(max, w));
+}
+
+// Calls `redraw` when the page's width really changes (rotation, a resized
+// window) — not on the height-only resizes a phone's toolbar makes on scroll.
+function onWidthChange(redraw) {
+  let lastWidth = window.innerWidth;
+  let frame = 0;
+  window.addEventListener("resize", () => {
+    if (window.innerWidth === lastWidth) return;
+    lastWidth = window.innerWidth;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(redraw);
+  });
+}
+
+// Centres a chart tooltip over `leftPx`, but slides it inward when it would
+// run past either edge of the chart — which on a phone is the screen edge.
+function placeChartTooltip(tooltip, leftPx, topPx, boxWidth) {
+  const half = tooltip.offsetWidth / 2;
+  const left = half * 2 >= boxWidth ? boxWidth / 2 : Math.min(boxWidth - half, Math.max(half, leftPx));
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${Math.max(0, topPx)}px`;
+}
+
 // ---------- "today" ----------
 // This log's day boundary is Pacific, not the browser's timezone and not UTC.
 // A session finished at 6pm in Los Angeles belongs to that day whether the

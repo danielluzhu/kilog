@@ -693,6 +693,7 @@ const TOP_WEIGHT_METRIC = {
 function createChartInstance(dom, metric = ONE_RM_METRIC) {
   const valueOf = metric.valueOf;
   let fullPoints = [];
+  let lastDrawn = null;
   // Record-holding dates for the three "highlight" stats — tracked by date
   // (not index) so they still resolve correctly after a zoom re-slices points.
   let prDates = { allTime: null, y365: null, d90: null };
@@ -754,7 +755,8 @@ function createChartInstance(dom, metric = ONE_RM_METRIC) {
     const wrap = dom.wrap;
     dom.resetZoomBtn.style.display = points.length < fullPoints.length ? "" : "none";
 
-    const W = 760, H = 220;
+    lastDrawn = points;
+    const W = chartWidth(wrap), H = 220;
     const padL = 44, padR = 16, padT = 16, padB = 28;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
@@ -800,17 +802,24 @@ function createChartInstance(dom, metric = ONE_RM_METRIC) {
     // Axis labels always carry the year — sessions can span multiple years,
     // and "Jul 24" alone is ambiguous when the same month/day recurs across them.
     const AXIS_DATE_OPTS = { month: "short", day: "numeric", year: "numeric" };
-    const axisLabelAt = (x, label) =>
-      `<text class="chart-axis-text" x="${x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${escapeHtml(
+    // A label with its year is about 75px wide; five fit a desktop chart,
+    // three a phone's.
+    const maxAxisLabels = Math.max(2, Math.min(5, Math.floor(plotW / 95) + 1));
+    // The two end labels hang inward from the plot's edges rather than
+    // centring on them, so neither runs off the side of a narrow chart.
+    const axisLabelAt = (x, label) => {
+      const anchor = x <= padL + 1 ? "start" : x >= W - padR - 1 ? "end" : "middle";
+      return `<text class="chart-axis-text" x="${x.toFixed(1)}" y="${H - 8}" text-anchor="${anchor}">${escapeHtml(
         label
       )}</text>`;
+    };
 
     let xLabels;
     if (timeScale) {
       // Ticks at even intervals along the *time* range rather than at every
       // Nth data point — on a time axis the latter clumps labels wherever
       // sessions happen to be dense and leaves long gaps unlabelled.
-      const labelCount = Math.min(5, Math.max(2, n));
+      const labelCount = Math.min(maxAxisLabels, Math.max(2, n));
       const parts = [];
       for (let k = 0; k < labelCount; k++) {
         const t = tMin + (k / (labelCount - 1)) * (tMax - tMin);
@@ -820,7 +829,7 @@ function createChartInstance(dom, metric = ONE_RM_METRIC) {
       }
       xLabels = parts.join("");
     } else {
-      const labelCount = Math.min(n, 5);
+      const labelCount = Math.min(n, maxAxisLabels);
       const labelIdxs = new Set();
       for (let k = 0; k < labelCount; k++) {
         labelIdxs.add(Math.round((k / (labelCount - 1 || 1)) * (n - 1)));
@@ -889,6 +898,9 @@ function createChartInstance(dom, metric = ONE_RM_METRIC) {
   }
 
   dom.resetZoomBtn.addEventListener("click", resetZoom);
+  onWidthChange(() => {
+    if (lastDrawn && dom.wrap.querySelector("svg")) draw(lastDrawn);
+  });
 
   function attachInteractivity(coords, geom) {
     const svg = dom.wrap.querySelector("svg");
@@ -934,8 +946,7 @@ function createChartInstance(dom, metric = ONE_RM_METRIC) {
 
       const leftPx = (c.x / geom.W) * rect.width;
       const topPx = (c.y / geom.H) * rect.height;
-      tooltip.style.left = `${leftPx}px`;
-      tooltip.style.top = `${Math.max(0, topPx - 10)}px`;
+      placeChartTooltip(tooltip, leftPx, topPx - 10, rect.width);
       tooltip.style.opacity = "1";
     }
 

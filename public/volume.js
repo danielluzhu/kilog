@@ -302,7 +302,7 @@ function renderStacked(
   }
   emptyEl.style.display = "none";
 
-  const W = 760, H = 280;
+  const W = chartWidth(wrap), H = 280;
   const padL = 40, padR = 12, padT = 12, padB = 46;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
@@ -355,7 +355,10 @@ function renderStacked(
     .map((b, i) => {
       if (i % stride !== 0 && i !== n - 1) return "";
       const cx = padL + slot * (i + 0.5);
-      return `<text class="chart-axis-text" x="${cx.toFixed(1)}" y="${H - 26}" text-anchor="middle">${escapeHtml(
+      // The end labels hang inward so neither runs off a narrow chart.
+      const anchor = i === 0 && n > 1 ? "start" : i === n - 1 && n > 1 ? "end" : "middle";
+      const lx = anchor === "start" ? padL : anchor === "end" ? W - padR : cx;
+      return `<text class="chart-axis-text" x="${lx.toFixed(1)}" y="${H - 26}" text-anchor="${anchor}">${escapeHtml(
         bucketLabel(b)
       )}</text>`;
     })
@@ -414,8 +417,7 @@ function attachHover(wrap, buckets, geom, spec) {
       `${headline}${parts.length ? ` — ${parts.join(", ")}` : ""}`;
 
     const barTopY = geom.padT + geom.plotH - (total / geom.top) * geom.plotH;
-    tooltip.style.left = `${(cx / geom.W) * rect.width}px`;
-    tooltip.style.top = `${Math.max(0, (barTopY / geom.H) * rect.height - 10)}px`;
+    placeChartTooltip(tooltip, (cx / geom.W) * rect.width, (barTopY / geom.H) * rect.height - 10, rect.width);
     tooltip.style.opacity = "1";
   });
 
@@ -820,3 +822,6 @@ $("#vrange-last-year").textContent = `Last year (${currentYear() - 1})`;
 
 markActive();
 loadFatigueRates().then(loadVolume);
+onWidthChange(() => {
+  if ($("#vol-chart-wrap svg")) render();
+});
