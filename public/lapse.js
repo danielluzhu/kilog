@@ -1092,9 +1092,9 @@ function chartSectionTemplate(title, metric) {
         <button type="button" class="small chart-reset-zoom" style="display:none;">Reset zoom</button>
       </div>
       <div class="stats-row" style="margin-bottom:0.75rem;">
-        <div class="stat"><span class="stat-value chart-stat-max-all">—</span><span class="stat-label">all-time max (${escapeHtml(metric.statSuffix)})</span><span class="stat-detail chart-stat-detail-all"></span></div>
-        <div class="stat"><span class="stat-value chart-stat-max-365">—</span><span class="stat-label">max, last 365 days</span><span class="stat-detail chart-stat-detail-365"></span></div>
-        <div class="stat"><span class="stat-value chart-stat-max-90">—</span><span class="stat-label">max, last 90 days</span><span class="stat-detail chart-stat-detail-90"></span></div>
+        <div class="stat"><span class="stat-value chart-stat-max-all">—</span><span class="stat-label">all time (${escapeHtml(metric.statSuffix)})</span><span class="stat-detail chart-stat-detail-all"></span></div>
+        <div class="stat"><span class="stat-value chart-stat-max-365">—</span><span class="stat-label">365 days</span><span class="stat-detail chart-stat-detail-365"></span></div>
+        <div class="stat"><span class="stat-value chart-stat-max-90">—</span><span class="stat-label">90 days</span><span class="stat-detail chart-stat-detail-90"></span></div>
       </div>
       <div class="chart-wrap"></div>
       <p class="muted chart-no-weight-msg" style="display:none; margin-bottom:0;"
@@ -1337,8 +1337,8 @@ function renderChart(history, abbreviation, fullName) {
   // rather than leaving a bare "1RM" that reads as total load.
   const isBodyweight = classifyEquipment(abbreviation, fullName) === "bodyweight";
   $("#stat-max-all-label").textContent = isBodyweight
-    ? "all-time max (added 1RM, kg)"
-    : "all-time max (1RM, kg)";
+    ? "all time (added)"
+    : "all time";
 
   defaultChartInstance.render(points, pointsInCurrentRange(points));
   renderSplitCharts(bodyweightSplitPoints(history, abbreviation, fullName));
