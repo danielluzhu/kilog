@@ -880,7 +880,6 @@ function createChartInstance(dom, metric = ONE_RM_METRIC) {
         <line class="chart-crosshair" data-crosshair x1="0" x2="0" y1="${padT}" y2="${padT + plotH}" />
       </svg>
       <div class="chart-tooltip"></div>
-      ${n > 4 ? '<p class="muted" style="margin: 0.4rem 0 0; font-size: 0.75rem;">Drag across the chart to zoom in; double-click or "Reset zoom" to zoom back out.</p>' : ""}
     `;
 
     attachInteractivity(coords, { padL, padR, padT, plotH, W, H });
@@ -1083,14 +1082,13 @@ function bodyweightSplitPoints(history, abbreviation, fullName) {
   return { bwPoints, addedPoints };
 }
 
-function chartSectionTemplate(title, subtitle, metric) {
+function chartSectionTemplate(title, metric) {
   return `
     <section class="card">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
         <h2 style="margin-top:0">${escapeHtml(title)}</h2>
         <button type="button" class="small chart-reset-zoom" style="display:none;">Reset zoom</button>
       </div>
-      <p class="muted" style="margin-top:0">${escapeHtml(subtitle)}</p>
       <div class="stats-row" style="margin-bottom:0.75rem;">
         <div class="stat"><span class="stat-value chart-stat-max-all">—</span><span class="stat-label">all-time max (${escapeHtml(metric.statSuffix)})</span><span class="stat-detail chart-stat-detail-all"></span></div>
         <div class="stat"><span class="stat-value chart-stat-max-365">—</span><span class="stat-label">max, last 365 days</span><span class="stat-detail chart-stat-detail-365"></span></div>
@@ -1139,12 +1137,10 @@ function renderSplitCharts(splitPoints) {
   container.innerHTML =
     chartSectionTemplate(
       "Added weight",
-      "Sets with weight added on top of bodyweight — each point is that session's best estimated one-rep max (Epley formula), shown as added weight.",
       ADDED_WEIGHT_METRIC
     ) +
     chartSectionTemplate(
       "Bodyweight reps",
-      "Sets with no added weight — the load is always bodyweight, so this plots the session's best rep count.",
       REPS_METRIC
     );
 
@@ -1330,9 +1326,6 @@ function renderChart(history, abbreviation, fullName) {
   $("#stat-max-all-label").textContent = isBodyweight
     ? "all-time max (added 1RM, kg)"
     : "all-time max (1RM, kg)";
-  $("#chart-single-sub").textContent = isBodyweight
-    ? "Each point is that session's best estimated one-rep max (Epley formula), shown as weight added on top of bodyweight."
-    : "Each point is the best set that session's estimated one-rep max (Epley formula).";
 
   defaultChartInstance.render(points, pointsInCurrentRange(points));
   renderSplitCharts(bodyweightSplitPoints(history, abbreviation, fullName));

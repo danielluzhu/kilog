@@ -44,10 +44,6 @@
       autocomplete="off"
     />
     <datalist id="lapse-exercise-options"></datalist>
-    <p class="muted" style="margin: 0.6rem 0 0;">
-      Works for any exercise. The estimated-1RM chart only plots sessions with a clean
-      "weight x reps" set — everything else still shows in the history table below it.
-    </p>
     <div id="lapse-quick-access" style="margin-top:0.6rem; display:flex; flex-wrap:wrap; gap:0.4rem;"></div>
   </section>
 
@@ -129,7 +125,6 @@
         <h2 style="margin-top:0">Estimated 1RM over time</h2>
         <button type="button" class="small" id="chart-reset-zoom" style="display:none;">Reset zoom</button>
       </div>
-      <p class="muted" style="margin-top:0" id="chart-single-sub">Each point is the best set that session's estimated one-rep max (Epley formula).</p>
       <div id="chart-wrap"></div>
       <p class="muted" id="no-weight-msg" style="display:none; margin-bottom:0;"
          data-empty-msg="Couldn't find a clean &quot;weight x reps&quot; set (e.g. &quot;135x5&quot;) in any logged session for this exercise — showing raw history below instead.">
@@ -145,10 +140,6 @@
         <h2 style="margin-top:0">Heaviest weight per week</h2>
         <button type="button" class="small" id="weekly-reset-zoom" style="display:none;">Reset zoom</button>
       </div>
-      <p class="muted" style="margin-top:0">
-        One point per training week — the single biggest weight actually moved that week, whatever
-        the reps. Unlike the estimated 1RM above, this is a number that was really on the bar.
-      </p>
       <div id="weekly-chart-wrap"></div>
       <p class="muted" id="weekly-no-weight-msg" style="display:none; margin-bottom:0;"
          data-empty-msg="Couldn't find a clean &quot;weight x reps&quot; set (e.g. &quot;135x5&quot;) in any logged session for this exercise, so there's no weight to plot per week.">
@@ -169,11 +160,6 @@
 
     <section>
       <h2>History <span class="muted" style="text-transform:none; font-weight:normal;">(newest first)</span></h2>
-      <p class="muted" style="margin:0 0 0.9rem; font-size:0.85rem;">
-        In each session's sets, <span class="set-value top-set">the best estimated 1RM</span> and
-        <span class="set-value top-weight">the heaviest weight moved</span> are marked — often the
-        same set, and worth telling apart when they aren't. Hover any set for its own estimate.
-      </p>
       <table class="history-table">
         <thead><tr><th>Date</th><th>Sets</th><th>Top weight</th><th>Best 1RM</th><th></th></tr></thead>
         <tbody id="lapse-history-body"></tbody>
