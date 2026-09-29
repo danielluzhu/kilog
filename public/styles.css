@@ -780,6 +780,17 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 /* The tier control sits under the title as a qualifier on the exercise, not
    as another stat — inline and narrow, so it reads as an attribute of the
    name above it rather than competing with the numbers below. */
+/* The name and its category share a line; the category wraps under the name
+   only when a long name leaves it no room. */
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.9rem;
+}
+.title-row .exercise-title { margin: 0; }
+.title-row .title-tier-row { margin: 0; }
 .title-tier-row {
   display: flex;
   align-items: center;
@@ -1453,8 +1464,15 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
 
   /* The exercise's summary card: the same figures, packed tighter — the
      two recent bests side by side, the three 1RM figures in one row. */
-  .lapse-summary .exercise-title { font-size: 1.35rem; margin-bottom: 0.3rem; }
-  .lapse-summary .title-tier-row { margin-bottom: 0.6rem; }
+  .lapse-summary .exercise-title { font-size: 1.3rem; }
+  .lapse-summary .exercise-title .exercise-title-abbrev { font-size: 0.85rem; margin-left: 0.3rem; }
+  .lapse-summary .title-row { margin-bottom: 0.6rem; gap: 0.35rem 0.75rem; }
+  /* The label stacks over its dropdown, so the pair is only as wide as the
+     dropdown and fits beside a short name; the dropdown keeps 16px text so
+     iOS doesn't zoom when it's opened. */
+  .lapse-summary .title-tier-row { flex-direction: column; align-items: flex-start; gap: 0.1rem; margin-left: auto; }
+  .lapse-summary .title-tier-row label { font-size: 0.58rem; }
+  .lapse-summary .title-tier-row .tag-select { min-width: 0; padding: 0.2rem 0.3rem; }
   .lapse-summary .record-banner { margin-top: 0.6rem; padding: 0.75rem 0.85rem; }
   .lapse-summary .record-banner-value { font-size: 2.3rem; }
   .lapse-summary .record-banner-recent {

@@ -52,9 +52,16 @@
 
   <div id="lapse-content" style="display:none">
     <section class="card lapse-summary">
-      <h2 class="exercise-title" style="margin-top:0">
-        <span id="exercise-title-name"></span><span id="exercise-title-abbrev" class="exercise-title-abbrev muted" tabindex="0" role="button" title="Click to edit full name"></span>
-      </h2>
+      <div class="title-row">
+        <h2 class="exercise-title" style="margin-top:0">
+          <span id="exercise-title-name"></span><span id="exercise-title-abbrev" class="exercise-title-abbrev muted" tabindex="0" role="button" title="Click to edit full name"></span>
+        </h2>
+        <div class="title-tier-row">
+          <label for="exercise-fatigue" style="margin-bottom:0;">Category</label>
+          <select id="exercise-fatigue" class="tag-select fatigue-select"></select>
+          <span class="muted" id="exercise-fatigue-note"></span>
+        </div>
+      </div>
       <div id="exercise-name-edit" style="display:none; margin-bottom:0.75rem;">
         <div class="row" style="align-items:flex-end; margin-bottom:0;">
           <div>
@@ -66,11 +73,6 @@
             <button type="button" id="exercise-name-cancel" class="small">Cancel</button>
           </div>
         </div>
-      </div>
-      <div class="title-tier-row">
-        <label for="exercise-fatigue" style="margin-bottom:0;">Fatigue tier</label>
-        <select id="exercise-fatigue" class="tag-select fatigue-select"></select>
-        <span class="muted" id="exercise-fatigue-note"></span>
       </div>
       <div class="record-banner" id="stat-max-weight-banner" style="display:none;">
         <span class="record-banner-label">🏆 Heaviest weight ever moved</span>
