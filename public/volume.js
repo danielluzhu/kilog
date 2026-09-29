@@ -348,20 +348,36 @@ function renderStacked(
     .join("");
 
   // Label as many bars as fit without colliding, always including the newest
-  // bucket so the right edge is dated.
+  // bucket so the right edge is dated. The end labels hang inward so neither
+  // runs off a narrow chart, which moves them toward their neighbours — so
+  // each label's extent is estimated and any that would touch the one before
+  // it is dropped, and the newest bucket's label wins over its neighbour.
   const maxLabels = Math.max(2, Math.floor(plotW / 78));
   const stride = Math.ceil(n / maxLabels);
-  const xLabels = buckets
-    .map((b, i) => {
-      if (i % stride !== 0 && i !== n - 1) return "";
-      const cx = padL + slot * (i + 0.5);
-      // The end labels hang inward so neither runs off a narrow chart.
-      const anchor = i === 0 && n > 1 ? "start" : i === n - 1 && n > 1 ? "end" : "middle";
-      const lx = anchor === "start" ? padL : anchor === "end" ? W - padR : cx;
-      return `<text class="chart-axis-text" x="${lx.toFixed(1)}" y="${H - 26}" text-anchor="${anchor}">${escapeHtml(
-        bucketLabel(b)
-      )}</text>`;
-    })
+  const CHAR_PX = 5.6; // 10px axis text
+  const placed = [];
+  buckets.forEach((b, i) => {
+    if (i % stride !== 0 && i !== n - 1) return;
+    const text = bucketLabel(b);
+    const w = text.length * CHAR_PX;
+    const cx = padL + slot * (i + 0.5);
+    const anchor = i === 0 && n > 1 ? "start" : i === n - 1 && n > 1 ? "end" : "middle";
+    const x = anchor === "start" ? padL : anchor === "end" ? W - padR : cx;
+    const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
+    const label = { text, anchor, x, left, right: left + w };
+    while (placed.length && placed[placed.length - 1].right + 8 > label.left) {
+      if (i !== n - 1) return;
+      placed.pop();
+    }
+    placed.push(label);
+  });
+  const xLabels = placed
+    .map(
+      (l) =>
+        `<text class="chart-axis-text" x="${l.x.toFixed(1)}" y="${H - 26}" text-anchor="${l.anchor}">${escapeHtml(
+          l.text
+        )}</text>`
+    )
     .join("");
 
   wrap.innerHTML = `
