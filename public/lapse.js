@@ -143,9 +143,8 @@ function renderFatigueTier(abbreviation, fullName) {
   // looks the same wherever it's shown.
   select.className = `tag-select fatigue-select fatigue-${effective}${override ? " is-set" : ""}`;
   select.title = override ? "Set by hand" : "Derived from the exercise type";
-  $("#exercise-fatigue-note").textContent = override
-    ? "set by hand"
-    : `derived from the exercise name`;
+  // The dropdown already reads "(auto)" when nothing is set by hand.
+  $("#exercise-fatigue-note").textContent = override ? "set by hand" : "";
 }
 
 $("#exercise-fatigue").addEventListener("change", async (e) => {
