@@ -1677,7 +1677,10 @@ function topWeightMovedStats(history, abbreviation, fullName) {
     const when = parseDateParts(h.date);
     for (const s of scoreSets(h.sets, abbreviation, fullName)) {
       if (!s) continue;
-      const entry = { ...s, date: h.date };
+      // Which log entry the set came from, not just its day: a composite
+      // session on the same date is a different entry that may hold nothing
+      // but misses at that weight.
+      const entry = { ...s, date: h.date, entryId: h.id, via: h.via ?? null };
       if (!allTime || s.weight > allTime.weight) allTime = entry;
       if (when && when >= cutoff365 && (!y365 || s.weight > y365.weight)) y365 = entry;
       if (when && when >= cutoff90 && (!d90 || s.weight > d90.weight)) d90 = entry;

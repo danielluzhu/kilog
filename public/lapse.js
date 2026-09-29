@@ -363,7 +363,7 @@ function renderHistoryTable(history, abbreviation, fullName) {
 
       // The session holding the all-time heaviest lift gets called out in
       // the table too, so the banner's number is findable in context.
-      const isHeaviestEver = h.date === heaviestEverDate;
+      const isHeaviestEver = isHeaviestEverEntry(h);
       const recordBadge = isHeaviestEver
         ? ' <span class="record-badge" title="Heaviest weight ever moved for this exercise">🏆 heaviest ever</span>'
         : "";
@@ -1244,7 +1244,18 @@ function renderWeeklyTopWeightChart(history, abbreviation, fullName) {
 // The single heaviest weight ever moved for this exercise, called out in its
 // own banner rather than buried among the 1RM tiles — it's a real, actually
 // lifted number, not an estimate, so it deserves top billing.
-let heaviestEverDate = null;
+let heaviestEver = null;
+
+// Matched on the entry, not the date: a C&J logged the same day as a clean
+// is a different session, and citing it would credit the clean to it.
+function isHeaviestEverEntry(h) {
+  return (
+    !!heaviestEver &&
+    h.date === heaviestEver.date &&
+    h.id === heaviestEver.entryId &&
+    (h.via?.abbrev ?? null) === (heaviestEver.via?.abbrev ?? null)
+  );
+}
 
 // The set a highlight came from, written the way the log and the history
 // table write it. An estimated 1RM is only as meaningful as the weight and
@@ -1270,7 +1281,7 @@ function describeRecordSet(s) {
 function renderMaxWeightStat(history, abbreviation, fullName) {
   const { allTime, y365, d90 } = topWeightMovedStats(history, abbreviation, fullName);
   const banner = $("#stat-max-weight-banner");
-  heaviestEverDate = allTime ? allTime.date : null;
+  heaviestEver = allTime;
 
   if (!allTime) {
     banner.style.display = "none";
