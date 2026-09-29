@@ -321,8 +321,11 @@ async function loadHistory(abbreviation) {
 
   renderTitle(data.abbreviation, data.fullName);
   $("#stat-count").textContent = history.length;
-  $("#stat-first").textContent = history[0] ? formatDate(history[0].date) : "—";
-  $("#stat-last").textContent = history.at(-1) ? formatDate(history.at(-1).date) : "—";
+  // "2024/04 - 2026/09": the month is all the span needs.
+  const yearMonth = (iso) => iso.slice(0, 7).replace("-", "/");
+  $("#stat-range").textContent = history.length
+    ? `${yearMonth(history[0].date)} - ${yearMonth(history.at(-1).date)}`
+    : "";
   renderCompositeNote(data.timesLogged, composite);
 
   renderChart(history, data.abbreviation, data.fullName);

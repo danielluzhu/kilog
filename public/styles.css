@@ -1264,20 +1264,10 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   .set-input-row button { padding-left: 0.6rem; padding-right: 0.6rem; }
 }
 
-/* Lapse's logging summary is bookkeeping, not a result — one quiet line of
-   label-and-value pairs rather than three headline figures. */
-#logging-summary { padding-top: 0.85rem; padding-bottom: 0.85rem; }
-#logging-summary h2 { margin-bottom: 0.45rem; }
-#logging-summary .stats-row { display: flex; flex-wrap: wrap; gap: 0.3rem 1.5rem; }
-#logging-summary .stat { flex: 0 0 auto; flex-direction: row-reverse; align-items: baseline; gap: 0.4rem; }
-#logging-summary .stat-value {
-  font-size: 0.95rem;
-  font-weight: 650;
-  letter-spacing: normal;
-  line-height: 1.4;
-  white-space: nowrap;
-}
-#logging-summary .stat-label { font-size: 0.68rem; }
+/* Lapse's logging summary is bookkeeping, not a result — one quiet line. */
+#logging-summary { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.logged-line { margin: 0; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.logged-line #stat-range { margin-left: 0.75rem; color: var(--muted); }
 
 /* ---------- Phone ---------- */
 /* One rule holds this whole block together: nothing may be wider than the
