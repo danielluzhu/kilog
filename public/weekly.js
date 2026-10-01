@@ -142,10 +142,11 @@ const DEFAULT_PLAN = {
           note: "Neutral grip, bodyweight, two reps short of failure." },
         { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62 },
         { ex: "BE", group: "Accessory", load: "light", sets: 3, reps: 10, note: "Unloaded." },
-        { ex: "HCu", group: "Accessory", load: "light", sets: 3, reps: 12,
-          note: "Arms and rear delts from here down — swap freely, nothing in this block has to be these three." },
+        { ex: "BB", group: "Pulls", load: "medium", sets: 3, reps: 12,
+          note: "Pulling bodybuilding — curls, rows, rear delts, whatever's free." },
+        { ex: "BB", group: "Press", load: "medium", sets: 3, reps: 12,
+          note: "Pressing bodybuilding — triceps, flyes, raises, whatever's free." },
         { ex: "TCPD", group: "Accessory", load: "light", sets: 3, reps: 12 },
-        { ex: "RDF", group: "Accessory", load: "light", sets: 3, reps: 15 },
       ],
       cardio: { activity: "Run", load: "light", detail: "25-35 min easy" },
     },
@@ -305,8 +306,12 @@ function weekType() {
   return WEEK_TYPES.find((w) => w.key === state.weekType) || WEEK_TYPES[0];
 }
 
+// Names for placeholders the plan uses that aren't one logged exercise: "BB"
+// is a block of bodybuilding work, filled with whatever isolation is on hand.
+const PLAN_ONLY_NAMES = { BB: "Bodybuilding" };
+
 function nameOf(abbrev) {
-  return state.names[abbrev] || "";
+  return state.names[abbrev] || PLAN_ONLY_NAMES[abbrev] || "";
 }
 
 function labelOf(abbrev) {
