@@ -200,17 +200,17 @@ const CARDIO_FOCUS = "Run / hike";
 const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 
 // The grid is a coarser view than the day strips: it answers "where does this
-// movement sit in the week", so two focuses that never appear apart are one
-// row, and a pattern row that only repeats what a named row above it already
+// movement sit in the week", so it rows the week up by movement family rather
+// than by lift, and a pattern row that only repeats what a named row already
 // shows is left out.
 //
-// The pull-up and the dip are trained together on every day either of them
-// appears, so one row says as much as two. The jerk from the rack sits in the
-// clean & jerk's row, inline with the lift it's half of. Push and Hinge are dropped
-// outright: the pressing is already on the Press and Dip rows, and the
-// hinging on the Pulls and Squat rows — a second row of the same marks is
-// noise, not information. Both still count everywhere else on the page.
-const GRID_ROW_ALIASES = { "Pull-up": "Pull-up + Dip", Dip: "Pull-up + Dip", Jerk: "Clean & Jerk" };
+// The pull-up sits with the other pulling (rows, deadlifts)
+// and the dip with the other pressing. The jerk from the rack sits in the
+// clean & jerk's row, inline with the lift it's half of. Push and Hinge are
+// dropped outright: the pressing is already on the Press row, and the hinging
+// on the Pulls and Squat rows — a second row of the same marks is noise, not
+// information. Both still count everywhere else on the page.
+const GRID_ROW_ALIASES = { "Pull-up": "Pulls", Dip: "Press", Jerk: "Clean & Jerk" };
 const GRID_HIDDEN_FOCUSES = new Set(["Push", "Hinge"]);
 const gridRowFor = (focus) => GRID_ROW_ALIASES[focus] || focus;
 const GRID_TECHNIQUE_LABELS = { Snatch: "S", "Clean & Jerk": "CJ" };
@@ -218,10 +218,6 @@ const GRID_TECHNIQUE_LABELS = { Snatch: "S", "Clean & Jerk": "CJ" };
 // Grid row order: the goal movements lead, then the named support blocks,
 // then everything else by how much of the week it takes up.
 const FOCUS_ORDER = [...new Set([...GOAL_FOCUSES, "Jerk", "Press", "Pulls"].map(gridRowFor))];
-
-// The goal movements as the grid rows them up, for the coverage line beneath
-// it: the merged pull-up/dip row is checked once, not twice.
-const GRID_GOAL_ROWS = [...new Set(GOAL_FOCUSES.map(gridRowFor))];
 
 const RECENT_WINDOW_DAYS = 120;
 const ACTUAL_WINDOW_DAYS = 28;
@@ -829,11 +825,11 @@ function renderGrid() {
       const techLabel = slot.load === "technique" ? GRID_TECHNIQUE_LABELS[focus] : null;
       if (techLabel) {
         if (!row.cells[i].some((c) => c.load === "technique" && c.ex === techLabel)) {
-          row.cells[i].push({ ex: techLabel, load: "technique" });
+          row.cells[i].push({ ex: techLabel, load: "technique", focus });
         }
         continue;
       }
-      row.cells[i].push({ ex: slot.ex, load: slot.load });
+      row.cells[i].push({ ex: slot.ex, load: slot.load, focus });
     }
     if (day.cardio) {
       rowFor(CARDIO_FOCUS).cells[i].push({
@@ -908,15 +904,20 @@ function renderGridGaps(ordered) {
     notes.get(text).push(focus);
   };
 
+  // Judged per goal lift, not per grid row: a row mixes a lift with the
+  // accessories drawn beside it, and those don't cover for the lift.
   let checked = 0;
-  for (const row of ordered) {
-    if (!GRID_GOAL_ROWS.includes(row.focus)) continue;
+  for (const goal of GOAL_FOCUSES) {
+    const days = state.plan.days.map((_, i) =>
+      ordered.flatMap((row) => row.cells[i].filter((c) => c.focus === goal))
+    );
+    if (!days.some((cell) => cell.length)) continue;
+    const row = { focus: goal, cells: days };
     checked += 1;
     // Technique work counts as the light exposure — it is the lightest thing
     // a lift is ever asked for, not a fourth category needing its own day.
-    // Heavy is counted in days, not in marks: the pull-up and the dip share a
-    // row and land on the same day, and a day that squats heavy twice is still
-    // one heavy day.
+    // Heavy is counted in days, not in marks: a day that squats heavy twice is
+    // still one heavy day.
     const loads = [];
     let heavy = 0;
     for (const cell of row.cells) {
