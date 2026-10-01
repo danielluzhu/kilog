@@ -19,7 +19,9 @@
 //
 //   Primary   snatch, clean & jerk — each gets a heavy day of its own, a
 //             shared medium day on Friday, and a light technique dose on
-//             Tuesday and again on Thursday.
+//             Tuesday, Thursday and Saturday. The heavy days also close on
+//             that lift's technique drills (tall snatch and overhead squat
+//             Monday, tall clean and high hang clean Wednesday).
 //   Secondary weighted pull-up, weighted dip — one heavy day together on
 //             Tuesday, and light volume on Saturday.
 //
@@ -54,7 +56,7 @@ const DEFAULT_PLAN = {
   days: [
     {
       name: "Monday",
-      title: "Heavy snatch · heavy front squat",
+      title: "Heavy snatch · heavy front squat · snatch technique",
       note: "Two heavy lifts on one day, in that order: the squat is the one that can afford to go second.",
       slots: [
         { ex: "S", group: "Snatch", load: "heavy", sets: 5, reps: 2, pctLo: 0.82, pctHi: 0.9,
@@ -62,6 +64,9 @@ const DEFAULT_PLAN = {
         { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S",
           note: "Finish the extension; this is not a shrug." },
         { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9 },
+        { ex: "TS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S",
+          note: "Feet flat, pull under from the hip. Positions, not load." },
+        { ex: "OHSQ", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.6, pctHi: 0.72, ref: "S" },
       ],
     },
     {
@@ -82,7 +87,7 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Wednesday",
-      title: "Heavy clean & jerk · pause front squat",
+      title: "Heavy clean & jerk · pause front squat · clean technique",
       note: "If the cleans start suffering, the squat is what comes down, not the clean & jerk.",
       slots: [
         { ex: "CJ", group: "Clean & Jerk", load: "heavy", sets: 5, reps: 1, pctLo: 0.85, pctHi: 0.93,
@@ -90,6 +95,9 @@ const DEFAULT_PLAN = {
         { ex: "CHP", group: "Clean & Jerk", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "CJ" },
         { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ",
           note: "Two seconds in the hole." },
+        { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ",
+          note: "Fast elbows, meet the bar in the rack." },
+        { ex: "HHC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, ref: "CJ" },
       ],
     },
     {
@@ -125,9 +133,11 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Saturday",
-      title: "Bodyweight volume · bodybuilding · run",
-      note: "Nothing heavy and nothing on a clock — the volume and the isolation work the hard days had no room for, in front of the rest day.",
+      title: "Olympic technique · bodyweight volume · bodybuilding · run",
+      note: "Nothing heavy and nothing on a clock — a technique touch on both lifts, then the volume and the isolation work the hard days had no room for, in front of the rest day.",
       slots: [
+        { ex: "TS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S" },
+        { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ" },
         { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10,
           note: "Neutral grip, bodyweight, two reps short of failure." },
         { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62 },
