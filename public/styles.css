@@ -1438,7 +1438,9 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   /* The week grid scrolls inside the card, edge to edge, with the movement
      names pinned so a scrolled-over column is never read against no row. */
   .plan-grid-scroll { margin: 0 -1rem; padding: 0 1rem; }
-  .plan-grid { min-width: 30rem; }
+  /* Separate borders: Chrome drops collapsed row rules once a cell in the
+     row is sticky. */
+  .plan-grid { min-width: 30rem; border-collapse: separate; border-spacing: 0; }
   .plan-grid th:first-child, .plan-grid td:first-child {
     position: sticky;
     left: 0;
