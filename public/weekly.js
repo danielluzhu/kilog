@@ -20,11 +20,8 @@
 //   Primary   snatch, clean & jerk — each gets a heavy day of its own, a
 //             shared medium day on Friday, and a light technique dose on
 //             Tuesday, Thursday and Saturday. The heavy days also close on
-//             that lift's technique drills. The drills rotate through the
-//             week: snatch balance, pause overhead squat, muscle snatch, tall
-//             snatch, drop snatch and overhead squat for the snatch; muscle
-//             clean, tall clean, high hang and hang clean, clean + front
-//             squat and front rack mobility for the clean.
+//             that lift's technique drills. Every technique session is the
+//             full drill list for its lift (SNATCH_TECHNIQUE, CLEAN_TECHNIQUE).
 //   Secondary weighted pull-up, weighted dip — one heavy day together on
 //             Tuesday, and light volume on Saturday.
 //
@@ -53,6 +50,30 @@
 // `ref` pegs a slot's percentages to a different lift, so the snatch high
 // pull is prescribed off the snatch rather than off its own best pull.
 
+// Every technique session runs the full set of drills for its lift, two sets
+// each, ordered pull to turnover to receiving to the squat out of it. The
+// percentages are of the competition lift, so they follow it as it moves.
+const SNATCH_TECHNIQUE = [
+  { ex: "MS", group: "Snatch", load: "technique", sets: 2, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "S",
+    note: "Bar close, elbows high and out, punch through. No rebend." },
+  { ex: "TS", group: "Snatch", load: "technique", sets: 2, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S" },
+  { ex: "DropSnatch", group: "Snatch", load: "technique", sets: 2, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "S" },
+  { ex: "SB", group: "Snatch", load: "technique", sets: 2, reps: 2, pctLo: 0.55, pctHi: 0.7, ref: "S",
+    note: "Drive under, don't press out." },
+  { ex: "OHSQ", group: "Snatch", load: "technique", sets: 2, reps: 3, pctLo: 0.55, pctHi: 0.7, ref: "S",
+    note: "Pause three seconds in the bottom on alternate sessions." },
+];
+const CLEAN_TECHNIQUE = [
+  { ex: "FRM", group: "Clean & Jerk", load: "technique", sets: 2, reps: 1,
+    note: "Lat, triceps and wrist stretches in the rack position, 30–60 s each." },
+  { ex: "MC", group: "Clean & Jerk", load: "technique", sets: 2, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "CJ" },
+  { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 2, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ" },
+  { ex: "HHC", group: "Clean & Jerk", load: "technique", sets: 2, reps: 3, pctLo: 0.5, pctHi: 0.6, ref: "CJ",
+    note: "Fast elbows, meet the bar in the rack. From the knee (hang clean) on alternate sessions." },
+  { ex: "C+FSQ", group: "Clean & Jerk", load: "technique", sets: 2, reps: "1+2", pctLo: 0.55, pctHi: 0.65, ref: "CJ",
+    note: "One clean, stand, then two front squats." },
+];
+
 const DEFAULT_PLAN = {
   version: 1,
   days: [
@@ -66,10 +87,7 @@ const DEFAULT_PLAN = {
         { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S",
           note: "Finish the extension; this is not a shrug." },
         { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9 },
-        { ex: "SB", group: "Snatch", load: "technique", sets: 3, reps: 2, pctLo: 0.55, pctHi: 0.7, ref: "S",
-          note: "Drive under, don't press out." },
-        { ex: "POHSQ", group: "Snatch", load: "technique", sets: 3, reps: 2, pctLo: 0.55, pctHi: 0.65, ref: "S",
-          note: "Three seconds in the bottom." },
+        ...SNATCH_TECHNIQUE,
       ],
     },
     {
@@ -77,11 +95,8 @@ const DEFAULT_PLAN = {
       title: "Technique touch · heavy pull-up + dip · medium press",
       note: "The secondary goals get their own hard day, on a day nothing heavy comes off the floor.",
       slots: [
-        { ex: "MS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "S",
-          note: "Bar close, elbows high and out, punch through. No rebend." },
-        { ex: "TS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S" },
-        { ex: "MC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "CJ" },
-        { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ" },
+        ...SNATCH_TECHNIQUE,
+        ...CLEAN_TECHNIQUE,
         { ex: "PLU", group: "Pull-up", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
           note: "Dead hang to chin over the bar, no kip." },
         { ex: "D", group: "Dip", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
@@ -100,10 +115,7 @@ const DEFAULT_PLAN = {
         { ex: "CHP", group: "Clean & Jerk", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "CJ" },
         { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ",
           note: "Two seconds in the hole." },
-        { ex: "HHC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, ref: "CJ",
-          note: "Fast elbows, meet the bar in the rack." },
-        { ex: "FRM", group: "Clean & Jerk", load: "technique", sets: 2, reps: 1,
-          note: "Lat, triceps and wrist stretches in the rack position, 30–60 s each." },
+        ...CLEAN_TECHNIQUE,
       ],
     },
     {
@@ -111,11 +123,8 @@ const DEFAULT_PLAN = {
       title: "Technique touch · row · press volume",
       note: "No top-end effort anywhere on it — the cheap day in the middle of the week, in front of Friday's heavy squat.",
       slots: [
-        { ex: "DropSnatch", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "S" },
-        { ex: "OHSQ", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.6, pctHi: 0.72, ref: "S" },
-        { ex: "C+FSQ", group: "Clean & Jerk", load: "technique", sets: 3, reps: "1+2", pctLo: 0.55, pctHi: 0.65, ref: "CJ",
-          note: "One clean, stand, then two front squats." },
-        { ex: "HC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6, ref: "CJ" },
+        ...SNATCH_TECHNIQUE,
+        ...CLEAN_TECHNIQUE,
         { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68 },
         { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68,
           note: "Strict press." },
@@ -143,8 +152,8 @@ const DEFAULT_PLAN = {
       title: "Olympic technique · Olympic pulls · bodyweight volume · bodybuilding · run",
       note: "Nothing heavy — a technique touch on both lifts and the two Olympic pulls, then the volume and the isolation work the hard days had no room for, in front of the rest day.",
       slots: [
-        { ex: "TS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S" },
-        { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ" },
+        ...SNATCH_TECHNIQUE,
+        ...CLEAN_TECHNIQUE,
         { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88 },
         { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88 },
         { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10,
@@ -323,7 +332,6 @@ const PLAN_ONLY_NAMES = {
   BB: "Bodybuilding",
   MS: "Muscle Snatch",
   MC: "Muscle Clean",
-  POHSQ: "Pause Overhead Squat",
   FRM: "Front Rack Mobility",
 };
 
