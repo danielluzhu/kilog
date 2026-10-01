@@ -205,11 +205,12 @@ const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 // shows is left out.
 //
 // The pull-up and the dip are trained together on every day either of them
-// appears, so one row says as much as two. Push and Hinge are dropped
+// appears, so one row says as much as two. The jerk from the rack sits in the
+// clean & jerk's row, inline with the lift it's half of. Push and Hinge are dropped
 // outright: the pressing is already on the Press and Dip rows, and the
 // hinging on the Pulls and Squat rows — a second row of the same marks is
 // noise, not information. Both still count everywhere else on the page.
-const GRID_ROW_ALIASES = { "Pull-up": "Pull-up + Dip", Dip: "Pull-up + Dip" };
+const GRID_ROW_ALIASES = { "Pull-up": "Pull-up + Dip", Dip: "Pull-up + Dip", Jerk: "Clean & Jerk" };
 const GRID_HIDDEN_FOCUSES = new Set(["Push", "Hinge"]);
 const gridRowFor = (focus) => GRID_ROW_ALIASES[focus] || focus;
 
