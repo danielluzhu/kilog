@@ -204,13 +204,16 @@ const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 // than by lift, and a pattern row that only repeats what a named row already
 // shows is left out.
 //
-// The pull-up sits with the other pulling (rows, deadlifts)
+// The pull-up sits with the other pulling (rows, deadlifts, the high pulls)
 // and the dip with the other pressing. The jerk from the rack sits in the
 // clean & jerk's row, inline with the lift it's half of. Push and Hinge are
 // dropped outright: the pressing is already on the Press row, and the hinging
 // on the Pulls and Squat rows — a second row of the same marks is noise, not
 // information. Both still count everywhere else on the page.
 const GRID_ROW_ALIASES = { "Pull-up": "Pulls", Dip: "Press", Jerk: "Clean & Jerk" };
+// Exercises that train a lift (and count toward it) but are drawn in another
+// row: the snatch and clean high pulls are pulls, whatever they're for.
+const GRID_ROW_BY_EXERCISE = { SHP: "Pulls", CHP: "Pulls" };
 const GRID_HIDDEN_FOCUSES = new Set(["Push", "Hinge"]);
 const gridRowFor = (focus) => GRID_ROW_ALIASES[focus] || focus;
 const GRID_TECHNIQUE_LABELS = { Snatch: "S", "Clean & Jerk": "CJ" };
@@ -817,7 +820,7 @@ function renderGrid() {
     for (const slot of day.slots || []) {
       const focus = focusOf(slot);
       if (GRID_HIDDEN_FOCUSES.has(focus)) continue;
-      const row = rowFor(gridRowFor(focus));
+      const row = rowFor(GRID_ROW_BY_EXERCISE[slot.ex] || gridRowFor(focus));
       row.wfu += slotFatigue(slot);
       // Technique work is marked as the lift it serves — one yellow S or CJ
       // for the day — rather than drill by drill: the grid says where the lift
