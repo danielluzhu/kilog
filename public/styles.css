@@ -1240,6 +1240,13 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
 .plan-grid-focus { font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
 .plan-grid-day { text-align: center; }
 .plan-grid-cell { text-align: center; }
+/* Projected set counts: the right-hand column per movement, the bottom row
+   per day. Quieter than the marks — they total the grid, they aren't in it. */
+.plan-grid .plan-grid-sets { text-align: right; }
+.plan-grid td.plan-grid-sets { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+.plan-grid tfoot td { border-top: 1px solid var(--muted); border-bottom: none; font-weight: 600; }
+.plan-grid tfoot td.plan-grid-sets { text-align: center; }
+.plan-grid tfoot td.plan-grid-total { text-align: right; color: var(--fg); }
 /* One mark per exercise, coloured by that slot's own load — a day that squats
    heavy and pause-squats light shows both, rather than averaging into one. */
 .plan-grid-mark {
@@ -1485,6 +1492,9 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
     left: 0;
     z-index: 1;
     background: var(--bg);
+    /* Covers the scroller's side padding too, so scrolled columns don't
+       show in the gap beside the pinned one. */
+    box-shadow: -1rem 0 0 var(--bg);
   }
 
   /* Lapse's exercise picker is the way into the page, not the page: the

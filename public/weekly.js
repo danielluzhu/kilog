@@ -888,7 +888,7 @@ function renderGrid() {
   const rows = new Map();
 
   const rowFor = (focus) => {
-    if (!rows.has(focus)) rows.set(focus, { focus, cells: days.map(() => []), wfu: 0 });
+    if (!rows.has(focus)) rows.set(focus, { focus, cells: days.map(() => []), wfu: 0, sets: 0 });
     return rows.get(focus);
   };
 
@@ -901,6 +901,7 @@ function renderGrid() {
       if (GRID_HIDDEN_FOCUSES.has(focus)) continue;
       const row = rowFor(GRID_ROW_BY_EXERCISE[slot.ex] || gridRowFor(focus));
       row.wfu += slotFatigue(slot);
+      row.sets += scaledSets(slot);
       // Technique work is marked as the lift it serves — one yellow S or CJ
       // for the day — rather than drill by drill: the grid says where the lift
       // is touched, and the day card below says which drills do it.
@@ -942,6 +943,7 @@ function renderGrid() {
         }>${escapeHtml(d.name.slice(0, 3))}</th>`;
       })
       .join("")}
+    <th class="plan-grid-sets">Sets</th>
   </tr>`;
 
   table.querySelector("tbody").innerHTML = ordered
@@ -965,9 +967,21 @@ function renderGrid() {
               }</td>`
           )
           .join("")}
+        <td class="plan-grid-sets">${row.sets || "—"}</td>
       </tr>`
     )
     .join("");
+
+  // Projected sets for the week type picked above: per movement in the last
+  // column, per day along the bottom, the week's total in the corner.
+  let tfoot = table.querySelector("tfoot");
+  if (!tfoot) tfoot = table.appendChild(document.createElement("tfoot"));
+  const daySets = days.map((d) => (d.rest ? 0 : dayTotals(d).sets));
+  tfoot.innerHTML = `<tr>
+    <td class="plan-grid-focus">Sets</td>
+    ${daySets.map((n) => `<td class="plan-grid-cell plan-grid-sets">${n || ""}</td>`).join("")}
+    <td class="plan-grid-sets plan-grid-total">${daySets.reduce((a, b) => a + b, 0)}</td>
+  </tr>`;
 
   renderGridGaps(ordered);
 }
