@@ -213,6 +213,7 @@ const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 const GRID_ROW_ALIASES = { "Pull-up": "Pull-up + Dip", Dip: "Pull-up + Dip", Jerk: "Clean & Jerk" };
 const GRID_HIDDEN_FOCUSES = new Set(["Push", "Hinge"]);
 const gridRowFor = (focus) => GRID_ROW_ALIASES[focus] || focus;
+const GRID_TECHNIQUE_LABELS = { Snatch: "S", "Clean & Jerk": "CJ" };
 
 // Grid row order: the goal movements lead, then the named support blocks,
 // then everything else by how much of the week it takes up.
@@ -822,6 +823,16 @@ function renderGrid() {
       if (GRID_HIDDEN_FOCUSES.has(focus)) continue;
       const row = rowFor(gridRowFor(focus));
       row.wfu += slotFatigue(slot);
+      // Technique work is marked as the lift it serves — one yellow S or CJ
+      // for the day — rather than drill by drill: the grid says where the lift
+      // is touched, and the day card below says which drills do it.
+      const techLabel = slot.load === "technique" ? GRID_TECHNIQUE_LABELS[focus] : null;
+      if (techLabel) {
+        if (!row.cells[i].some((c) => c.load === "technique" && c.ex === techLabel)) {
+          row.cells[i].push({ ex: techLabel, load: "technique" });
+        }
+        continue;
+      }
       row.cells[i].push({ ex: slot.ex, load: slot.load });
     }
     if (day.cardio) {
