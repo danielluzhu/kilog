@@ -1096,6 +1096,45 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   margin-top: 0.2rem;
 }
 
+/* A day's technique drills, folded into one line until opened. Tinted in the
+   technique hue so the closed line still reads as that load. */
+.plan-technique {
+  margin: 0.5rem 0;
+  border: 1px solid color-mix(in srgb, var(--tier-technique) 45%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--tier-technique) 6%, transparent);
+}
+.plan-technique > summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  list-style: none;
+}
+.plan-technique > summary::-webkit-details-marker { display: none; }
+.plan-technique > summary::before {
+  content: "\203A";
+  display: inline-block;
+  color: var(--tier-technique);
+  font-weight: 700;
+  transition: transform 0.15s ease;
+}
+.plan-technique[open] > summary::before { transform: rotate(90deg); }
+.plan-technique-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tier-technique);
+}
+.plan-technique-list { font-size: 0.85rem; font-weight: 600; }
+.plan-technique-sets { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+.plan-technique .plan-table { margin: 0; }
+.plan-technique .plan-table td { padding-left: 0.7rem; padding-right: 0.7rem; }
+.plan-technique .plan-table tr:last-child td { border-bottom: none; }
+
 /* Load level. Reuses the fatigue-tier hues rather than inventing a second
    colour language: heavy work is the expensive kind, light work isn't. */
 .load-badge {

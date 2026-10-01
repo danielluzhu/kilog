@@ -247,6 +247,7 @@ const state = {
   weekType: "medium",
   basis: "recent",
   editing: false,
+  openTechnique: new Set(), // day indexes whose technique block is open
   names: {},          // abbreviation -> full name
   dict: {},           // abbreviation -> the dictionary row (for movement pattern)
   maxes: {},          // abbreviation -> { oneRM, date, sets } | null
@@ -766,6 +767,53 @@ function focusStrip(day) {
     .join("")}</div>`;
 }
 
+const PLAN_TABLE_HEAD = (weightLabel) =>
+  `<thead><tr><th>Exercise</th><th class="plan-col-num">Sets</th><th class="plan-col-num">Intensity</th><th class="plan-col-num">${weightLabel}</th></tr></thead>`;
+
+function editTable(day, dayIndex) {
+  const rows = (day.slots || []).map((slot, i) => slotRowEdit(slot, dayIndex, i)).join("");
+  return rows ? `<table class="plan-table">${PLAN_TABLE_HEAD("")}<tbody>${rows}</tbody></table>` : "";
+}
+
+// The day's technique drills fold into one disclosure, placed where the
+// first of them sits in the session: they're the part of the day read once
+// and then done from memory, and closed they still name every drill.
+function readTables(day, dayIndex) {
+  const slots = day.slots || [];
+  const technique = slots.filter((slot) => slot.load === "technique");
+  const parts = [];
+  let pending = [];
+  let placed = false;
+  let headed = false;
+  const flush = () => {
+    if (!pending.length) return;
+    parts.push(
+      `<table class="plan-table">${headed ? "" : PLAN_TABLE_HEAD("Weight")}<tbody>${pending.join("")}</tbody></table>`
+    );
+    headed = true;
+    pending = [];
+  };
+  for (const slot of slots) {
+    if (slot.load !== "technique") {
+      pending.push(slotRowRead(slot));
+      continue;
+    }
+    if (placed) continue;
+    placed = true;
+    flush();
+    const sets = technique.reduce((n, t) => n + scaledSets(t), 0);
+    const open = state.openTechnique.has(dayIndex) ? " open" : "";
+    parts.push(`<details class="plan-technique" data-day="${dayIndex}"${open}>
+      <summary><span class="plan-technique-label">Technique</span>
+        <span class="plan-technique-list">${technique.map((t) => escapeHtml(t.ex)).join(" · ")}</span>
+        <span class="plan-technique-sets">${sets} sets</span></summary>
+      <table class="plan-table"><tbody>${technique.map(slotRowRead).join("")}</tbody></table>
+    </details>`);
+  }
+  flush();
+  return parts.join("");
+}
+
 function renderDay(day, dayIndex) {
   const totals = dayTotals(day);
   const isRest = Boolean(day.rest) || (day.slots || []).length === 0;
@@ -773,18 +821,7 @@ function renderDay(day, dayIndex) {
     ? "no lifting"
     : `${totals.sets} sets · ${round1(totals.wfu)} fatigue units`;
 
-  const rows = (day.slots || [])
-    .map((slot, i) => (state.editing ? slotRowEdit(slot, dayIndex, i) : slotRowRead(slot)))
-    .join("");
-
-  const table = rows
-    ? `<table class="plan-table">
-        <thead><tr><th>Exercise</th><th class="plan-col-num">Sets</th><th class="plan-col-num">Intensity</th><th class="plan-col-num">${
-          state.editing ? "" : "Weight"
-        }</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`
-    : "";
+  const table = state.editing ? editTable(day, dayIndex) : readTables(day, dayIndex);
 
   const editControls = state.editing
     ? `<div class="plan-day-actions">
@@ -809,6 +846,19 @@ function renderDay(day, dayIndex) {
     ${editControls}
   </section>`;
 }
+
+// "toggle" doesn't bubble, so it's caught on the way down.
+document.addEventListener(
+  "toggle",
+  (evt) => {
+    const el = evt.target;
+    if (!el.classList || !el.classList.contains("plan-technique")) return;
+    const day = Number(el.dataset.day);
+    if (el.open) state.openTechnique.add(day);
+    else state.openTechnique.delete(day);
+  },
+  true
+);
 
 function renderDays() {
   const html = state.plan.days.map((day, i) => renderDay(day, i)).join("");
