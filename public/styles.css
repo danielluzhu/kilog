@@ -1104,10 +1104,16 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--tier-technique) 6%, transparent);
 }
+/* Two lines: what to do (pick so many), then the menu and what it's counted
+   as. A grid rather than a wrapping row, so the set count never ends up
+   stranded on a line of its own. */
 .plan-technique > summary {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "arrow label pick pick"
+    ".     list  list sets";
   align-items: baseline;
-  flex-wrap: wrap;
   gap: 0.2rem 0.6rem;
   padding: 0.55rem 0.7rem;
   cursor: pointer;
@@ -1122,6 +1128,7 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   transition: transform 0.15s ease;
 }
 .plan-technique[open] > summary::before { transform: rotate(90deg); }
+.plan-technique > summary::before { grid-area: arrow; }
 .plan-technique-label {
   font-size: 0.7rem;
   font-weight: 700;
@@ -1129,8 +1136,10 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   letter-spacing: 0.06em;
   color: var(--tier-technique);
 }
-.plan-technique-list { font-size: 0.85rem; font-weight: 600; }
-.plan-technique-sets { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+.plan-technique-label { grid-area: label; }
+.plan-technique-pick { grid-area: pick; font-size: 0.8rem; color: var(--fg); }
+.plan-technique-list { grid-area: list; font-size: 0.8rem; color: var(--muted); }
+.plan-technique-sets { grid-area: sets; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
 .plan-technique .plan-table { margin: 0; }
 .plan-technique .plan-table td { padding-left: 0.7rem; padding-right: 0.7rem; }
 .plan-technique .plan-table tr:last-child td { border-bottom: none; }

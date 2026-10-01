@@ -50,8 +50,9 @@
 // `ref` pegs a slot's percentages to a different lift, so the snatch high
 // pull is prescribed off the snatch rather than off its own best pull.
 
-// Every technique session runs the full set of drills for its lift, two sets
-// each, ordered pull to turnover to receiving to the squat out of it. The
+// A technique session is a menu, not a list to work through: pick two or
+// three of these and do two or three sets of each (TECHNIQUE_PICK). The drills
+// run pull to turnover to receiving to the squat out of it, and the
 // percentages are of the competition lift, so they follow it as it moves.
 const SNATCH_TECHNIQUE = [
   { ex: "MS", group: "Snatch", load: "technique", sets: 2, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "S",
@@ -349,6 +350,24 @@ function scaledSets(slot) {
   return Math.max(1, Math.round(slot.sets * weekType().volume));
 }
 
+// What a day's technique menu is projected to cost: two or three drills at two
+// or three sets each, counted at the middle — six sets — and scaled by the
+// week type like everything else.
+const TECHNIQUE_PICK = { drills: "2–3", sets: "2–3", projectedSets: 6 };
+
+function techniqueBlockSets() {
+  return Math.max(1, Math.round(TECHNIQUE_PICK.projectedSets * weekType().volume));
+}
+
+// The sets a slot is counted as in the day's totals. A technique drill is one
+// option on a menu, so it carries an even share of the block's projected sets
+// rather than its own.
+function countedSets(slot, day) {
+  if (slot.load !== "technique") return scaledSets(slot);
+  const options = (day.slots || []).filter((s) => s.load === "technique").length;
+  return techniqueBlockSets() / options;
+}
+
 function scaledPct(slot) {
   if (!slot.pctHi) return null;
   const f = weekType().intensity;
@@ -436,8 +455,8 @@ function dayFocuses(day) {
     const key = focusOf(slot);
     const entry = byFocus.get(key) || { focus: key, load: slot.load, sets: 0, wfu: 0, exercises: [] };
     if ((LOAD_RANK[slot.load] ?? 9) < (LOAD_RANK[entry.load] ?? 9)) entry.load = slot.load;
-    entry.sets += scaledSets(slot);
-    entry.wfu += slotFatigue(slot);
+    entry.sets += countedSets(slot, day);
+    entry.wfu += slotFatigue(slot, day);
     entry.exercises.push(slot.ex);
     byFocus.set(key, entry);
   }
@@ -463,18 +482,18 @@ function dayFocuses(day) {
 // Same weighted fatigue units the Volume page reports, so the plan's cost and
 // the log's cost are the same number and can be compared directly.
 
-function slotFatigue(slot) {
-  return scaledSets(slot) * fatigueMultiplier(slot.ex, nameOf(slot.ex));
+function slotFatigue(slot, day) {
+  return countedSets(slot, day) * fatigueMultiplier(slot.ex, nameOf(slot.ex));
 }
 
 function dayTotals(day) {
   let sets = 0;
   let wfu = 0;
   for (const slot of day.slots || []) {
-    sets += scaledSets(slot);
-    wfu += slotFatigue(slot);
+    sets += countedSets(slot, day);
+    wfu += slotFatigue(slot, day);
   }
-  return { sets, wfu };
+  return { sets: Math.round(sets), wfu };
 }
 
 function weekTotals() {
@@ -681,7 +700,9 @@ function slotRowRead(slot) {
       ${loadBadge(slot.load)}
       <div class="plan-slot-note">${escapeHtml(detail)}</div>
     </td>
-    <td class="plan-col-num">${scaledSets(slot)} × ${escapeHtml(String(slot.reps))}</td>
+    <td class="plan-col-num">${
+      slot.load === "technique" ? TECHNIQUE_PICK.sets : scaledSets(slot)
+    } × ${escapeHtml(String(slot.reps))}</td>
     <td class="plan-col-num">${escapeHtml(formatPctBand(slot))}</td>
     <td class="plan-col-num plan-weight">${
       weight ? escapeHtml(weight) : scaledPct(slot) ? "—" : ""
@@ -809,12 +830,12 @@ function readTables(day, dayIndex) {
     if (placed) continue;
     placed = true;
     flush();
-    const sets = technique.reduce((n, t) => n + scaledSets(t), 0);
     const open = state.openTechnique.has(dayIndex) ? " open" : "";
     parts.push(`<details class="plan-technique" data-day="${dayIndex}"${open}>
       <summary><span class="plan-technique-label">Technique</span>
+        <span class="plan-technique-pick" title="Pick ${TECHNIQUE_PICK.drills} drills, ${TECHNIQUE_PICK.sets} sets each">pick ${TECHNIQUE_PICK.drills} × ${TECHNIQUE_PICK.sets} sets</span>
         <span class="plan-technique-list">${technique.map((t) => escapeHtml(t.ex)).join(" · ")}</span>
-        <span class="plan-technique-sets">${sets} sets</span></summary>
+        <span class="plan-technique-sets">~${techniqueBlockSets()} sets</span></summary>
       <table class="plan-table"><tbody>${technique.map(slotRowRead).join("")}</tbody></table>
     </details>`);
   }
@@ -900,8 +921,8 @@ function renderGrid() {
       const focus = focusOf(slot);
       if (GRID_HIDDEN_FOCUSES.has(focus)) continue;
       const row = rowFor(GRID_ROW_BY_EXERCISE[slot.ex] || gridRowFor(focus));
-      row.wfu += slotFatigue(slot);
-      row.sets += scaledSets(slot);
+      row.wfu += slotFatigue(slot, day);
+      row.sets += countedSets(slot, day);
       // Technique work is marked as the lift it serves — one yellow S or CJ
       // for the day — rather than drill by drill: the grid says where the lift
       // is touched, and the day card below says which drills do it.
@@ -967,7 +988,7 @@ function renderGrid() {
               }</td>`
           )
           .join("")}
-        <td class="plan-grid-sets">${row.sets || "—"}</td>
+        <td class="plan-grid-sets">${Math.round(row.sets) || "—"}</td>
       </tr>`
     )
     .join("");
