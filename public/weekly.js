@@ -20,8 +20,11 @@
 //   Primary   snatch, clean & jerk — each gets a heavy day of its own, a
 //             shared medium day on Friday, and a light technique dose on
 //             Tuesday, Thursday and Saturday. The heavy days also close on
-//             that lift's technique drills (tall snatch and overhead squat
-//             Monday, tall clean and high hang clean Wednesday).
+//             that lift's technique drills. The drills rotate through the
+//             week: snatch balance, pause overhead squat, muscle snatch, tall
+//             snatch, drop snatch and overhead squat for the snatch; muscle
+//             clean, tall clean, high hang and hang clean, clean + front
+//             squat and front rack mobility for the clean.
 //   Secondary weighted pull-up, weighted dip — one heavy day together on
 //             Tuesday, and light volume on Saturday.
 //
@@ -63,9 +66,10 @@ const DEFAULT_PLAN = {
         { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S",
           note: "Finish the extension; this is not a shrug." },
         { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9 },
-        { ex: "TS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S",
-          note: "Feet flat, pull under from the hip. Positions, not load." },
-        { ex: "OHSQ", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.6, pctHi: 0.72, ref: "S" },
+        { ex: "SB", group: "Snatch", load: "technique", sets: 3, reps: 2, pctLo: 0.55, pctHi: 0.7, ref: "S",
+          note: "Drive under, don't press out." },
+        { ex: "POHSQ", group: "Snatch", load: "technique", sets: 3, reps: 2, pctLo: 0.55, pctHi: 0.65, ref: "S",
+          note: "Three seconds in the bottom." },
       ],
     },
     {
@@ -73,9 +77,11 @@ const DEFAULT_PLAN = {
       title: "Technique touch · heavy pull-up + dip · medium press",
       note: "The secondary goals get their own hard day, on a day nothing heavy comes off the floor.",
       slots: [
-        { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6,
-          note: "Positions and speed under the bar; nothing here should feel like a lift." },
-        { ex: "CJ", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6 },
+        { ex: "MS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "S",
+          note: "Bar close, elbows high and out, punch through. No rebend." },
+        { ex: "TS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S" },
+        { ex: "MC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "CJ" },
+        { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ" },
         { ex: "PLU", group: "Pull-up", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
           note: "Dead hang to chin over the bar, no kip." },
         { ex: "D", group: "Dip", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
@@ -94,9 +100,10 @@ const DEFAULT_PLAN = {
         { ex: "CHP", group: "Clean & Jerk", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "CJ" },
         { ex: "PFSQ", group: "Squat", load: "medium", sets: 4, reps: 3, pctLo: 0.72, pctHi: 0.8, ref: "FSQ",
           note: "Two seconds in the hole." },
-        { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ",
+        { ex: "HHC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, ref: "CJ",
           note: "Fast elbows, meet the bar in the rack." },
-        { ex: "HHC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6, ref: "CJ" },
+        { ex: "FRM", group: "Clean & Jerk", load: "technique", sets: 2, reps: 1,
+          note: "Lat, triceps and wrist stretches in the rack position, 30–60 s each." },
       ],
     },
     {
@@ -104,9 +111,11 @@ const DEFAULT_PLAN = {
       title: "Technique touch · row · press volume",
       note: "No top-end effort anywhere on it — the cheap day in the middle of the week, in front of Friday's heavy squat.",
       slots: [
-        { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6,
-          note: "Positions and speed under the bar, never load." },
-        { ex: "CJ", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6 },
+        { ex: "DropSnatch", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.5, ref: "S" },
+        { ex: "OHSQ", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.6, pctHi: 0.72, ref: "S" },
+        { ex: "C+FSQ", group: "Clean & Jerk", load: "technique", sets: 3, reps: "1+2", pctLo: 0.55, pctHi: 0.65, ref: "CJ",
+          note: "One clean, stand, then two front squats." },
+        { ex: "HC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6, ref: "CJ" },
         { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68 },
         { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68,
           note: "Strict press." },
@@ -306,9 +315,16 @@ function weekType() {
   return WEEK_TYPES.find((w) => w.key === state.weekType) || WEEK_TYPES[0];
 }
 
-// Names for placeholders the plan uses that aren't one logged exercise: "BB"
-// is a block of bodybuilding work, filled with whatever isolation is on hand.
-const PLAN_ONLY_NAMES = { BB: "Bodybuilding" };
+// Names for exercises the plan uses that the dictionary doesn't have yet —
+// drills not logged so far, and "BB", a block of bodybuilding work filled
+// with whatever isolation is on hand. A dictionary name always wins.
+const PLAN_ONLY_NAMES = {
+  BB: "Bodybuilding",
+  MS: "Muscle Snatch",
+  MC: "Muscle Clean",
+  POHSQ: "Pause Overhead Squat",
+  FRM: "Front Rack Mobility",
+};
 
 function nameOf(abbrev) {
   return state.names[abbrev] || PLAN_ONLY_NAMES[abbrev] || "";
@@ -684,8 +700,8 @@ function slotRowEdit(slot, dayIndex, slotIndex) {
       <input type="number" class="plan-num" min="1" max="20" ${at} data-field="sets"
              value="${slot.sets}" aria-label="Sets" />
       <span class="muted">×</span>
-      <input type="number" class="plan-num" min="1" max="50" ${at} data-field="reps"
-             value="${slot.reps}" aria-label="Reps" />
+      <input type="text" inputmode="numeric" class="plan-num" ${at} data-field="reps"
+             value="${escapeHtml(String(slot.reps))}" aria-label="Reps" />
     </td>
     <td class="plan-col-num">
       <input type="number" class="plan-num" min="0" max="150" step="1" ${at} data-field="pctLo"
@@ -1007,7 +1023,10 @@ async function applyFieldChange(target) {
   const slot = slotAt(dayIndex, Number(target.dataset.slot));
   if (!slot || !field) return;
 
-  if (field === "sets" || field === "reps") {
+  if (field === "reps" && /^\s*\d+(\s*\+\s*\d+)+\s*$/.test(target.value)) {
+    // A complex's reps, one count per lift: "1+2" is a clean then two squats.
+    slot.reps = target.value.replace(/\s+/g, "");
+  } else if (field === "sets" || field === "reps") {
     const n = Number(target.value);
     if (Number.isFinite(n) && n > 0) slot[field] = Math.round(n);
   } else if (field === "pctLo" || field === "pctHi") {
