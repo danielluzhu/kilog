@@ -27,14 +27,13 @@
 //
 // The week leads heavy three days running: snatch and front squat Monday,
 // pull-up and dip Tuesday, clean & jerk Wednesday. Thursday is the row and
-// the two Olympic pulls. Friday runs all three Olympic lifts at medium and
-// finishes on the heavy back squat, Saturday is the bodyweight volume and the
-// run, and Sunday is off.
+// press volume. Friday runs all three Olympic lifts at medium and finishes on
+// the heavy back squat, Saturday is the two Olympic pulls, the bodyweight
+// volume and the run, and Sunday is off.
 //
-// Tuesday is the only day that costs the legs nothing at all. From Wednesday
-// they work four days running — the pause front squat, Thursday's pulls,
-// Friday's back squat, Saturday's run — which is why the two cheapest things
-// in the week, that run and the rest day, are stacked at the end of it.
+// Tuesday and Thursday cost the legs little. Wednesday's pause front squat,
+// Friday's back squat and Saturday's pulls and run are what they carry in the
+// back half of the week, with the rest day straight after the pulls.
 //
 // The squat is the one movement carrying two heavy days (Monday's front
 // squat, Friday's back squat) with the pause front squat medium between them
@@ -102,15 +101,13 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Thursday",
-      title: "Technique touch · row and Olympic pulls · press volume",
-      note: "No top-end effort anywhere on it, but the pulls make it real work.",
+      title: "Technique touch · row · press volume",
+      note: "No top-end effort anywhere on it — the cheap day in the middle of the week, in front of Friday's heavy squat.",
       slots: [
         { ex: "S", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.5, pctHi: 0.6,
           note: "Positions and speed under the bar, never load." },
         { ex: "CJ", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.5, pctHi: 0.6 },
         { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68 },
-        { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88 },
-        { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88 },
         { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68,
           note: "Strict press." },
         { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15 },
@@ -134,11 +131,13 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Saturday",
-      title: "Olympic technique · bodyweight volume · bodybuilding · run",
-      note: "Nothing heavy and nothing on a clock — a technique touch on both lifts, then the volume and the isolation work the hard days had no room for, in front of the rest day.",
+      title: "Olympic technique · Olympic pulls · bodyweight volume · bodybuilding · run",
+      note: "Nothing heavy — a technique touch on both lifts and the two Olympic pulls, then the volume and the isolation work the hard days had no room for, in front of the rest day.",
       slots: [
         { ex: "TS", group: "Snatch", load: "technique", sets: 3, reps: 3, pctLo: 0.4, pctHi: 0.55, ref: "S" },
         { ex: "TC", group: "Clean & Jerk", load: "technique", sets: 3, reps: 2, pctLo: 0.45, pctHi: 0.55, ref: "CJ" },
+        { ex: "SDL", group: "Pulls", load: "medium", sets: 4, reps: 3, pctLo: 0.8, pctHi: 0.88 },
+        { ex: "CDL", group: "Pulls", load: "medium", sets: 3, reps: 3, pctLo: 0.8, pctHi: 0.88 },
         { ex: "NPLU", group: "Pull-up", load: "light", sets: 3, reps: 10,
           note: "Neutral grip, bodyweight, two reps short of failure." },
         { ex: "D", group: "Dip", load: "light", sets: 3, reps: 10, pctLo: 0.55, pctHi: 0.62 },
