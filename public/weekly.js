@@ -127,6 +127,7 @@ const DEFAULT_PLAN = {
           note: "Both halves, every rep." },
         { ex: "J", group: "Jerk", load: "medium", sets: 3, reps: 2, pctLo: 0.75, pctHi: 0.82, ref: "CJ",
           note: "From the rack. First thing to cut if the squat behind it is what's suffering." },
+        { ex: "PP", group: "Press", load: "medium", sets: 3, reps: 3, pctLo: 0.75, pctHi: 0.82 },
         { ex: "SQ", group: "Squat", load: "heavy", sets: 5, reps: 3, pctLo: 0.8, pctHi: 0.87,
           note: "Back squat." },
       ],
