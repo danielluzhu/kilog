@@ -88,6 +88,14 @@ $("#add-form").addEventListener("submit", async (e) => {
 const DAYS_PER_PAGE = 14;
 let dayOffset = 0;
 let currentSearch = "";
+// Days before today start folded to their header: the log is opened to add
+// today's work, and history is there to look something up, not to scroll
+// past. Days opened by hand stay open across a refresh (a save, an edit).
+const openedDays = new Set();
+
+function dayIsOpen(date) {
+  return Boolean(currentSearch) || date >= todayIso() || openedDays.has(date);
+}
 
 function formatDayHeading(iso) {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -152,12 +160,17 @@ function dayHeaderHtml(date, workouts) {
       )} WFU</span>`
     : "";
 
+  // Folded, the header still says what was trained.
+  const exercises = workouts.map((w) => escapeHtml(w.exercise)).join(" · ");
+
   return `
     <td colspan="3">
+      <span class="day-chevron" aria-hidden="true">\u203A</span>
       <span class="day-heading">${escapeHtml(formatDayHeading(date))}</span>
       <span class="day-summary">
         <span class="day-set-count">${total} set${total === 1 ? "" : "s"}</span>${wfuPill}${tierPills}
       </span>
+      <span class="day-exercises">${exercises}</span>
     </td>
   `;
 }
@@ -166,13 +179,19 @@ function renderDays(days, append) {
   const tbody = $("#log-body");
   if (!append) tbody.innerHTML = "";
   for (const day of days) {
+    const open = dayIsOpen(day.date);
     const headerTr = document.createElement("tr");
-    headerTr.className = "day-header-row";
+    headerTr.className = `day-header-row${open ? "" : " is-collapsed"}`;
+    headerTr.dataset.date = day.date;
+    headerTr.tabIndex = 0;
+    headerTr.setAttribute("role", "button");
+    headerTr.setAttribute("aria-expanded", String(open));
     headerTr.innerHTML = dayHeaderHtml(day.date, day.workouts);
     tbody.appendChild(headerTr);
 
     for (const w of day.workouts) {
       const tr = document.createElement("tr");
+      if (!open) tr.classList.add("day-folded");
       tr.dataset.id = w.id;
       tr.dataset.date = day.date;
       tr.dataset.exercise = w.exercise;
@@ -183,6 +202,31 @@ function renderDays(days, append) {
   }
   attachRowHandlers();
 }
+
+function toggleDay(headerTr) {
+  const date = headerTr.dataset.date;
+  const open = headerTr.classList.toggle("is-collapsed") === false;
+  headerTr.setAttribute("aria-expanded", String(open));
+  if (open) openedDays.add(date);
+  else openedDays.delete(date);
+  let tr = headerTr.nextElementSibling;
+  while (tr && !tr.classList.contains("day-header-row")) {
+    tr.classList.toggle("day-folded", !open);
+    tr = tr.nextElementSibling;
+  }
+}
+
+$("#log-body").addEventListener("click", (e) => {
+  const header = e.target.closest("tr.day-header-row");
+  if (header) toggleDay(header);
+});
+$("#log-body").addEventListener("keydown", (e) => {
+  const header = e.target.closest("tr.day-header-row");
+  if (header && (e.key === "Enter" || e.key === " ")) {
+    e.preventDefault();
+    toggleDay(header);
+  }
+});
 
 function rowHtml(w) {
   const label = w.exerciseName ? escapeHtml(w.exerciseName) : escapeHtml(w.exercise);

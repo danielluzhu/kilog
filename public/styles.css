@@ -501,6 +501,27 @@ tr.day-header-row td {
   border-bottom: 1px solid var(--border);
 }
 tr.day-header-row:first-child td { padding-top: 0.5rem; }
+/* Log days fold to their header. The whole header row is the toggle. */
+tr.day-header-row { cursor: pointer; }
+tr.day-header-row:hover td { background: color-mix(in srgb, var(--fg) 4%, var(--row-alt)); }
+.day-chevron {
+  display: inline-block;
+  width: 0.9rem;
+  color: var(--muted);
+  transform: rotate(90deg);
+  transition: transform 0.15s ease;
+}
+tr.day-header-row.is-collapsed .day-chevron { transform: none; }
+.day-exercises { display: none; }
+tr.day-header-row.is-collapsed .day-exercises {
+  display: block;
+  margin-top: 0.2rem;
+  padding-left: 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.log-table tbody tr.day-folded { display: none; }
 .day-heading { margin-right: 0.6rem; }
 .day-summary { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0.25rem; font-weight: normal; }
 .day-set-count { font-size: 0.8rem; color: var(--muted); }
