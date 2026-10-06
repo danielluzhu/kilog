@@ -259,6 +259,7 @@ const state = {
   basis: "recent",
   editing: false,
   openTechnique: new Set(), // day indexes whose technique block is open
+  openDays: new Set(), // day indexes whose card is open
   names: {},          // abbreviation -> full name
   dict: {},           // abbreviation -> the dictionary row (for movement pattern)
   maxes: {},          // abbreviation -> { oneRM, date, sets } | null
@@ -863,18 +864,25 @@ function renderDay(day, dayIndex) {
       </div>`
     : "";
 
-  return `<section class="card plan-day${isRest ? " plan-day-rest" : ""}">
-    <div class="plan-day-head">
-      <h2 class="plan-day-name">${escapeHtml(day.name)}</h2>
-      <span class="plan-day-title">${escapeHtml(day.title || "")}</span>
-      <span class="plan-day-meta">${escapeHtml(meta)}</span>
-    </div>
-    ${focusStrip(day)}
+  // Closed by default so the whole week fits a phone screen as seven
+  // headlines: name, what the session is, what it costs and what it trains.
+  // Customize opens every day — the editor is no use folded away.
+  const open = state.editing || state.openDays.has(dayIndex) ? " open" : "";
+  return `<details class="card plan-day${isRest ? " plan-day-rest" : ""}" data-day="${dayIndex}"${open}>
+    <summary>
+      <div class="plan-day-head">
+        <h2 class="plan-day-name">${escapeHtml(day.name)}</h2>
+        <span class="plan-day-title">${escapeHtml(day.title || "")}</span>
+        <span class="plan-day-meta">${escapeHtml(meta)}</span>
+        <span class="plan-day-chevron" aria-hidden="true">\u203A</span>
+      </div>
+      ${focusStrip(day)}
+    </summary>
     ${day.note ? `<p class="muted plan-day-note">${escapeHtml(day.note)}</p>` : ""}
     ${table}
     ${cardioBlock(day, dayIndex)}
     ${editControls}
-  </section>`;
+  </details>`;
 }
 
 // "toggle" doesn't bubble, so it's caught on the way down.
@@ -882,10 +890,16 @@ document.addEventListener(
   "toggle",
   (evt) => {
     const el = evt.target;
-    if (!el.classList || !el.classList.contains("plan-technique")) return;
+    if (!el.classList) return;
+    const set = el.classList.contains("plan-technique")
+      ? state.openTechnique
+      : el.classList.contains("plan-day") && !state.editing
+        ? state.openDays
+        : null;
+    if (!set) return;
     const day = Number(el.dataset.day);
-    if (el.open) state.openTechnique.add(day);
-    else state.openTechnique.delete(day);
+    if (el.open) set.add(day);
+    else set.delete(day);
   },
   true
 );
