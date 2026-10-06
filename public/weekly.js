@@ -26,8 +26,8 @@
 //             Thursday, and light volume on Saturday.
 //
 // Snatch and front squat are heavy Monday, with the medium strict press after
-// them, and clean & jerk Wednesday, with an easy Tuesday of technique and side
-// raises between them. Thursday is
+// them, and clean & jerk Wednesday, with an easy Tuesday of technique, a light
+// press, bodybuilding and core between them. Thursday is
 // the heavy pull-up and dip — after the clean & jerk rather than the day
 // before it, so tired triceps and grip never meet a heavy jerk. The row goes
 // with it, after the pull-ups. Friday runs all three Olympic lifts at medium and finishes on
@@ -98,12 +98,18 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Tuesday",
-      title: "Technique touch · side raises",
-      note: "The easy day between the two heavy Olympic days: technique and a little isolation, nothing that leaves the arms, the back or the legs tired for Wednesday's clean & jerk.",
+      title: "Technique touch · light press · bodybuilding · core",
+      note: "The easy day between the two heavy Olympic days: technique, a light press, bodybuilding and core — nothing taken near failure, nothing that leaves the arms, the back or the legs tired for Wednesday's clean & jerk.",
       slots: [
         ...SNATCH_TECHNIQUE,
         ...CLEAN_TECHNIQUE,
-        { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15 },
+        { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68,
+          note: "Strict press, well short of failure — the jerk is tomorrow." },
+        { ex: "BB", group: "Pulls", load: "light", sets: 3, reps: 12,
+          note: "Pulling bodybuilding — curls, rear delts. Nothing to failure." },
+        { ex: "BB", group: "Press", load: "light", sets: 3, reps: 12,
+          note: "Pressing bodybuilding — side raises, triceps. Nothing to failure." },
+        { ex: "LL", group: "Core", load: "light", sets: 3, reps: 10 },
       ],
     },
     {
