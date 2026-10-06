@@ -54,7 +54,7 @@
 // pull is prescribed off the snatch rather than off its own best pull.
 
 // A technique session is a menu, not a list to work through: pick two or
-// three of these and do two or three sets of each (TECHNIQUE_PICK). The drills
+// three of these and do two or three sets of each (MENUS.technique). The drills
 // run pull to turnover to receiving to the squat out of it, and the
 // percentages are of the competition lift, so they follow it as it moves.
 const SNATCH_TECHNIQUE = [
@@ -76,6 +76,20 @@ const CLEAN_TECHNIQUE = [
     note: "Fast elbows, meet the bar in the rack. From the knee (hang clean) on alternate sessions." },
   { ex: "C+FSQ", group: "Clean & Jerk", load: "technique", sets: 2, reps: "1+2", pctLo: 0.55, pctHi: 0.65, ref: "CJ",
     note: "One clean, stand, then two front squats." },
+];
+
+// Core work is a menu too: three to five of these, two or three sets each,
+// marked by how hard the movement is rather than by a percentage.
+const CORE_WORK = [
+  { ex: "DeadBug", group: "Core", menu: "core", level: "easy", load: "light", sets: 3, reps: "8/side",
+    note: "Low back pinned to the floor the whole time." },
+  { ex: "SidePlank", group: "Core", menu: "core", level: "moderate", load: "light", sets: 3, reps: "30–45 s/side" },
+  { ex: "HollowHold", group: "Core", menu: "core", level: "moderate", load: "light", sets: 3, reps: "20–30 s",
+    note: "The position the jerk and the snatch receive in." },
+  { ex: "LL", group: "Core", menu: "core", level: "hard", load: "light", sets: 3, reps: 10,
+    note: "Hanging, legs straight, no swing." },
+  { ex: "AbWheel", group: "Core", menu: "core", level: "hard", load: "light", sets: 3, reps: 8,
+    note: "Only as far out as the back stays flat." },
 ];
 
 const DEFAULT_PLAN = {
@@ -109,7 +123,7 @@ const DEFAULT_PLAN = {
           note: "Pulling bodybuilding — curls, rear delts. Nothing to failure." },
         { ex: "BB", group: "Press", load: "light", sets: 3, reps: 12,
           note: "Pressing bodybuilding — side raises, triceps. Nothing to failure." },
-        { ex: "LL", group: "Core", load: "light", sets: 3, reps: 10 },
+        ...CORE_WORK,
       ],
     },
     {
@@ -267,7 +281,7 @@ const state = {
   weekType: "medium",
   basis: "recent",
   editing: false,
-  openTechnique: new Set(), // day indexes whose technique block is open
+  openMenus: new Set(), // "day:menu" keys whose menu block is open
   openDays: new Set(), // day indexes whose card is open
   names: {},          // abbreviation -> full name
   dict: {},           // abbreviation -> the dictionary row (for movement pattern)
@@ -345,6 +359,9 @@ const PLAN_ONLY_NAMES = {
   MS: "Muscle Snatch",
   MC: "Muscle Clean",
   FRM: "Front Rack Mobility",
+  DeadBug: "Dead Bug",
+  HollowHold: "Hollow Hold",
+  AbWheel: "Ab Wheel Rollout",
 };
 
 function nameOf(abbrev) {
@@ -361,22 +378,31 @@ function scaledSets(slot) {
   return Math.max(1, Math.round(slot.sets * weekType().volume));
 }
 
-// What a day's technique menu is projected to cost: two or three drills at two
-// or three sets each, counted at the middle — six sets — and scaled by the
-// week type like everything else.
-const TECHNIQUE_PICK = { drills: "2–3", sets: "2–3", projectedSets: 6 };
+// Menus: blocks of options to pick from rather than lists to work through.
+// Each is projected at the middle of its pick — technique two or three drills
+// at two or three sets (six sets), core three to five exercises at two or
+// three sets (ten) — and scaled by the week type like everything else.
+const MENUS = {
+  technique: { label: "Technique", pick: "2–3", sets: "2–3", projectedSets: 6 },
+  core: { label: "Core", pick: "3–5", sets: "2–3", projectedSets: 10 },
+};
 
-function techniqueBlockSets() {
-  return Math.max(1, Math.round(TECHNIQUE_PICK.projectedSets * weekType().volume));
+function menuOf(slot) {
+  if (slot.load === "technique") return "technique";
+  return MENUS[slot.menu] ? slot.menu : null;
 }
 
-// The sets a slot is counted as in the day's totals. A technique drill is one
-// option on a menu, so it carries an even share of the block's projected sets
-// rather than its own.
+function menuBlockSets(menu) {
+  return Math.max(1, Math.round(MENUS[menu].projectedSets * weekType().volume));
+}
+
+// The sets a slot is counted as in the day's totals. An option on a menu
+// carries an even share of the block's projected sets rather than its own.
 function countedSets(slot, day) {
-  if (slot.load !== "technique") return scaledSets(slot);
-  const options = (day.slots || []).filter((s) => s.load === "technique").length;
-  return techniqueBlockSets() / options;
+  const menu = menuOf(slot);
+  if (!menu) return scaledSets(slot);
+  const options = (day.slots || []).filter((s) => menuOf(s) === menu).length;
+  return menuBlockSets(menu) / options;
 }
 
 function scaledPct(slot) {
@@ -688,6 +714,10 @@ function loadBadge(load) {
   return `<span class="load-badge load-${escapeHtml(load)}">${escapeHtml(LOAD_LABELS[load] || load)}</span>`;
 }
 
+function levelBadge(level) {
+  return `<span class="level-badge level-${escapeHtml(level)}">${escapeHtml(level)}</span>`;
+}
+
 function maxNote(slot) {
   const key = slot.ref || slot.ex;
   const max = state.maxes[key];
@@ -707,12 +737,14 @@ function slotRowRead(slot) {
     .join(" · ");
   return `<tr>
     <td class="plan-col-name">
-      <a class="exercise-link" href="/lapse.html?exercise=${encodeURIComponent(slot.ex)}">${escapeHtml(labelOf(slot.ex))}</a>
-      ${loadBadge(slot.load)}
+      <a class="exercise-link" href="/lapse.html?exercise=${encodeURIComponent(slot.ex)}">${escapeHtml(
+        menuOf(slot) === "core" ? nameOf(slot.ex) || slot.ex : labelOf(slot.ex)
+      )}</a>
+      ${slot.level ? levelBadge(slot.level) : loadBadge(slot.load)}
       <div class="plan-slot-note">${escapeHtml(detail)}</div>
     </td>
     <td class="plan-col-num">${
-      slot.load === "technique" ? TECHNIQUE_PICK.sets : scaledSets(slot)
+      menuOf(slot) ? MENUS[menuOf(slot)].sets : scaledSets(slot)
     } × ${escapeHtml(String(slot.reps))}</td>
     <td class="plan-col-num">${escapeHtml(formatPctBand(slot))}</td>
     <td class="plan-col-num plan-weight">${
@@ -815,15 +847,15 @@ function editTable(day, dayIndex) {
   return rows ? `<table class="plan-table">${PLAN_TABLE_HEAD("")}<tbody>${rows}</tbody></table>` : "";
 }
 
-// The day's technique drills fold into one disclosure, placed where the
-// first of them sits in the session: they're the part of the day read once
-// and then done from memory, and closed they still name every drill.
+// Each menu on the day — technique drills, core work — folds into one
+// disclosure, placed where its first option sits in the session: these are
+// the parts of a day read once and then picked from, and closed they still
+// name every option.
 function readTables(day, dayIndex) {
   const slots = day.slots || [];
-  const technique = slots.filter((slot) => slot.load === "technique");
   const parts = [];
+  const placed = new Set();
   let pending = [];
-  let placed = false;
   let headed = false;
   const flush = () => {
     if (!pending.length) return;
@@ -834,20 +866,28 @@ function readTables(day, dayIndex) {
     pending = [];
   };
   for (const slot of slots) {
-    if (slot.load !== "technique") {
+    const menu = menuOf(slot);
+    if (!menu) {
       pending.push(slotRowRead(slot));
       continue;
     }
-    if (placed) continue;
-    placed = true;
+    if (placed.has(menu)) continue;
+    placed.add(menu);
     flush();
-    const open = state.openTechnique.has(dayIndex) ? " open" : "";
-    parts.push(`<details class="plan-technique" data-day="${dayIndex}"${open}>
-      <summary><span class="plan-technique-label">Technique</span>
-        <span class="plan-technique-pick" title="Pick ${TECHNIQUE_PICK.drills} drills, ${TECHNIQUE_PICK.sets} sets each">pick ${TECHNIQUE_PICK.drills} × ${TECHNIQUE_PICK.sets} sets</span>
-        <span class="plan-technique-list">${technique.map((t) => escapeHtml(t.ex)).join(" · ")}</span>
-        <span class="plan-technique-sets">~${techniqueBlockSets()} sets</span></summary>
-      <table class="plan-table"><tbody>${technique.map(slotRowRead).join("")}</tbody></table>
+    const options = slots.filter((s) => menuOf(s) === menu);
+    const m = MENUS[menu];
+    const key = `${dayIndex}:${menu}`;
+    const open = state.openMenus.has(key) ? " open" : "";
+    parts.push(`<details class="plan-menu plan-menu-${menu}" data-menu="${key}"${open}>
+      <summary><span class="plan-menu-label">${escapeHtml(m.label)}</span>
+        <span class="plan-menu-pick" title="Pick ${m.pick}, ${m.sets} sets each">pick ${m.pick} × ${m.sets} sets</span>
+        <span class="plan-menu-list">${options
+          // Drills read by their codes, as they're logged; core by name, since
+          // most of it has no code worth knowing.
+          .map((t) => escapeHtml(menu === "core" ? nameOf(t.ex) || t.ex : t.ex))
+          .join(" · ")}</span>
+        <span class="plan-menu-sets">~${menuBlockSets(menu)} sets</span></summary>
+      <table class="plan-table"><tbody>${options.map(slotRowRead).join("")}</tbody></table>
     </details>`);
   }
   flush();
@@ -900,15 +940,18 @@ document.addEventListener(
   (evt) => {
     const el = evt.target;
     if (!el.classList) return;
-    const set = el.classList.contains("plan-technique")
-      ? state.openTechnique
-      : el.classList.contains("plan-day") && !state.editing
-        ? state.openDays
-        : null;
+    let set = null;
+    let key = null;
+    if (el.classList.contains("plan-menu")) {
+      set = state.openMenus;
+      key = el.dataset.menu;
+    } else if (el.classList.contains("plan-day") && !state.editing) {
+      set = state.openDays;
+      key = Number(el.dataset.day);
+    }
     if (!set) return;
-    const day = Number(el.dataset.day);
-    if (el.open) set.add(day);
-    else set.delete(day);
+    if (el.open) set.add(key);
+    else set.delete(key);
   },
   true
 );
@@ -947,13 +990,15 @@ function renderGrid() {
       const row = rowFor(GRID_ROW_BY_EXERCISE[slot.ex] || gridRowFor(focus));
       row.wfu += slotFatigue(slot, day);
       row.sets += countedSets(slot, day);
-      // Technique work is marked as the lift it serves — one yellow S or CJ
-      // for the day — rather than drill by drill: the grid says where the lift
-      // is touched, and the day card below says which drills do it.
-      const techLabel = slot.load === "technique" ? GRID_TECHNIQUE_LABELS[focus] : null;
-      if (techLabel) {
-        if (!row.cells[i].some((c) => c.load === "technique" && c.ex === techLabel)) {
-          row.cells[i].push({ ex: techLabel, load: "technique", focus });
+      // A menu is marked once for the day, as what it serves — a yellow S or
+      // CJ for technique, "Core" for core work — rather than option by
+      // option: the grid says where the work lands, the day card what it is.
+      const menu = menuOf(slot);
+      const menuLabel =
+        menu === "technique" ? GRID_TECHNIQUE_LABELS[focus] : menu ? MENUS[menu].label : null;
+      if (menuLabel) {
+        if (!row.cells[i].some((c) => c.menu && c.ex === menuLabel)) {
+          row.cells[i].push({ ex: menuLabel, load: slot.load, focus, menu: true });
         }
         continue;
       }

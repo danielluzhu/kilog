@@ -1132,18 +1132,22 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   margin-top: 0.2rem;
 }
 
-/* A day's technique drills, folded into one line until opened. Tinted in the
-   technique hue so the closed line still reads as that load. */
-.plan-technique {
+/* A day's menu blocks — technique drills, core work — folded into one line
+   until opened. Each is tinted in its own hue so the closed line still says
+   which kind of work it is. */
+.plan-menu {
+  --menu-hue: var(--muted);
   margin: 0.5rem 0;
-  border: 1px solid color-mix(in srgb, var(--tier-technique) 45%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--menu-hue) 45%, var(--border));
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--tier-technique) 6%, transparent);
+  background: color-mix(in srgb, var(--menu-hue) 6%, transparent);
 }
+.plan-menu-technique { --menu-hue: var(--tier-technique); }
+.plan-menu-core { --menu-hue: var(--tier-cardio); }
 /* Two lines: what to do (pick so many), then the menu and what it's counted
    as. A grid rather than a wrapping row, so the set count never ends up
    stranded on a line of its own. */
-.plan-technique > summary {
+.plan-menu > summary {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   grid-template-areas:
@@ -1155,30 +1159,49 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   cursor: pointer;
   list-style: none;
 }
-.plan-technique > summary::-webkit-details-marker { display: none; }
-.plan-technique > summary::before {
+.plan-menu > summary::-webkit-details-marker { display: none; }
+.plan-menu > summary::before {
   content: "\203A";
+  grid-area: arrow;
   display: inline-block;
-  color: var(--tier-technique);
+  color: var(--menu-hue);
   font-weight: 700;
   transition: transform 0.15s ease;
 }
-.plan-technique[open] > summary::before { transform: rotate(90deg); }
-.plan-technique > summary::before { grid-area: arrow; }
-.plan-technique-label {
+.plan-menu[open] > summary::before { transform: rotate(90deg); }
+.plan-menu-label {
+  grid-area: label;
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--tier-technique);
+  color: var(--menu-hue);
 }
-.plan-technique-label { grid-area: label; }
-.plan-technique-pick { grid-area: pick; font-size: 0.8rem; color: var(--fg); }
-.plan-technique-list { grid-area: list; font-size: 0.8rem; color: var(--muted); }
-.plan-technique-sets { grid-area: sets; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
-.plan-technique .plan-table { margin: 0; }
-.plan-technique .plan-table td { padding-left: 0.7rem; padding-right: 0.7rem; }
-.plan-technique .plan-table tr:last-child td { border-bottom: none; }
+.plan-menu-pick { grid-area: pick; font-size: 0.8rem; color: var(--fg); }
+.plan-menu-list { grid-area: list; font-size: 0.8rem; color: var(--muted); }
+.plan-menu-sets { grid-area: sets; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.plan-menu .plan-table { margin: 0; }
+.plan-menu .plan-table td { padding-left: 0.7rem; padding-right: 0.7rem; }
+.plan-menu .plan-table tr:last-child td { border-bottom: none; }
+
+/* How hard a core exercise is, in place of a load badge: core work isn't
+   prescribed as a percentage, so its scale is the movement itself. */
+.level-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  margin-left: 0.4rem;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+.level-easy { color: var(--ok); }
+.level-moderate { color: var(--tier-technique); }
+.level-hard { color: var(--tier-complex); }
 
 /* Load level. Reuses the fatigue-tier hues rather than inventing a second
    colour language: heavy work is the expensive kind, light work isn't. */
