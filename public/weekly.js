@@ -23,11 +23,12 @@
 //             that lift's technique drills. Every technique session is the
 //             full drill list for its lift (SNATCH_TECHNIQUE, CLEAN_TECHNIQUE).
 //   Secondary weighted pull-up, weighted dip — one heavy day together on
-//             Tuesday, and light volume on Saturday.
+//             Thursday, and light volume on Saturday.
 //
-// The week leads heavy three days running: snatch and front squat Monday,
-// pull-up and dip Tuesday, clean & jerk Wednesday. Thursday is the row and
-// press volume. Friday runs all three Olympic lifts at medium and finishes on
+// Snatch and front squat are heavy Monday and clean & jerk Wednesday, with an
+// easy Tuesday of technique, the row and pressing between them. Thursday is
+// the heavy pull-up and dip — after the clean & jerk rather than the day
+// before it, so tired triceps and grip never meet a heavy jerk. Friday runs all three Olympic lifts at medium and finishes on
 // the heavy back squat, Saturday is the two Olympic pulls, the bodyweight
 // volume and the run, and Sunday is off.
 //
@@ -93,17 +94,15 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Tuesday",
-      title: "Technique touch · heavy pull-up + dip · medium press",
-      note: "The secondary goals get their own hard day, on a day nothing heavy comes off the floor.",
+      title: "Technique touch · row · medium press",
+      note: "The easy day between the two heavy Olympic days: nothing on it should leave the arms or the legs tired for Wednesday's clean & jerk.",
       slots: [
         ...SNATCH_TECHNIQUE,
         ...CLEAN_TECHNIQUE,
-        { ex: "PLU", group: "Pull-up", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
-          note: "Dead hang to chin over the bar, no kip." },
-        { ex: "D", group: "Dip", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
-          note: "Full depth, controlled turnaround." },
+        { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68 },
         { ex: "SP", group: "Press", load: "medium", sets: 4, reps: 5, pctLo: 0.7, pctHi: 0.78,
           note: "Strict press." },
+        { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15 },
       ],
     },
     {
@@ -121,15 +120,17 @@ const DEFAULT_PLAN = {
     },
     {
       name: "Thursday",
-      title: "Technique touch · row · press volume",
-      note: "No top-end effort anywhere on it — the cheap day in the middle of the week, in front of Friday's heavy squat.",
+      title: "Technique touch · heavy pull-up + dip · press volume",
+      note: "The secondary goals get their own hard day — after the heavy clean & jerk rather than in front of it, and on a day that costs the legs nothing before Friday's squat.",
       slots: [
         ...SNATCH_TECHNIQUE,
         ...CLEAN_TECHNIQUE,
-        { ex: "BR", group: "Accessory", load: "medium", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68 },
+        { ex: "PLU", group: "Pull-up", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
+          note: "Dead hang to chin over the bar, no kip." },
+        { ex: "D", group: "Dip", load: "heavy", sets: 4, reps: 3, pctLo: 0.88, pctHi: 0.93,
+          note: "Full depth, controlled turnaround." },
         { ex: "SP", group: "Press", load: "light", sets: 3, reps: 8, pctLo: 0.6, pctHi: 0.68,
           note: "Strict press." },
-        { ex: "SDR", group: "Accessory", load: "light", sets: 3, reps: 15 },
       ],
     },
     {
