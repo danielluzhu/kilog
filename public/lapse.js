@@ -434,6 +434,7 @@ function startHistoryEdit(tr) {
   `;
   const editor = buildSetsEditor(sets, {
     startingLoadKind: startingLoadKindFor(dictionaryEntries, currentAbbreviation, currentFullName),
+    repeatButton: true,
   });
   tr.querySelector(".cell-sets-edit").appendChild(editor.el);
   tr.querySelector(".save-btn").onclick = () => saveHistoryEdit(tr, id, editor);
@@ -536,6 +537,7 @@ function renderDayPanel(data) {
     const w = data.workouts.find((x) => x.id === id);
     const editor = buildSetsEditor(w.sets, {
       startingLoadKind: startingLoadKindFor(dictionaryEntries, w.exercise, w.exerciseName),
+      repeatButton: true,
     });
     item.querySelector(".day-sets-edit").appendChild(editor.el);
     item.querySelector(".day-save-btn").addEventListener("click", () => saveDayPanelItem(item, data.date, editor));
