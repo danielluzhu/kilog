@@ -1390,7 +1390,7 @@ function isLandmineExercise(abbreviation, fullName) {
 // it: every surface that edits an existing workout (the history rows, the
 // Lapse table, the day panel) needs to be able to add sets too, not just the
 // log-a-workout form.
-function buildSetsEditor(values = [], { startingLoadKind = null } = {}) {
+function buildSetsEditor(values = [], { startingLoadKind = null, repeatButton = false } = {}) {
   const root = document.createElement("div");
   root.className = "sets-editor-root";
 
@@ -1406,7 +1406,31 @@ function buildSetsEditor(values = [], { startingLoadKind = null } = {}) {
     wrap.lastElementChild?.querySelector(".set-value").focus();
   });
 
-  root.append(wrap, addBtn);
+  // "Repeat set" appends one copy of the last set entered — the common case
+  // of logging another set identical to the one before it. A row holding
+  // several sets ("100x5, 100x5") contributes only its last one.
+  let buttons = addBtn;
+  if (repeatButton) {
+    const repeatBtn = document.createElement("button");
+    repeatBtn.type = "button";
+    repeatBtn.className = "small repeat-set-row";
+    repeatBtn.textContent = "↻ Repeat set";
+    repeatBtn.title = "Add a copy of the previous set";
+    repeatBtn.addEventListener("click", () => {
+      const previous = [...wrap.children].flatMap(rowSetValues).filter((v) => v !== "").at(-1);
+      if (previous === undefined) return;
+      const last = wrap.lastElementChild;
+      // An empty trailing row is filled in place rather than left blank above
+      // the copy.
+      if (last && last.querySelector(".set-value").value.trim() === "") last.remove();
+      addRow(previous);
+    });
+    buttons = document.createElement("div");
+    buttons.className = "sets-editor-buttons";
+    buttons.append(addBtn, repeatBtn);
+  }
+
+  root.append(wrap, buttons);
 
   function renumber() {
     [...wrap.children].forEach((row, i) => {

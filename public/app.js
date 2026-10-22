@@ -305,6 +305,7 @@ function startEdit(tr) {
   `;
   const editor = buildSetsEditor(sets, {
     startingLoadKind: startingLoadKindFor(dictionary, exercise, nameFor(exercise)),
+    repeatButton: true,
   });
   tr.querySelector(".cell-sets-edit").appendChild(editor.el);
   tr.querySelector(".save-btn").onclick = () => saveEdit(tr, id, editor);
