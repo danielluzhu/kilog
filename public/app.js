@@ -45,6 +45,16 @@ function nameFor(abbrev) {
   return match?.full_name || null;
 }
 
+// Enter in any field saves the entry. The browser's own implicit submit isn't
+// dependable here: committing a sets field can rebuild its row (splitting
+// "100x5, 105x3" into two) and take the focused input out of the form first.
+// IME composition is left alone so Enter can still confirm a candidate.
+$("#add-form").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.isComposing || e.target.tagName !== "INPUT") return;
+  e.preventDefault();
+  $("#add-form").requestSubmit();
+});
+
 $("#add-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const status = $("#add-status");
