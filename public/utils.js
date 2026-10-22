@@ -1875,9 +1875,14 @@ function setsHtmlWithHover(sets, abbreviation, fullName) {
     if (!s) return;
     if (topIdx === -1 || s.oneRM > scored[topIdx].oneRM) topIdx = i;
     // Ranked on the weight that was on the bar, so a 3-rep set never outranks
-    // a heavier single the way its estimate does. Ties keep the first set,
-    // which is the one done fresher.
-    if (heaviestIdx === -1 || s.weight > scored[heaviestIdx].weight) heaviestIdx = i;
+    // a heavier single the way its estimate does. At the same weight the set
+    // with more reps wins; a full tie keeps the first set, done fresher.
+    const h = scored[heaviestIdx];
+    if (
+      heaviestIdx === -1 ||
+      s.weight > h.weight ||
+      (s.weight === h.weight && s.reps > h.reps)
+    ) heaviestIdx = i;
   });
 
   return sets
