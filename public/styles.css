@@ -1384,10 +1384,12 @@ tr.highlight td { background: var(--row-alt); font-weight: 600; }
   #add-form .row { gap: 0.5rem; margin-bottom: 0.6rem; }
   /* The date is a fixed-width value and the exercise is a name being typed
      into, so they don't split the row evenly: the date takes only the 140px
-     it needs to show its own year, and the exercise takes the rest. Below
+     it needs to show its own year. The exercise is an abbreviation, so it
+     gets a fixed width that fits one rather than the rest of the row. Below
      about 375px there isn't room for both and they stack. */
   #add-form .row > div { min-width: 7rem; }
   #add-form .row > div:first-child { flex: 0 0 7.6rem; min-width: 7.6rem; }
+  #add-form .row > div:last-child { flex: 0 0 7.5rem; width: auto; }
   /* The date's own text and picker button are what set its floor, so they
      come down with it — the box is a value being read, not typed into. */
   #add-form input[type="date"] { font-size: 0.85rem; padding-left: 0.5rem; padding-right: 0.3rem; }
