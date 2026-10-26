@@ -364,5 +364,8 @@ $("#search").addEventListener("input", (e) => {
   }, 250);
 });
 
-loadDictionaryOptions();
-loadFatigueRates().then(refreshLog);
+// The log is drawn only once the dictionary is in: an exercise's tier, rate
+// and movement pattern can be set by hand there, and drawing first showed the
+// name-derived guess on whichever loads won the race — so a lift's pill could
+// read Technique on one load and Complex on the next.
+Promise.allSettled([loadDictionaryOptions(), loadFatigueRates()]).then(refreshLog);
