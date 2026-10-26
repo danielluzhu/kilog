@@ -1663,24 +1663,43 @@ function scoreSets(sets, abbreviation, fullName) {
   });
 }
 
-// Picks the highest-1RM entry from scoreSets' output, or null.
-function topScorableSetOf(sets, abbreviation, fullName) {
-  const scored = scoreSets(sets, abbreviation, fullName);
-  let best = null;
-  for (const s of scored) {
-    if (s && (!best || s.oneRM > best.oneRM)) best = s;
-  }
+// The two per-session picks, as indexes into scoreSets' output (-1 if
+// nothing scored). Everything that names a session's top set — the 1RM badge,
+// the charts, the highlighted set in the list — goes through these, so the set
+// a number came from and the set that's highlighted can never disagree.
+
+// Best estimated 1RM. Ties keep the earlier set.
+function topScorableIndex(scored) {
+  let best = -1;
+  scored.forEach((s, i) => {
+    if (s && (best === -1 || s.oneRM > scored[best].oneRM)) best = i;
+  });
   return best;
 }
 
-// The heaviest set of one session, ranked on the weight that was on the bar
-// rather than on what it estimates to. Ties keep the earlier set.
-function heaviestScorableSetOf(sets, abbreviation, fullName) {
-  let best = null;
-  for (const s of scoreSets(sets, abbreviation, fullName)) {
-    if (s && (!best || s.weight > best.weight)) best = s;
-  }
+// Heaviest weight on the bar, not what it estimates to, so a 3-rep set never
+// outranks a heavier single the way its estimate does. At the same weight the
+// set with more reps wins; a full tie keeps the earlier set, done fresher.
+function heaviestScorableIndex(scored) {
+  let best = -1;
+  scored.forEach((s, i) => {
+    if (!s) return;
+    const b = scored[best];
+    if (best === -1 || s.weight > b.weight || (s.weight === b.weight && s.reps > b.reps)) best = i;
+  });
   return best;
+}
+
+// Picks the highest-1RM entry from scoreSets' output, or null.
+function topScorableSetOf(sets, abbreviation, fullName) {
+  const scored = scoreSets(sets, abbreviation, fullName);
+  return scored[topScorableIndex(scored)] ?? null;
+}
+
+// The heaviest set of one session (see heaviestScorableIndex), or null.
+function heaviestScorableSetOf(sets, abbreviation, fullName) {
+  const scored = scoreSets(sets, abbreviation, fullName);
+  return scored[heaviestScorableIndex(scored)] ?? null;
 }
 
 // Heaviest actual weight moved — ranked by raw `weight`, not estimated 1RM,
@@ -1869,21 +1888,8 @@ function setsHtmlWithHover(sets, abbreviation, fullName) {
   if (!sets || sets.length === 0) return '<span class="muted">—</span>';
 
   const scored = scoreSets(sets, abbreviation, fullName);
-  let topIdx = -1;
-  let heaviestIdx = -1;
-  scored.forEach((s, i) => {
-    if (!s) return;
-    if (topIdx === -1 || s.oneRM > scored[topIdx].oneRM) topIdx = i;
-    // Ranked on the weight that was on the bar, so a 3-rep set never outranks
-    // a heavier single the way its estimate does. At the same weight the set
-    // with more reps wins; a full tie keeps the first set, done fresher.
-    const h = scored[heaviestIdx];
-    if (
-      heaviestIdx === -1 ||
-      s.weight > h.weight ||
-      (s.weight === h.weight && s.reps > h.reps)
-    ) heaviestIdx = i;
-  });
+  const topIdx = topScorableIndex(scored);
+  const heaviestIdx = heaviestScorableIndex(scored);
 
   return sets
     .map((raw, i) => {
