@@ -298,6 +298,15 @@ input[type="file"]::file-selector-button:hover { border-color: var(--muted); }
 #add-form .row { margin-bottom: 0.55rem; }
 #add-form label { margin-bottom: 0.25rem; }
 #add-form input[type="text"], #add-form input[type="date"] { padding: 0.45rem 0.65rem; }
+/* On a wide screen the two fields each stretched to half the card, and the
+   exercise box (and the suggestion list that opens at its width) ran far
+   wider than a name ever is. Both are sized to what they hold; the phone
+   layout below keeps its own split. */
+@media (min-width: 641px) {
+  #add-form .row > div { flex: 0 0 auto; }
+  #add-form .row > div:first-child { width: 10.5rem; }
+  #add-form .row > div:last-child { width: 16rem; }
+}
 /* Reserving a line for a message the form isn't showing cost more height
    than the message ever does; it takes its space when it has something to
    say and the button moves down a line. */
