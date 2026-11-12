@@ -38,22 +38,26 @@ git add -f backups/workout.db && git commit && git push
 
 Restore with `cp backups/workout.db data/workout.db`.
 
-### Published automatically, as entries are logged
+### Published automatically, one commit per day
 
 `workout-log-publish.path` watches the live database and runs
-`scripts/commit-new-workouts.ts` as soon as an entry is written: it refreshes
-the snapshot, commits **one workout day per commit** with the session written
-into the message, and pushes to `master`. A rest day leaves no commit behind.
+`scripts/commit-new-workouts.ts` whenever an entry is written. It commits
+**one workout day per commit**, with the whole session written into the
+message, and pushes to `master`. A rest day leaves no commit behind.
 
-The run doesn't start the moment the first set lands — `wait-for-quiet-db.sh`
-holds it until the database has been quiet for three minutes, so a session
-publishes once, when it's over, rather than once per set. Adding to a day
-that's already been published appends a second commit for that date
-(*Add to the … session*).
+A day is published once, after it is over. While anything dated today
+(Pacific) is still changing, a run holds everything back, so a session never
+gets split across commits by the rests between sets. The finished day goes
+out as a single commit on the first run after midnight, which is at the
+latest the daily timer. That commit covers everything filed under the date:
+new exercises, sets added to or corrected on existing ones, cardio, and any
+dictionary entry the day used for the first time. A later edit to a day
+that's already published gets one commit of its own (*Edit the … session*).
 
-`workout-log-publish.timer` still runs the same job once a day, as the sweep
-for anything the watch missed: the machine asleep, a commit made by hand, a
-run that aborted on a dirty tree.
+`workout-log-publish.timer` runs the same job once a day at about 3am
+Pacific. It publishes the day that just ended and sweeps up anything the
+watch missed: the machine asleep, a commit made by hand, a run that aborted
+on a dirty tree.
 
 ```
 systemctl status workout-log-publish.path         # is the watch armed

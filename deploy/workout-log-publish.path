@@ -1,5 +1,6 @@
-# Publishes new entries as they are logged, rather than waiting for the next
-# run of workout-log-publish.timer.
+# Runs the publish as entries are logged. The script itself holds back a day
+# that is still being logged, so this publishes edits to earlier days right
+# away and leaves today's session for the first run after midnight.
 # Installed to /etc/systemd/system/ alongside the service it triggers.
 [Unit]
 Description=Watch the workout log for new entries

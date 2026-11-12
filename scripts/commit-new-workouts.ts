@@ -1,14 +1,21 @@
-// Publishes newly logged workouts: refreshes the committed snapshot at
-// backups/workout.db, commits one workout day at a time, and pushes.
+// Publishes the workout log: refreshes the committed snapshot at
+// backups/workout.db, one workout day per commit, and pushes.
 //
-// Run by workout-log-publish.timer once a day, and safe to run by hand.
-// Does nothing at all when the log hasn't moved, so a rest day leaves no
-// trace in the history.
+// Run by workout-log-publish.path as entries are written and by
+// workout-log-publish.timer once a day; safe to run by hand. Does nothing at
+// all when the log hasn't moved, so a rest day leaves no trace in the history.
 //
-// The snapshot is one binary file, so a day's commit can't be a readable
-// diff. Each commit therefore carries the session in its message -- every
-// exercise and its sets -- which is the only human-readable record of what
-// the blob changed.
+// A day is published once, whole, after it is over. While anything dated
+// today (Pacific, the log's own day boundary) differs from the snapshot, the
+// session is still being logged and the run holds everything back -- the
+// path unit fires after every set, and publishing then would split one
+// session across a string of commits. The first run after midnight, at the
+// latest the daily timer's, picks the finished day up as a single commit.
+//
+// A day's commit carries everything that changed under that date: new
+// exercises, sets added to or edited on existing ones, cardio, and the
+// dictionary rows the day first used. The snapshot is one binary file, so its
+// diff is unreadable; the message lists the day in full instead.
 //
 // Refuses to run rather than guess whenever the repository isn't in a state
 // it fully understands: a dirty tree, a diverged branch, a snapshot that
@@ -19,10 +26,11 @@ import { copyFileSync, rmSync, existsSync, mkdtempSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
-const REPO = "/workspace";
+const REPO = join(import.meta.dir, "..");
 const LIVE = join(REPO, "data/workout.db");
 const TARGET = join(REPO, "backups/workout.db");
 const BRANCH = "master";
+const APP_TIME_ZONE = "America/Los_Angeles";
 
 const log = (msg: string) => console.log(`[publish] ${msg}`);
 const die = (msg: string): never => {
@@ -36,6 +44,19 @@ function git(args: string[], { check = true } = {}): string {
     die(`git ${args.join(" ")}\n${p.stdout.toString()}${p.stderr.toString()}`);
   }
   return p.stdout.toString().trim();
+}
+
+// Same reading of "today" as public/utils.js: part by part, so no locale
+// gets to choose the field order.
+function todayIso(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const p = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${p.year}-${p.month}-${p.day}`;
 }
 
 // ---------- preflight ----------
@@ -52,6 +73,45 @@ if (git(["status", "--porcelain"])) die("working tree is dirty; leaving it alone
 git(["fetch", "--quiet", "origin", BRANCH]);
 const behind = Number(git(["rev-list", "--count", `${BRANCH}..origin/${BRANCH}`]));
 if (behind > 0) die(`local ${BRANCH} is ${behind} commit(s) behind origin; needs a manual look`);
+
+// ---------- reading a day out of a database ----------
+
+type Day = { workouts: any[]; sets: any[]; cardio: any[] };
+
+function readDays(db: Database): Map<string, Day> {
+  const days = new Map<string, Day>();
+  const day = (d: string) => {
+    if (!days.has(d)) days.set(d, { workouts: [], sets: [], cardio: [] });
+    return days.get(d)!;
+  };
+  for (const w of db.query("SELECT * FROM workouts ORDER BY id").all() as any[]) day(w.date).workouts.push(w);
+  for (const s of db
+    .query("SELECT s.*, w.date AS _date FROM sets s JOIN workouts w ON w.id = s.workout_id ORDER BY s.id")
+    .all() as any[]) {
+    const { _date, ...set } = s;
+    day(_date).sets.push(set);
+  }
+  for (const c of db.query("SELECT * FROM cardio_sessions ORDER BY id").all() as any[]) day(c.date).cardio.push(c);
+  return days;
+}
+
+const sameDay = (a: Day | undefined, b: Day | undefined) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+// Every row of every table, for "is this the same database" -- the per-day
+// view above doesn't see dictionary edits, fatigue rates or orphaned rows.
+function contents(db: Database): string {
+  const tables = (db.query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as any[]).map(
+    (r) => r.name
+  );
+  return JSON.stringify(tables.map((t) => [t, db.query(`SELECT * FROM "${t}" ORDER BY rowid`).all()]));
+}
+
+function insert(db: Database, table: string, row: Record<string, unknown>) {
+  const cols = Object.keys(row);
+  db.query(
+    `INSERT INTO ${table} (${cols.map((c) => `"${c}"`).join(", ")}) VALUES (${cols.map((_, i) => `?${i + 1}`).join(", ")})`
+  ).run(...(Object.values(row) as any[]));
+}
 
 // ---------- snapshot the live database ----------
 
@@ -75,51 +135,58 @@ try {
   await Bun.write(work, head.stdout);
 
   const oldDb = new Database(work, { readonly: true });
-  const oldWorkoutIds = new Set(
-    (oldDb.query("SELECT id FROM workouts").all() as any[]).map((r) => r.id)
-  );
-  const oldDates = new Set((oldDb.query("SELECT DISTINCT date d FROM workouts").all() as any[]).map((r) => r.d));
+  const oldDays = readDays(oldDb);
   const oldDict = new Set(
     (oldDb.query("SELECT abbreviation a FROM exercise_dictionary").all() as any[]).map((r) => r.a)
   );
   oldDb.close();
 
-  const newWorkouts = (
-    freshDb.query("SELECT id, date, exercise, created_at FROM workouts ORDER BY date, id").all() as any[]
-  ).filter((w) => !oldWorkoutIds.has(w.id));
-
+  const freshDays = readDays(freshDb);
   const freshDictRows = freshDb.query("SELECT * FROM exercise_dictionary").all() as any[];
   const newDict = freshDictRows.filter((d) => !oldDict.has(d.abbreviation));
 
+  const changed = [...new Set([...oldDays.keys(), ...freshDays.keys()])]
+    .filter((d) => !sameDay(oldDays.get(d), freshDays.get(d)))
+    .sort();
+
   // Nothing new to snapshot doesn't mean nothing to push: a commit made by
   // hand earlier still needs to reach origin, and this job is what keeps the
-  // two in step. So this only skips the snapshot work, and still falls
-  // through to the push at the end.
+  // two in step. Holding back an open day works the same way.
+  const today = todayIso();
+  const open = changed.filter((d) => d >= today);
   const snapshotUnchanged =
     Bun.hash(await Bun.file(fresh).arrayBuffer()) === Bun.hash(await Bun.file(TARGET).arrayBuffer());
+  const hold = !snapshotUnchanged && open.length > 0;
   if (snapshotUnchanged) log("snapshot already current; checking for anything unpushed");
+  if (hold) log(`${open.join(", ")} still being logged; publishing it once the day is over`);
 
   // ---------- one commit per workout day ----------
 
-  const days = snapshotUnchanged ? [] : [...new Set(newWorkouts.map((w) => w.date))].sort();
-  if (days.length) log(`${newWorkouts.length} new workout(s) across ${days.length} day(s)`);
+  const days = snapshotUnchanged || hold ? [] : changed;
+  if (days.length) log(`${days.length} day(s) changed`);
 
   // A new dictionary row belongs with the day that first used it -- logging a
-  // new abbreviation is what creates it.
+  // new abbreviation is what creates it. A workout can also name an exercise
+  // the dictionary has no row for (rows get merged away while the workouts
+  // keep their name), and there is nothing to carry over for those.
   const firstUse = new Map<string, string>();
-  for (const w of newWorkouts) {
-    if (!oldDict.has(w.exercise) && !firstUse.has(w.exercise)) firstUse.set(w.exercise, w.date);
+  for (const d of days) {
+    for (const w of freshDays.get(d)?.workouts ?? []) {
+      if (!oldDict.has(w.exercise) && !firstUse.has(w.exercise)) firstUse.set(w.exercise, d);
+    }
   }
 
-  const setsOf = (id: number) =>
-    freshDb
-      .query("SELECT id, workout_id, set_number, value FROM sets WHERE workout_id=?1 ORDER BY set_number")
-      .all(id) as any[];
+  const freshContents = contents(freshDb);
 
   const commit = (message: string) => {
-    rmSync(TARGET, { force: true });
+    // Once the rebuilt snapshot holds exactly what the live log does, publish
+    // the live vacuum itself: the two differ in page layout even then, and
+    // committing the rebuild would leave that churn for a commit of its own.
     const w = new Database(work, { readonly: true });
-    w.query("VACUUM INTO ?1").run(String(TARGET));
+    const caughtUp = contents(w) === freshContents;
+    rmSync(TARGET, { force: true });
+    if (caughtUp) copyFileSync(fresh, TARGET);
+    else w.query("VACUUM INTO ?1").run(String(TARGET));
     w.close();
     const chk = new Database(TARGET, { readonly: true });
     const ok = (chk.query("PRAGMA integrity_check").get() as any).integrity_check;
@@ -131,61 +198,67 @@ try {
   };
 
   for (const day of days) {
-    const ws = newWorkouts.filter((w) => w.date === day);
-    // A workout can name an exercise the dictionary has no row for. The
-    // server writes one when the workout is created, but rows get merged away
-    // or deleted afterwards while the workouts keep the name they were logged
-    // under -- and the log has six such names in it. There is nothing to carry
-    // into the commit for those, and assuming otherwise used to abort the run
-    // and, with it, every publish after the day one was logged.
+    const before = oldDays.get(day);
+    const after = freshDays.get(day) ?? { workouts: [], sets: [], cardio: [] };
     const dictForDay = [...firstUse.entries()]
       .filter(([, d]) => d === day)
       .map(([a]) => a)
       .filter((a) => freshDictRows.some((d) => d.abbreviation === a));
 
+    // Replace the day wholesale with what the live log now has for it.
     const db = new Database(work);
-    for (const ab of dictForDay) {
-      const r = freshDictRows.find((d) => d.abbreviation === ab)!;
-      db.query(
-        `INSERT INTO exercise_dictionary
-           (abbreviation, full_name, sled_weight_kg, movement_pattern, fatigue_tier)
-         VALUES (?1, ?2, ?3, ?4, ?5)`
-      ).run(r.abbreviation, r.full_name, r.sled_weight_kg, r.movement_pattern, r.fatigue_tier);
-    }
-    for (const w of ws) {
-      db.query("INSERT INTO workouts (id, date, exercise, created_at) VALUES (?1, ?2, ?3, ?4)").run(
-        w.id, w.date, w.exercise, w.created_at
-      );
-      for (const s of setsOf(w.id)) {
-        db.query("INSERT INTO sets (id, workout_id, set_number, value) VALUES (?1, ?2, ?3, ?4)").run(
-          s.id, s.workout_id, s.set_number, s.value
-        );
-      }
-    }
+    db.transaction(() => {
+      for (const w of before?.workouts ?? []) db.query("DELETE FROM sets WHERE workout_id=?1").run(w.id);
+      db.query("DELETE FROM workouts WHERE date=?1").run(day);
+      db.query("DELETE FROM cardio_sessions WHERE date=?1").run(day);
+      for (const ab of dictForDay) insert(db, "exercise_dictionary", freshDictRows.find((d) => d.abbreviation === ab)!);
+      for (const w of after.workouts) insert(db, "workouts", w);
+      for (const s of after.sets) insert(db, "sets", s);
+      for (const c of after.cardio) insert(db, "cardio_sessions", c);
+    })();
     db.close();
 
-    // Subject names the exercises while they fit; the body always lists them
-    // in full with their sets, since the diff itself is unreadable.
-    const verb = oldDates.has(day) ? "Add to" : "Log";
-    let subject = `${verb} the ${day} session: `;
-    const parts: string[] = [];
-    for (const w of ws) {
-      if ((subject + [...parts, w.exercise].join(", ")).length > 68) {
-        parts.push("...");
-        break;
-      }
-      parts.push(w.exercise);
-    }
-    subject += parts.join(", ");
+    const oldIds = new Set((before?.workouts ?? []).map((w) => w.id));
+    const names = [...after.workouts.map((w) => w.exercise), ...after.cardio.map((c) => c.activity)];
+    const verb = !before
+      ? "Log"
+      : !names.length
+        ? "Remove"
+        : after.workouts.some((w) => !oldIds.has(w.id)) || after.cardio.length > before.cardio.length
+          ? "Add to"
+          : "Edit";
 
-    const body = ws
-      .map((w) => {
-        const sets = setsOf(w.id).map((s) => s.value).join(", ");
-        const full = freshDictRows.find((d) => d.abbreviation === w.exercise)?.full_name;
-        const label = full ? `${w.exercise} (${full})` : w.exercise;
-        return `  ${label}: ${sets || "no sets"}`;
-      })
-      .join("\n");
+    // Subject names the exercises while they fit; the body always lists the
+    // whole day as it now stands, since the diff itself is unreadable.
+    let subject = `${verb} the ${day} session`;
+    if (names.length) {
+      subject += ": ";
+      const parts: string[] = [];
+      for (const n of names) {
+        if ((subject + [...parts, n].join(", ")).length > 68) {
+          parts.push("...");
+          break;
+        }
+        parts.push(n);
+      }
+      subject += parts.join(", ");
+    }
+
+    const lines = after.workouts.map((w) => {
+      const sets = after.sets
+        .filter((s) => s.workout_id === w.id)
+        .sort((a, b) => a.set_number - b.set_number)
+        .map((s) => s.value)
+        .join(", ");
+      const full = freshDictRows.find((d) => d.abbreviation === w.exercise)?.full_name;
+      const label = full ? `${w.exercise} (${full})` : w.exercise;
+      return `  ${label}: ${sets || "no sets"}`;
+    });
+    for (const c of after.cardio) {
+      const mins = Math.round(c.duration_seconds / 60);
+      lines.push(`  ${c.activity}: ${c.distance_value} ${c.distance_unit} in ${mins} min`);
+    }
+    const body = lines.length ? lines.join("\n") : "  (the day no longer has any entries)";
     const dictNote = dictForDay.length
       ? `\n\nFirst use of ${dictForDay.join(", ")}, added to the exercise dictionary.`
       : "";
@@ -194,11 +267,10 @@ try {
   }
 
   // ---------- whatever else moved ----------
-  // Edits to older sessions, dictionary changes not tied to a new day, and
-  // the page-level churn a re-save leaves behind. Committing the real vacuum
-  // output also guarantees the published file is exactly what
-  // scripts/backup-db.sh produces, rather than something rebuilt here.
-  if (!snapshotUnchanged) copyFileSync(fresh, TARGET);
+  // Dictionary and fatigue-rate edits, and anything else not filed under a
+  // date. Committing the real vacuum output also guarantees the published
+  // file is exactly what scripts/backup-db.sh produces.
+  if (!snapshotUnchanged && !hold) copyFileSync(fresh, TARGET);
   if (git(["status", "--porcelain", "backups/workout.db"])) {
     const counts = freshDb.query("SELECT COUNT(*) c FROM workouts").get() as any;
     const dictNote = newDict.length
@@ -208,9 +280,8 @@ try {
     git([
       "commit", "--quiet", "-m",
       "Refresh the workout database snapshot\n\n" +
-        "Edits to earlier sessions, dictionary changes, and the row churn a\n" +
-        "re-save leaves behind -- everything the per-day commits above don't\n" +
-        `cover. The snapshot now holds ${counts.c} workouts.${dictNote}`,
+        "Dictionary and fatigue-rate changes -- everything outside the\n" +
+        `per-day commits above. The snapshot now holds ${counts.c} workouts.${dictNote}`,
     ]);
     log("committed: Refresh the workout database snapshot");
   }
@@ -219,9 +290,11 @@ try {
 
   // The published file must be byte-identical to a straight vacuum of the
   // live database; anything else means the rebuild above drifted.
-  const a = Bun.hash(await Bun.file(fresh).arrayBuffer());
-  const b = Bun.hash(await Bun.file(TARGET).arrayBuffer());
-  if (a !== b) die("built snapshot differs from the live vacuum; not pushing");
+  if (!hold) {
+    const a = Bun.hash(await Bun.file(fresh).arrayBuffer());
+    const b = Bun.hash(await Bun.file(TARGET).arrayBuffer());
+    if (a !== b) die("built snapshot differs from the live vacuum; not pushing");
+  }
 
   const ahead = Number(git(["rev-list", "--count", `origin/${BRANCH}..${BRANCH}`]));
   if (ahead === 0) {

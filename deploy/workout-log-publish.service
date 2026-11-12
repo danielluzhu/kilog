@@ -2,8 +2,9 @@
 #
 # Installed to /etc/systemd/system/ and driven by two units:
 # workout-log-publish.path, which fires as soon as an entry is written, and
-# workout-log-publish.timer, which sweeps up once a day whatever the watch
-# missed (machine asleep, a commit made by hand, a run that aborted).
+# workout-log-publish.timer, which runs after midnight Pacific to publish the
+# day that just ended along with anything the watch missed (machine asleep, a
+# commit made by hand, a run that aborted).
 [Unit]
 Description=Publish new workout log entries to git
 After=network-online.target
