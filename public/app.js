@@ -15,6 +15,57 @@ $(".add-actions").prepend(setsEditor.addButton);
 
 let dictionary = [];
 
+// ---------- rest timer ----------
+// Counts three minutes down from the last entry logged here, so the rest
+// between sets is on the same screen the next set is typed into. The start
+// time is kept in storage so a reload mid-rest picks the countdown back up.
+
+const REST_MS = 3 * 60 * 1000;
+const REST_KEY = "kilog.lastLoggedAt";
+const restTimer = $("#rest-timer");
+let restTick;
+
+function showRestTimer(loggedAt) {
+  clearInterval(restTick);
+  // Drawn from the clock each tick rather than counted down, so a phone that
+  // throttled the page while it was locked still shows the right time.
+  const draw = () => {
+    const left = loggedAt + REST_MS - Date.now();
+    if (left <= 0) {
+      clearInterval(restTick);
+      restTimer.textContent = "Rest over";
+      restTimer.classList.add("done");
+      return;
+    }
+    const s = Math.ceil(left / 1000);
+    restTimer.textContent = `Rest ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    restTimer.classList.remove("done");
+  };
+  restTimer.hidden = false;
+  draw();
+  restTick = setInterval(draw, 250);
+}
+
+function markLogged() {
+  const now = Date.now();
+  try {
+    localStorage.setItem(REST_KEY, String(now));
+  } catch {
+    // Storage blocked: the timer still runs, it just won't survive a reload.
+  }
+  showRestTimer(now);
+}
+
+// A rest that already ran out before the page opened stays hidden rather
+// than announcing one that ended long ago.
+{
+  let lastLogged = 0;
+  try {
+    lastLogged = Number(localStorage.getItem(REST_KEY)) || 0;
+  } catch {}
+  if (Date.now() - lastLogged < REST_MS) showRestTimer(lastLogged);
+}
+
 // The starting-weight column only appears once the typed exercise is one that
 // has one — a machine's sled, a landmine's bar — so it follows along as the
 // exercise field changes.
@@ -79,6 +130,7 @@ $("#add-form").addEventListener("submit", async (e) => {
     });
     if (!res.ok) throw new Error((await res.json()).error || "Failed to save");
 
+    markLogged();
     status.textContent = "Saved!";
     status.className = "status ok";
     $("#exercise").value = "";
@@ -336,6 +388,7 @@ async function saveEdit(tr, id, editor) {
     alert((await res.json()).error || "Failed to save");
     return;
   }
+  markLogged();
   await loadDictionaryOptions();
   await refreshLog();
 }
