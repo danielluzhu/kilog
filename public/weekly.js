@@ -102,7 +102,7 @@ const DEFAULT_PLAN = {
       slots: [
         { ex: "S", group: "Snatch", load: "heavy", sets: 5, reps: 2, pctLo: 0.82, pctHi: 0.9,
           note: "Two misses at the same weight ends the exercise for the day." },
-        { ex: "SHP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S",
+        { ex: "SRP", group: "Snatch", load: "medium", sets: 3, reps: 3, pctLo: 0.95, pctHi: 1.05, ref: "S",
           note: "Finish the extension; this is not a shrug." },
         { ex: "FSQ", group: "Squat", load: "heavy", sets: 4, reps: 2, pctLo: 0.85, pctHi: 0.9 },
         { ex: "SP", group: "Press", load: "medium", sets: 4, reps: 5, pctLo: 0.7, pctHi: 0.78,
@@ -256,8 +256,8 @@ const GOAL_FOCUSES = ["Snatch", "Clean & Jerk", "Squat", "Pull-up", "Dip"];
 // information. Both still count everywhere else on the page.
 const GRID_ROW_ALIASES = { "Pull-up": "Pulls", Dip: "Press", Jerk: "Clean & Jerk" };
 // Exercises that train a lift (and count toward it) but are drawn in another
-// row: the snatch and clean high pulls are pulls, whatever they're for.
-const GRID_ROW_BY_EXERCISE = { SHP: "Pulls", CHP: "Pulls" };
+// row: the snatch pull and the clean high pull are pulls, whatever they're for.
+const GRID_ROW_BY_EXERCISE = { SRP: "Pulls", CHP: "Pulls" };
 const GRID_HIDDEN_FOCUSES = new Set(["Push", "Hinge"]);
 const gridRowFor = (focus) => GRID_ROW_ALIASES[focus] || focus;
 const GRID_TECHNIQUE_LABELS = { Snatch: "S", "Clean & Jerk": "CJ" };
