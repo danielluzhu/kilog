@@ -287,7 +287,9 @@ const state = {
   dict: {},           // abbreviation -> the dictionary row (for movement pattern)
   maxes: {},          // abbreviation -> { oneRM, date, sets } | null
   actualWfuPerWeek: null,
+  actualWfuV2PerWeek: null,
   actualDaysPerWeek: null,
+  fatigueV2: null,    // fatigueUnitsV2's context over the whole log, or null
 };
 
 // ---------- persistence ----------
@@ -523,19 +525,49 @@ function slotFatigue(slot, day) {
   return countedSets(slot, day) * fatigueMultiplier(slot.ex, nameOf(slot.ex));
 }
 
+// A slot's reps as a number v2 can read: "1+2" is three reps in the set, and
+// anything per side or timed has no load to price.
+function plannedReps(slot) {
+  const r = String(slot.reps);
+  if (/^\d+$/.test(r)) return Number(r);
+  if (/^\d+\+\d+$/.test(r)) return r.split("+").reduce((a, b) => a + Number(b), 0);
+  return null;
+}
+
+// The same slot under fatigue v2, which is on trial beside WFU. The planned
+// weight -- the middle of the prescribed band, off the max the page shows --
+// is read against the max v2 would use for the exercise today, the way a
+// logged set of it would be. A slot with no weight to read keeps its WFU.
+function slotFatigueV2(slot, day) {
+  const base = slotFatigue(slot, day);
+  const v2 = state.fatigueV2;
+  const tier = classifyFatigueTier(slot.ex, nameOf(slot.ex));
+  const mean = v2?.tierMeanEffort[tier];
+  const reps = plannedReps(slot);
+  const pct = scaledPct(slot);
+  const max = state.maxes[slot.ref || slot.ex];
+  if (!mean || !reps || !pct || !max) return base;
+  const weight = ((pct.lo + pct.hi) / 2) * max.oneRM;
+  const own = v2.maxOn(slot.ex, todayIso()) || max.oneRM;
+  return (base * fatigueV2Effort(weight, reps, own)) / mean;
+}
+
 function dayTotals(day) {
   let sets = 0;
   let wfu = 0;
+  let wfuV2 = 0;
   for (const slot of day.slots || []) {
     sets += countedSets(slot, day);
     wfu += slotFatigue(slot, day);
+    wfuV2 += slotFatigueV2(slot, day);
   }
-  return { sets: Math.round(sets), wfu };
+  return { sets: Math.round(sets), wfu, wfuV2 };
 }
 
 function weekTotals() {
   let sets = 0;
   let wfu = 0;
+  let wfuV2 = 0;
   let liftDays = 0;
   let cardio = 0;
   let cardioOptional = 0;
@@ -543,13 +575,14 @@ function weekTotals() {
     const totals = dayTotals(day);
     sets += totals.sets;
     wfu += totals.wfu;
+    wfuV2 += totals.wfuV2;
     if (totals.sets > 0) liftDays += 1;
     if (day.cardio) {
       if (day.cardio.optional) cardioOptional += 1;
       else cardio += 1;
     }
   }
-  return { sets, wfu, liftDays, cardio, cardioOptional };
+  return { sets, wfu, wfuV2, liftDays, cardio, cardioOptional };
 }
 
 // ---------- data ----------
@@ -608,26 +641,29 @@ async function loadMaxes() {
 async function loadActualLoad() {
   try {
     const res = await fetch("/api/volume");
-    const rows = await res.json();
+    // Priced over the whole log, which v2 needs; only the window is summed.
+    const { rows, v2 } = priceVolumeRows(await res.json());
+    state.fatigueV2 = v2;
     const cutoff = daysAgoDate(ACTUAL_WINDOW_DAYS);
     let wfu = 0;
+    let wfuV2 = 0;
     const days = new Set();
     for (const row of rows) {
       const when = parseDateParts(row.date);
       if (!when || when < cutoff) continue;
-      const tier = row.fatigueTier || classifyFatigueTier(row.exercise, row.exerciseName);
-      const units =
-        row.setCount *
-        fatigueMultiplier(row.exercise, row.exerciseName, tier, row.fatigueMultiplier);
-      wfu += units;
-      if (units > 0) days.add(row.date);
+      wfu += row.wfu;
+      wfuV2 += row.wfuV2;
+      if (row.wfu > 0) days.add(row.date);
     }
     const weeks = ACTUAL_WINDOW_DAYS / 7;
     state.actualWfuPerWeek = wfu / weeks;
+    state.actualWfuV2PerWeek = wfuV2 / weeks;
     state.actualDaysPerWeek = days.size / weeks;
   } catch {
     state.actualWfuPerWeek = null;
+    state.actualWfuV2PerWeek = null;
     state.actualDaysPerWeek = null;
+    state.fatigueV2 = null;
   }
 }
 
@@ -661,11 +697,19 @@ function renderStats() {
   const tiles = [
     { value: String(totals.liftDays), label: "lifting days" },
     { value: String(totals.sets), label: "working sets" },
-    { value: round1(totals.wfu).toString(), label: "fatigue units", detail: WFU_EXPLAINER_SHORT },
+    {
+      value: round1(totals.wfu).toString(),
+      label: "fatigue units",
+      detail: state.fatigueV2 ? `v2: ${round1(totals.wfuV2)} · ${WFU_EXPLAINER_SHORT}` : WFU_EXPLAINER_SHORT,
+    },
     {
       value: actual === null ? "—" : round1(actual).toString(),
       label: "your recent average",
-      detail: actual === null ? "" : `weighted fatigue units/week, last ${ACTUAL_WINDOW_DAYS} days`,
+      detail:
+        actual === null
+          ? ""
+          : `weighted fatigue units/week, last ${ACTUAL_WINDOW_DAYS} days` +
+            (state.actualWfuV2PerWeek === null ? "" : ` · v2: ${round1(state.actualWfuV2PerWeek)}`),
     },
     {
       value: String(totals.cardio),
@@ -899,7 +943,8 @@ function renderDay(day, dayIndex) {
   const isRest = Boolean(day.rest) || (day.slots || []).length === 0;
   const meta = isRest
     ? "no lifting"
-    : `${totals.sets} sets · ${round1(totals.wfu)} fatigue units`;
+    : `${totals.sets} sets · ${round1(totals.wfu)} fatigue units` +
+      (state.fatigueV2 ? ` · v2 ${round1(totals.wfuV2)}` : "");
 
   const table = state.editing ? editTable(day, dayIndex) : readTables(day, dayIndex);
 

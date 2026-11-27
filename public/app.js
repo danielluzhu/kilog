@@ -138,12 +138,34 @@ $("#add-form").addEventListener("submit", async (e) => {
     dateInput.value = date; // keep date for logging multiple exercises same day
 
     await loadDictionaryOptions();
+    await loadFatigueV2();
     await refreshLog();
   } catch (err) {
     status.textContent = err.message;
     status.className = "status err";
   }
 });
+
+// ---------- fatigue v2 (on trial) ----------
+// v2 needs the whole log -- each set is read against the lift's max over the
+// prior year -- where the history below is fetched a page at a time. So it
+// is priced once from /api/volume and looked up by date when a day is drawn,
+// and re-priced after anything is saved.
+
+let fatigueV2ByDate = new Map();
+
+async function loadFatigueV2() {
+  try {
+    const res = await fetch("/api/volume");
+    const { rows } = priceVolumeRows(await res.json());
+    const byDate = new Map();
+    for (const r of rows) byDate.set(r.date, (byDate.get(r.date) || 0) + r.wfuV2);
+    fatigueV2ByDate = byDate;
+  } catch {
+    // The day headers fall back to WFU alone.
+    fatigueV2ByDate = new Map();
+  }
+}
 
 // ---------- history table / log (grouped by day, newest day first) ----------
 
@@ -215,12 +237,15 @@ function dayHeaderHtml(date, workouts) {
     .join("");
 
   // A day of nothing but stretching or steady-state cardio scores no fatigue
-  // units at all — omitted rather than shown as a "0".
-  const wfuPill = fatigueUnits
-    ? `<span class="day-wfu" title="${escapeHtml(WFU_EXPLAINER)}">${formatFatigueUnits(
-        fatigueUnits
-      )} WFU</span>`
-    : "";
+  // units at all — omitted rather than shown as a "0". v2 rides in the same
+  // pill while it's on trial; a day of only misses has v2 and no WFU.
+  const v2 = fatigueV2ByDate.get(date);
+  const wfuPill =
+    fatigueUnits || v2
+      ? `<span class="day-wfu" title="${escapeHtml(`${WFU_EXPLAINER}\n\n${FATIGUE_V2_EXPLAINER}`)}">${formatFatigueUnits(
+          fatigueUnits
+        )} WFU${v2 === undefined ? "" : ` · v2 ${formatFatigueUnits(v2)}`}</span>`
+      : "";
 
   // Folded, the header still says what was trained.
   const exercises = workouts.map((w) => escapeHtml(w.exercise)).join(" · ");
@@ -390,6 +415,7 @@ async function saveEdit(tr, id, editor) {
   }
   markLogged();
   await loadDictionaryOptions();
+  await loadFatigueV2();
   await refreshLog();
 }
 
@@ -421,4 +447,5 @@ $("#search").addEventListener("input", (e) => {
 // and movement pattern can be set by hand there, and drawing first showed the
 // name-derived guess on whichever loads won the race — so a lift's pill could
 // read Technique on one load and Complex on the next.
-Promise.allSettled([loadDictionaryOptions(), loadFatigueRates()]).then(refreshLog);
+// v2 is priced after both, since it reads tiers and rates off them.
+Promise.allSettled([loadDictionaryOptions(), loadFatigueRates()]).then(loadFatigueV2).then(refreshLog);

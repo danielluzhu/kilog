@@ -67,9 +67,9 @@
       <div class="stat"><span class="stat-value" id="vol-per-bucket">—</span><span class="stat-label" id="vol-per-bucket-label">avg per bucket</span></div>
       <div class="stat"><span class="stat-value" id="vol-sessions">—</span><span class="stat-label">training days</span></div>
       <div class="stat" title="Weighted fatigue units: counted sets x 2 (clean &amp; jerk), x1.5 (snatch, clean, and complexes built on them), x1 (jerk, Olympic pulls, other compounds, technique), x0.4 (isolation). Steady-state cardio doesn't score; intervals do, at x1.">
-        <span class="stat-value" id="vol-wfu">—</span><span class="stat-label">fatigue units (WFU)</span>
+        <span class="stat-value" id="vol-wfu">—</span><span class="stat-label">fatigue units (WFU)</span><span class="stat-detail" id="vol-wfu-v2"></span>
       </div>
-      <div class="stat"><span class="stat-value" id="vol-wfu-per-bucket">—</span><span class="stat-label" id="vol-wfu-per-bucket-label">avg WFU per bucket</span></div>
+      <div class="stat"><span class="stat-value" id="vol-wfu-per-bucket">—</span><span class="stat-label" id="vol-wfu-per-bucket-label">avg WFU per bucket</span><span class="stat-detail" id="vol-wfu-per-bucket-v2"></span></div>
     </div>
     <div class="rate-row" id="vol-rate"></div>
     <div id="vol-chart-wrap"></div>
@@ -82,10 +82,11 @@
       <div class="vol-legend" id="wfu-legend"></div>
     </div>
     <div class="stats-row" style="margin-bottom:0.9rem;">
-      <div class="stat"><span class="stat-value" id="wfu-peak">—</span><span class="stat-label" id="wfu-peak-label">heaviest bucket</span></div>
-      <div class="stat"><span class="stat-value" id="wfu-per-set">—</span><span class="stat-label">avg WFU per set</span></div>
+      <div class="stat"><span class="stat-value" id="wfu-peak">—</span><span class="stat-label" id="wfu-peak-label">heaviest bucket</span><span class="stat-detail" id="wfu-peak-v2"></span></div>
+      <div class="stat"><span class="stat-value" id="wfu-per-set">—</span><span class="stat-label">avg WFU per set</span><span class="stat-detail" id="wfu-per-set-v2"></span></div>
     </div>
     <div class="rate-row" id="wfu-rate"></div>
+    <div class="rate-row" id="wfu-v2-rate" title="Fatigue v2, on trial beside WFU: each set weighted by how close to failure it was."></div>
     <div id="wfu-chart-wrap"></div>
     <p class="muted" id="wfu-empty" style="display:none; margin-bottom:0;">No sets logged in this range.</p>
   </section>

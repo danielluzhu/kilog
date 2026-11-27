@@ -283,30 +283,30 @@ function deleteWorkout(id: number) {
 // fatigue-tier classification itself stays client-side (public/utils.js), so
 // there's only ever one copy of those rules.
 function listVolume() {
-  // Set values are concatenated (on a separator no set value contains, since
-  // a single value can hold commas) only to be counted here — they're
-  // dropped before the response, so the chart still ships one number per
-  // workout rather than every set.
+  // Set values are concatenated on a separator no set value contains, since
+  // a single value can hold commas. They ship with the count: fatigue v2
+  // prices each set by its weight, which a count can't carry. Workouts with
+  // no counted set ship too -- a session of misses costs something under v2
+  // -- and the charts drop them themselves.
   const rows = db
     .query(
       `SELECT w.date, w.exercise, d.full_name AS exerciseName,
               d.movement_pattern AS movementPattern, d.fatigue_tier AS fatigueTier,
               d.fatigue_multiplier AS fatigueMultiplier,
-              GROUP_CONCAT(s.value, char(31)) AS setValues
+              -- In set order: a bare rep count takes the weight of the set
+              -- before it, so v2 reads the sets in the order they were done.
+              (SELECT GROUP_CONCAT(value, char(31))
+                 FROM (SELECT value FROM sets WHERE workout_id = w.id ORDER BY set_number)) AS setValues
        FROM workouts w
-       LEFT JOIN sets s ON s.workout_id = w.id
        LEFT JOIN exercise_dictionary d ON d.abbreviation = w.exercise
-       GROUP BY w.id
-       ORDER BY w.date`
+       ORDER BY w.date, w.id`
     )
     .all() as ({ setValues: string | null } & Record<string, unknown>)[];
 
-  return rows
-    .map(({ setValues, ...row }) => ({
-      ...row,
-      setCount: countSets(setValues === null ? [] : setValues.split("\x1f")),
-    }))
-    .filter((row) => row.setCount > 0);
+  return rows.map(({ setValues, ...row }) => {
+    const sets = setValues === null ? [] : setValues.split("\x1f");
+    return { ...row, sets, setCount: countSets(sets) };
+  });
 }
 
 // ---------- exercise dictionary ----------

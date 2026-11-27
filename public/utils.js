@@ -776,6 +776,129 @@ function buildWfuExplainer() {
 
 let WFU_EXPLAINER = buildWfuExplainer();
 
+// ---------- fatigue v2 (on trial, shown beside WFU) ----------
+// WFU prices every set of an exercise alike. v2 prices each set by how close
+// it came to failure, read off its weight against the lift's recent estimated
+// max: a warm-up costs a fraction of a top set, and a missed attempt costs the
+// most of all instead of nothing.
+//
+//   max     best Epley estimate over the prior 365 days and the same day.
+//           The day's own sets count, so a set that beats the old max reads
+//           as taken to failure rather than as impossible. 365 rather than
+//           120 days: on lifts trained a few times a quarter the shorter
+//           window missed the real max for over half the sets.
+//   effort  reps / reps possible at that weight, capped at 1. A miss is 1.
+//   units   the WFU rate x effort / that tier's average effort. The average
+//           set in each tier still costs its tier's rate, so totals stay
+//           where they were and only move between sets.
+//
+// Only complex, compound and isolation are scaled. Technique, cardio and
+// stretching keep their flat rate, as does any set with no load or no max to
+// read it against. Needs the whole log, not a page of it: both the max and
+// the tier averages are read across history.
+const FATIGUE_V2_LOOKBACK_DAYS = 365;
+const FATIGUE_V2_SCALED_TIERS = new Set(["complex", "compound", "isolation"]);
+const FATIGUE_V2_EXPLAINER =
+  "v2 (on trial): each set weighted by how close to failure it was — its weight against " +
+  "the lift's best estimated max of the last 365 days. Warm-ups count for less, top sets " +
+  "and misses for more; the average set in each tier costs what it does in WFU.";
+
+// Unlike epley1RM, a single goes through the formula too: the estimate and
+// its inverse below have to agree, or a set at its own max reads as
+// impossible.
+function fatigueV2OneRM(weight, reps) {
+  return weight * (1 + Math.min(reps, MAX_SCORED_REPS) / 30);
+}
+
+// Share of the reps possible at `weight` that `reps` used, for a lift whose
+// max is `max`. Capped at 1.
+function fatigueV2Effort(weight, reps, max) {
+  const possible = 30 * (max / weight - 1);
+  return possible <= 0 ? 1 : Math.min(1, reps / possible);
+}
+
+// `workouts`: the whole log, as [{ date, exercise, exerciseName, sets, tier,
+// rate }]. `tier` and `rate` are what the caller already prices the workout
+// at — the Volume page reads its overrides off its own rows — so v2 can only
+// differ from WFU by its per-set factor.
+// Returns { units, tierMeanEffort, maxOn }: `units` is aligned with
+// `workouts`; maxOn(exercise, isoDate) is the max v2 would read a set on that
+// date against, or 0.
+function fatigueUnitsV2(workouts) {
+  const dayOf = (iso) => Math.round(Date.parse(`${iso}T00:00:00Z`) / 86400000);
+  const sets = [];
+  const bestByDay = new Map(); // exercise -> Map(day -> best estimate that day)
+  workouts.forEach((wk, wi) => {
+    const raw = wk.sets || [];
+    const resolved = resolveWeightCarryover(raw, wk.exercise, wk.exerciseName);
+    const day = dayOf(wk.date);
+    raw.forEach((value, i) => {
+      const counted = countsAsSet(value);
+      const parsed = parseScorableSet(resolved[i], wk.exercise, wk.exerciseName);
+      const loaded = Boolean(parsed && parsed.weight > 0);
+      if (!counted && !(loaded && parsed.reps === 0)) return;
+      sets.push({ wi, day, counted, weight: loaded ? parsed.weight : 0, reps: loaded ? parsed.reps : null });
+      if (loaded && parsed.reps >= 1) {
+        if (!bestByDay.has(wk.exercise)) bestByDay.set(wk.exercise, new Map());
+        const days = bestByDay.get(wk.exercise);
+        days.set(day, Math.max(days.get(day) || 0, fatigueV2OneRM(parsed.weight, parsed.reps)));
+      }
+    });
+  });
+
+  const maxCache = new Map();
+  const maxOnDay = (exercise, day) => {
+    const key = `${exercise}|${day}`;
+    if (maxCache.has(key)) return maxCache.get(key);
+    let best = 0;
+    for (const [d, v] of bestByDay.get(exercise) || []) {
+      if (d <= day && d >= day - FATIGUE_V2_LOOKBACK_DAYS && v > best) best = v;
+    }
+    maxCache.set(key, best);
+    return best;
+  };
+
+  const sums = {};
+  for (const s of sets) {
+    const wk = workouts[s.wi];
+    s.effort = null;
+    if (!FATIGUE_V2_SCALED_TIERS.has(wk.tier) || !s.weight) continue;
+    const max = maxOnDay(wk.exercise, s.day);
+    if (!max) continue;
+    s.effort = s.reps === 0 ? 1 : fatigueV2Effort(s.weight, s.reps, max);
+    if (s.reps >= 1) {
+      sums[wk.tier] = sums[wk.tier] || { total: 0, n: 0 };
+      sums[wk.tier].total += s.effort;
+      sums[wk.tier].n += 1;
+    }
+  }
+  const tierMeanEffort = Object.fromEntries(
+    Object.entries(sums).map(([tier, { total, n }]) => [tier, total / n])
+  );
+
+  const units = workouts.map(() => 0);
+  for (const s of sets) {
+    const wk = workouts[s.wi];
+    const mean = tierMeanEffort[wk.tier];
+    if (s.effort !== null && mean) units[s.wi] += (wk.rate * s.effort) / mean;
+    else if (s.counted) units[s.wi] += wk.rate;
+  }
+  return { units, tierMeanEffort, maxOn: (exercise, iso) => maxOnDay(exercise, dayOf(iso)) };
+}
+
+// The /api/volume rows, priced the way every page prices them, run through
+// v2. Each row gains `wfu` and `wfuV2`; the v2 context comes back alongside.
+function priceVolumeRows(rows) {
+  const priced = rows.map((r) => {
+    const tier = r.fatigueTier || classifyFatigueTier(r.exercise, r.exerciseName);
+    const rate = fatigueMultiplier(r.exercise, r.exerciseName, tier, r.fatigueMultiplier);
+    return { ...r, tier, rate, wfu: r.setCount * rate };
+  });
+  const v2 = fatigueUnitsV2(priced);
+  priced.forEach((r, i) => (r.wfuV2 = v2.units[i]));
+  return { rows: priced, v2 };
+}
+
 // Lays the hand-set rates from /api/fatigue-rates over the built-in ones.
 // Anything missing, out of range or not a known rate is ignored rather than
 // allowed to poison a total: a bad row should cost you one custom number,
