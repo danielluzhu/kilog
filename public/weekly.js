@@ -945,7 +945,7 @@ document.addEventListener(
     if (el.classList.contains("plan-menu")) {
       set = state.openMenus;
       key = el.dataset.menu;
-    } else if (el.classList.contains("plan-day") && !state.editing) {
+    } else if (el.classList.contains("plan-day") && el.dataset.day !== undefined && !state.editing) {
       set = state.openDays;
       key = Number(el.dataset.day);
     }
