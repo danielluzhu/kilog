@@ -214,7 +214,7 @@ function dayHeaderHtml(date, workouts) {
     )
     .join("");
 
-  // A day of nothing but technique or steady-state cardio scores no fatigue
+  // A day of nothing but stretching or steady-state cardio scores no fatigue
   // units at all — omitted rather than shown as a "0".
   const wfuPill = fatigueUnits
     ? `<span class="day-wfu" title="${escapeHtml(WFU_EXPLAINER)}">${formatFatigueUnits(

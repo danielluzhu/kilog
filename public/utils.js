@@ -490,6 +490,12 @@ const TECHNIQUE_KEYWORDS = [
   "tempo", "pause snatch", "pause clean", "no foot", "no-foot", "from power",
 ];
 
+// Stretching and mobility work. A held stretch is not a set performed in the
+// sense this scale counts, so it costs nothing (FATIGUE_MULTIPLIERS.stretch)
+// whatever tier it lands in. Matched after the technique keywords, so the
+// snatch-stretch drill stays a technique drill.
+const STRETCH_KEYWORDS = ["stretch", "mobility", "yoga", "foam roll"];
+
 // Keywords are matched as plain substrings against a full name, which is safe
 // enough in prose ("Row Erg", "Bike Sprints"). An abbreviation is terser and
 // far more collision-prone — "Crunch" contains "run" — so when it's all
@@ -576,6 +582,7 @@ const DEFAULT_FATIGUE_MULTIPLIERS = {
   technique: 1,
   intervals: 1,
   uncounted: 0,
+  stretch: 0,
 };
 
 // Display order and names for the Dictionary's "Default WFU per set" panel,
@@ -590,6 +597,7 @@ const FATIGUE_RATE_LABELS = {
   technique: "Technique",
   intervals: "Intervals",
   uncounted: "Steady-state cardio",
+  stretch: "Stretching",
 };
 const FATIGUE_RATE_NOTES = {
   cleanAndJerk: "Two maximal efforts inside one set.",
@@ -599,6 +607,7 @@ const FATIGUE_RATE_NOTES = {
   technique: "Light drills still cost a set performed.",
   intervals: "Genuinely repeated hard efforts.",
   uncounted: "Not the kind of work this measures.",
+  stretch: "Held positions, not sets performed.",
 };
 
 // The rates actually in force: the built-ins with any hand-set ones laid
@@ -612,6 +621,14 @@ let FATIGUE_MULTIPLIERS = { ...DEFAULT_FATIGUE_MULTIPLIERS };
 const MAX_FATIGUE_MULTIPLIER = 10;
 
 const INTERVAL_KEYWORDS = ["interval", "hiit", "tabata", "fartlek", "sprint", "repeat"];
+
+// The name decides where there is one; an unnamed entry ("Lat + tricep
+// stretch") is read off its abbreviation, a keyword to a word.
+function isStretch(abbreviation, fullName) {
+  const name = (fullName || "").toLowerCase();
+  if (name) return STRETCH_KEYWORDS.some((w) => name.includes(w));
+  return abbreviationMentions(abbreviation, STRETCH_KEYWORDS);
+}
 
 function isIntervalConditioning(abbreviation, fullName) {
   const text = `${fullName || ""} ${abbreviation || ""}`.toLowerCase();
@@ -680,6 +697,7 @@ function autoFatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTie
       ? FATIGUE_MULTIPLIERS.intervals
       : FATIGUE_MULTIPLIERS.uncounted;
   }
+  if (isStretch(abbreviation, fullName)) return FATIGUE_MULTIPLIERS.stretch;
   if (tier === "complex") {
     return isCleanAndJerk(abbreviation, fullName)
       ? FATIGUE_MULTIPLIERS.cleanAndJerk
@@ -751,7 +769,7 @@ function buildWfuExplainer() {
     `${x("olympic")} (snatch, clean, and complexes built on them), ` +
     `${x("compound")} (jerk, Olympic pulls, other compounds), ${x("technique")} (technique), ` +
     `${x("isolation")} (isolation). Steady-state cardio scores ${x("uncounted")}, ` +
-    `intervals ${x("intervals")}. Those rates, and any one exercise's own, are set in the ` +
+    `intervals ${x("intervals")}, stretching ${x("stretch")}. Those rates, and any one exercise's own, are set in the ` +
     "Dictionary."
   );
 }

@@ -472,6 +472,7 @@ const FATIGUE_RATE_NAMES = [
   "technique",
   "intervals",
   "uncounted",
+  "stretch",
 ];
 
 function listFatigueRates() {
