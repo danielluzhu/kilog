@@ -95,6 +95,7 @@ function priceRows() {
   // volume rides alongside the raw count, never instead of it: the charts
   // stay in sets, WFUs (and v2 beside them) surface in the stat tiles and
   // the tables. v2 is only priced while it's switched on.
+  rateTotalsCache = null;
   rows = priceVolumeRows(rawRows, { v2: fatigueV2Shown() })
     .rows.map((r) => ({
       ...r,
@@ -586,18 +587,44 @@ function weeksInWindow(key) {
   return Math.max(1, to - from + 1) / 7;
 }
 
-// `weightOf` lets a row count for a fraction of itself, which is what a body
-// part needs: a set of cleans is a whole set of legs but only half a set of
-// back. Returning 1 (the default) is the plain unweighted count the tier and
-// pattern rows use.
-function rateIn(key, field, filter, weightOf) {
-  const weeks = weeksInWindow(key);
-  if (!weeks || rows.length === 0) return null;
-  const { from, to } = windowBounds(key);
-  const total = rows
-    .filter((r) => r.day >= from && r.day <= to && (!filter || filter(r)))
-    .reduce((sum, r) => sum + (field === "wfu" || field === "wfuV2" ? r[field] : r.setCount) * (weightOf ? weightOf(r) : 1), 0);
-  return total / weeks;
+// Every rate on the page is a total over one of the windows above, and they
+// don't move with the chips — so all of them are summed in one pass over the
+// log when it's priced, not one pass per number on every redraw.
+let rateTotalsCache = null;
+
+// A body part's total is weighted: a set of cleans is a whole set of legs but
+// only half a set of back. A pattern's is the plain set count.
+function rateTotals() {
+  if (rateTotalsCache) return rateTotalsCache;
+  const windows = rateWindows().map((w) => ({ key: w.key, weeks: weeksInWindow(w.key), ...windowBounds(w.key) }));
+  const totals = {
+    // The series that appear anywhere in the log, whatever the window.
+    seen: { pattern: new Set(), bodyPart: new Set() },
+  };
+  for (const w of windows) totals[w.key] = { weeks: w.weeks, sets: 0, wfu: 0, wfuV2: 0, pattern: {}, bodyPart: {} };
+  for (const r of rows) {
+    totals.seen.pattern.add(r.pattern);
+    for (const [k, v] of Object.entries(r.bodyParts)) if (v > 0) totals.seen.bodyPart.add(k);
+    for (const w of windows) {
+      if (r.day < w.from || r.day > w.to) continue;
+      const t = totals[w.key];
+      t.sets += r.setCount;
+      t.wfu += r.wfu;
+      t.wfuV2 += r.wfuV2;
+      t.pattern[r.pattern] = (t.pattern[r.pattern] || 0) + r.setCount;
+      for (const [k, v] of Object.entries(r.bodyParts)) t.bodyPart[k] = (t.bodyPart[k] || 0) + r.setCount * v;
+    }
+  }
+  return (rateTotalsCache = totals);
+}
+
+// `field` is "sets", "wfu" or "wfuV2" for the whole log, or with `series`
+// ("pattern" or "bodyPart") and its key, that series' sets.
+function rateIn(key, field, series, seriesKey) {
+  if (rows.length === 0) return null;
+  const t = rateTotals()[key];
+  if (!t.weeks) return null;
+  return (series ? t[series][seriesKey] || 0 : t[field]) / t.weeks;
 }
 
 function renderRateRow(sel, noun, field, unit) {
@@ -620,16 +647,16 @@ function renderRateRow(sel, noun, field, unit) {
       .join("");
 }
 
-// One renderer for both breakdowns. `weightFor` returns how much of a row
-// counts toward a key: an equality test for the single-bucket patterns, a
-// lookup into the row's weight map for body parts.
+// One renderer for both breakdowns; `series` names which of rateTotals()'s
+// breakdowns to read, "pattern" or "bodyPart".
 // `unit` travels with the caller because a weighted series is not counting
 // the same thing an unweighted one is: a body-part rate is part-sets per
 // week, and labelling it sets/wk would quietly contradict the chart above it.
-function renderSeriesRates(spec, { headSel, bodySel, heading, stack, weightFor, unit = "sets/wk" }) {
+function renderSeriesRates(spec, { headSel, bodySel, heading, stack, series, unit = "sets/wk" }) {
   const dimmed = dimmerFor(spec);
   const windows = rateWindows();
-  const present = stack.filter((k) => rows.some((r) => weightFor(r, k) > 0));
+  const seen = rateTotals().seen[series];
+  const present = stack.filter((k) => seen.has(k));
 
   // Rendered rather than written into the markup: the column names carry the
   // actual years, so they change with the calendar.
@@ -643,7 +670,7 @@ function renderSeriesRates(spec, { headSel, bodySel, heading, stack, weightFor, 
     .map((k) => {
       const cells = windows
         .map((w) => {
-          const rate = rateIn(w.key, "sets", null, (r) => weightFor(r, k));
+          const rate = rateIn(w.key, "sets", series, k);
           // The unit rides in the column header here rather than on every
           // cell — 28 repetitions of "sets/wk" is noise, not clarity.
           return `<td>${rate === null ? '<span class="muted">—</span>' : formatRate(rate)}</td>`;
@@ -773,14 +800,14 @@ function render() {
     bodySel: "#pattern-rate-body",
     heading: "Pattern",
     stack: PATTERN_STACK,
-    weightFor: (r, k) => (r.pattern === k ? 1 : 0),
+    series: "pattern",
   });
   renderSeriesRates(bodyPartSpec, {
     headSel: "#bodypart-rate-head",
     bodySel: "#bodypart-rate-body",
     heading: "Body part",
     stack: BODY_PART_STACK,
-    weightFor: (r, k) => r.bodyParts[k] || 0,
+    series: "bodyPart",
     unit: "part-sets/wk",
   });
 
