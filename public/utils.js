@@ -1,6 +1,29 @@
 // Shared helpers used across all four tabs. Loaded before each page's own
 // script via a plain <script> tag (no build step / bundler in this app).
 
+// ---------- per-exercise memo ----------
+// The name classifiers below read nothing but the strings they're given, yet
+// a page prices every set of the whole log through them: about 12,000 sets
+// over a couple of hundred distinct exercises, so nearly every call repeats
+// one already made. Each answer is worked out once per exercise and kept.
+// Only for functions that read nothing else — anything that reads a
+// dictionary override or a rate stays uncached.
+//
+// The cache hangs off the function itself, one level of Map per argument:
+// building a joined key string on every call cost more than the lookups.
+function memoByName(fn, abbreviation, fullName, extra) {
+  const level = (map, key) => {
+    let next = map.get(key);
+    if (!next) map.set(key, (next = new Map()));
+    return next;
+  };
+  const cache = level(level(fn.memo || (fn.memo = new Map()), abbreviation ?? ""), fullName ?? "");
+  const key = extra ?? "";
+  let hit = cache.get(key);
+  if (hit === undefined && !cache.has(key)) cache.set(key, (hit = fn(abbreviation, fullName, extra)));
+  return hit;
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -394,6 +417,10 @@ function normalizeLiftName(name) {
 // Returns { key, label, isVariation } for the first matching category, or
 // null if this exercise isn't a tracked compound lift at all.
 function classifyLift(abbreviation, fullName) {
+  return memoByName(classifyLiftUncached, abbreviation, fullName);
+}
+
+function classifyLiftUncached(abbreviation, fullName) {
   const name = (fullName || "").toLowerCase();
 
   if (name) {
@@ -508,6 +535,10 @@ function abbreviationMentions(abbreviation, keywords) {
 // The tier this exercise's name and category imply, ignoring any override.
 // The Dictionary shows this as the "Auto" option.
 function autoFatigueTier(abbreviation, fullName) {
+  return memoByName(autoFatigueTierUncached, abbreviation, fullName);
+}
+
+function autoFatigueTierUncached(abbreviation, fullName) {
   const name = (fullName || "").toLowerCase();
   if (name && CARDIO_KEYWORDS.some((w) => name.includes(w))) return "cardio";
   if (name && TECHNIQUE_KEYWORDS.some((w) => name.includes(w))) return "technique";
@@ -975,6 +1006,10 @@ const BARBELL_DEFAULT_LIFT_KEYS = new Set([
 
 // Returns "bodyweight" | "free weight" | "cable" | "machine" | null.
 function classifyEquipment(abbreviation, fullName) {
+  return memoByName(classifyEquipmentUncached, abbreviation, fullName);
+}
+
+function classifyEquipmentUncached(abbreviation, fullName) {
   const name = (fullName || "").toLowerCase();
   if (!name) return null;
 
@@ -1077,6 +1112,10 @@ function matchesPatternWord(name, word) {
 }
 
 function classifyMovementPattern(abbreviation, fullName) {
+  return memoByName(classifyMovementPatternUncached, abbreviation, fullName);
+}
+
+function classifyMovementPatternUncached(abbreviation, fullName) {
   const name = ((fullName || "").trim() || nameFromAbbreviation(abbreviation)).toLowerCase();
   if (!name) return null;
   for (const rule of MOVEMENT_PATTERN_RULES) {
@@ -1216,6 +1255,10 @@ function weightsFromRule(rule) {
 // ("SidePlank") reads as well as a full name, and an all-caps code carries
 // no words to match on.
 function classifyBodyParts(abbreviation, fullName, movementPattern) {
+  return memoByName(classifyBodyPartsUncached, abbreviation, fullName, movementPattern);
+}
+
+function classifyBodyPartsUncached(abbreviation, fullName, movementPattern) {
   const name = ((fullName || "").trim() || nameFromAbbreviation(abbreviation)).toLowerCase();
   if (name) {
     for (const rule of BODY_PART_RULES) {
@@ -1356,6 +1399,10 @@ function resolveWeightCarryover(sets, abbreviation, fullName) {
 // rather than misread as an attempt ratio.
 const SINGLE_ARM_KEYWORDS = ["single arm", "single-arm", "one arm", "1 arm"];
 function isSingleArmExercise(abbreviation, fullName) {
+  return memoByName(isSingleArmExerciseUncached, abbreviation, fullName);
+}
+
+function isSingleArmExerciseUncached(abbreviation, fullName) {
   const name = (fullName || "").toLowerCase();
   return SINGLE_ARM_KEYWORDS.some((w) => name.includes(w));
 }
