@@ -474,6 +474,7 @@ td.col-abbrev { overflow-wrap: anywhere; }
 .fatigue-select.fatigue-isolation { color: var(--tier-isolation); }
 .fatigue-select.fatigue-technique { color: var(--tier-technique); }
 .fatigue-select.fatigue-cardio { color: var(--tier-cardio); }
+.fatigue-select.fatigue-stretch { color: var(--tier-stretch); }
 .fatigue-select.is-set { border-color: currentColor; font-weight: 600; }
 .col-sled { width: 5rem; }
 .col-sled .sled-input { width: 100%; padding: 0.25rem 0.35rem; font-size: 0.85rem; text-align: right; }
@@ -571,14 +572,15 @@ tr.day-header-row.is-collapsed .day-exercises {
 /* Fatigue-tier colours, shared by the Log pills, the Dictionary dropdown and
    the Volume chart so a tier looks the same everywhere. Validated against
    both surfaces in the stack order complex / compound / isolation / technique
-   / cardio — isolation's neutral sits between the two warm hues on purpose,
-   since red beside yellow fails the dark-mode separation floor. */
+   / cardio / stretch — isolation's neutral sits between the two warm hues on
+   purpose, since red beside yellow fails the dark-mode separation floor. */
 :root {
   --tier-complex: #e66767;
   --tier-compound: #3987e5;
   --tier-isolation: var(--muted);
   --tier-technique: #c98500;
   --tier-cardio: #199e70;
+  --tier-stretch: #a67fe0;
 }
 @media (prefers-color-scheme: light) {
   :root {
@@ -586,6 +588,7 @@ tr.day-header-row.is-collapsed .day-exercises {
     --tier-compound: #2a78d6;
     --tier-technique: #eda100;
     --tier-cardio: #1baf7a;
+    --tier-stretch: #8457cc;
   }
 }
 .pill.fatigue-complex { color: var(--tier-complex); border-color: var(--tier-complex); }
@@ -593,6 +596,7 @@ tr.day-header-row.is-collapsed .day-exercises {
 .pill.fatigue-isolation { color: var(--tier-isolation); border-color: var(--border); }
 .pill.fatigue-technique { color: var(--tier-technique); border-color: var(--tier-technique); }
 .pill.fatigue-cardio { color: var(--tier-cardio); border-color: var(--tier-cardio); }
+.pill.fatigue-stretch { color: var(--tier-stretch); border-color: var(--tier-stretch); }
 
 /* Movement-pattern pill in the Log. Deliberately quieter than the fatigue
    pill beside it — a filled tint rather than an outline, so the two read as
@@ -915,6 +919,7 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 .vol-isolation { fill: var(--tier-isolation); }
 .vol-technique { fill: var(--tier-technique); }
 .vol-cardio { fill: var(--tier-cardio); }
+.vol-stretch { fill: var(--tier-stretch); }
 
 /* Categorical palette for the body-part chart. Eight fixed slots, assigned to
    muscle groups in a stable order so a colour always means the same body part
@@ -1068,6 +1073,7 @@ a.composite-link:hover { border-color: var(--accent); color: var(--accent); }
 .vol-swatch.vol-isolation { background: var(--tier-isolation); }
 .vol-swatch.vol-technique { background: var(--tier-technique); }
 .vol-swatch.vol-cardio { background: var(--tier-cardio); }
+.vol-swatch.vol-stretch { background: var(--tier-stretch); }
 .chip .chip-date { color: var(--muted); font-size: 0.75rem; margin-left: 0.35rem; }
 .chip:hover .chip-date { color: inherit; }
 tr.highlight td { background: var(--row-alt); font-weight: 600; }

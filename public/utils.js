@@ -525,10 +525,11 @@ const TECHNIQUE_KEYWORDS = [
   "tempo", "pause snatch", "pause clean", "no foot", "no-foot", "from power",
 ];
 
-// Stretching and mobility work. A held stretch is not a set performed in the
-// sense this scale counts, so it costs nothing (FATIGUE_MULTIPLIERS.stretch)
-// whatever tier it lands in. Matched after the technique keywords, so the
-// snatch-stretch drill stays a technique drill.
+// Stretching and mobility work, its own tier. A held stretch is not a set
+// performed in the sense this scale counts, so it costs nothing
+// (FATIGUE_MULTIPLIERS.stretch) — and still costs nothing if a stretch is
+// filed under another tier by hand. Matched after the technique keywords, so
+// the snatch-stretch drill stays a technique drill unless it's set by hand.
 const STRETCH_KEYWORDS = ["stretch", "mobility", "yoga", "foam roll"];
 
 // Keywords are matched as plain substrings against a full name, which is safe
@@ -559,6 +560,7 @@ function autoFatigueTierUncached(abbreviation, fullName) {
     if (abbreviationMentions(abbreviation, CARDIO_KEYWORDS)) return "cardio";
     if (abbreviationMentions(abbreviation, TECHNIQUE_KEYWORDS)) return "technique";
   }
+  if (isStretch(abbreviation, fullName)) return "stretch";
 
   if (isOlympicPull(abbreviation, fullName)) return "compound";
 
@@ -582,7 +584,8 @@ function classifyFatigueTier(abbreviation, fullName) {
 // Technique: it's the one neutral-coloured tier, and keeping it there stops
 // the warm hues (Complex red, Technique yellow) from landing next to each
 // other in a stacked bar, where they're hard to tell apart in dark mode.
-const FATIGUE_TIERS = ["complex", "compound", "isolation", "technique", "cardio"];
+// Stretch goes last, beside the other tier that scores no fatigue.
+const FATIGUE_TIERS = ["complex", "compound", "isolation", "technique", "cardio", "stretch"];
 
 const FATIGUE_TIER_LABELS = {
   complex: "Complex",
@@ -590,6 +593,7 @@ const FATIGUE_TIER_LABELS = {
   isolation: "Isolation",
   technique: "Technique",
   cardio: "Cardio",
+  stretch: "Stretch",
 };
 
 // ---------- weighted fatigue units (WFU) ----------
@@ -736,7 +740,7 @@ function autoFatigueMultiplier(abbreviation, fullName, tier = classifyFatigueTie
       ? FATIGUE_MULTIPLIERS.intervals
       : FATIGUE_MULTIPLIERS.uncounted;
   }
-  if (isStretch(abbreviation, fullName)) return FATIGUE_MULTIPLIERS.stretch;
+  if (tier === "stretch" || isStretch(abbreviation, fullName)) return FATIGUE_MULTIPLIERS.stretch;
   if (tier === "complex") {
     return isCleanAndJerk(abbreviation, fullName)
       ? FATIGUE_MULTIPLIERS.cleanAndJerk

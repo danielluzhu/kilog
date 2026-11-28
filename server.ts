@@ -391,7 +391,7 @@ function parseMovementPattern(body: any): string | null | undefined {
   return v;
 }
 
-const FATIGUE_TIERS = ["complex", "compound", "isolation", "technique", "cardio"];
+const FATIGUE_TIERS = ["complex", "compound", "isolation", "technique", "cardio", "stretch"];
 
 function parseFatigueTier(body: any): string | null | undefined {
   if (!(body && Object.prototype.hasOwnProperty.call(body, "fatigueTier"))) return undefined;
