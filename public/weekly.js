@@ -286,6 +286,8 @@ const state = {
   names: {},          // abbreviation -> full name
   dict: {},           // abbreviation -> the dictionary row (for movement pattern)
   maxes: {},          // abbreviation -> { oneRM, date, sets } | null
+  log: null,          // the whole log as /api/volume rows, oldest first, or null
+  logByExercise: null, // lowercased abbreviation -> its rows in `log`
   actualWfuPerWeek: null,
   actualWfuV2PerWeek: null,
   actualDaysPerWeek: null,
@@ -596,30 +598,60 @@ async function loadDictionary() {
   return entries;
 }
 
+// The whole log, fetched once per page load. The maxes and the recent average
+// are both read out of it, which used to take a history request per exercise
+// in the plan (34 of them for the default week) on top of this one.
+async function loadLog() {
+  try {
+    const res = await fetch("/api/volume");
+    state.log = res.ok ? await res.json() : null;
+  } catch {
+    state.log = null;
+  }
+  state.logByExercise = null;
+}
+
+// The log's rows for an abbreviation, whatever its capitalization, the way
+// the history endpoint matched them.
+function logRowsFor(abbrev) {
+  if (!state.logByExercise) {
+    state.logByExercise = new Map();
+    for (const row of state.log || []) {
+      const key = row.exercise.toLowerCase();
+      if (!state.logByExercise.has(key)) state.logByExercise.set(key, []);
+      state.logByExercise.get(key).push(row);
+    }
+  }
+  return state.logByExercise.get(String(abbrev).trim().toLowerCase()) || [];
+}
+
+// The spelling the dictionary knows an abbreviation by, else the one it was
+// logged under: what its sets are scored as.
+function canonicalExercise(abbrev) {
+  const lower = String(abbrev).trim().toLowerCase();
+  const inDict = Object.keys(state.dict || {}).find((a) => a.toLowerCase() === lower);
+  return inDict ?? logRowsFor(abbrev)[0]?.exercise ?? String(abbrev).trim();
+}
+
 // Best estimated 1RM for one exercise, over the whole log or the trailing
 // window, whichever the "Maxes from" control asks for. Falls back to the
 // all-time best when the recent window is empty, so a lift that hasn't come
 // up lately still gets a number rather than a dash.
-async function loadMax(abbrev) {
-  let data;
-  try {
-    const res = await fetch(`/api/exercises/${encodeURIComponent(abbrev)}/history`);
-    if (!res.ok) return null;
-    data = await res.json();
-  } catch {
-    return null;
-  }
-  if (!data || !data.history || data.timesLogged === 0) return null;
+function maxFor(abbrev) {
+  const rows = logRowsFor(abbrev);
+  if (rows.length === 0) return null;
+  const canonical = canonicalExercise(abbrev);
+  const fullName = state.dict?.[canonical]?.full_name || null;
 
   const cutoff = state.basis === "recent" ? daysAgoDate(RECENT_WINDOW_DAYS) : null;
   let best = null;
   let bestRecent = null;
-  for (const h of data.history) {
-    const top = topScorableSetOf(h.sets, data.abbreviation, data.fullName);
+  for (const row of rows) {
+    const top = topScorableSetOf(row.sets, canonical, fullName);
     if (!top) continue;
-    const entry = { oneRM: top.oneRM, date: h.date, set: top };
+    const entry = { oneRM: top.oneRM, date: row.date, set: top };
     if (!best || top.oneRM > best.oneRM) best = entry;
-    const when = parseDateParts(h.date);
+    const when = parseDateParts(row.date);
     if (cutoff && when && when >= cutoff && (!bestRecent || top.oneRM > bestRecent.oneRM)) {
       bestRecent = entry;
     }
@@ -629,21 +661,19 @@ async function loadMax(abbrev) {
   return { ...chosen, stale: Boolean(cutoff && !bestRecent) };
 }
 
-async function loadMaxes() {
-  const wanted = referencedExercises();
-  const results = await Promise.all(wanted.map((ex) => loadMax(ex)));
-  state.maxes = Object.fromEntries(wanted.map((ex, i) => [ex, results[i]]));
+function computeMaxes() {
+  state.maxes = Object.fromEntries(referencedExercises().map((ex) => [ex, maxFor(ex)]));
 }
 
 // What the log actually says the last four weeks cost, for the plan to be
 // read against. Uses the Volume endpoint's per-day set counts rather than
 // re-walking every set.
-async function loadActualLoad() {
+function computeActualLoad() {
   try {
-    const res = await fetch("/api/volume");
+    if (!state.log) throw new Error("no log");
     // Priced over the whole log, which v2 needs; only the window is summed.
     // v2 is only priced while it's switched on, and stays null otherwise.
-    const { rows, v2 } = priceVolumeRows(await res.json(), { v2: fatigueV2Shown() });
+    const { rows, v2 } = priceVolumeRows(state.log, { v2: fatigueV2Shown() });
     state.fatigueV2 = v2;
     const cutoff = daysAgoDate(ACTUAL_WINDOW_DAYS);
     let wfu = 0;
@@ -1249,8 +1279,8 @@ async function applyFieldChange(target) {
   }
 
   savePlan();
-  // A new abbreviation may need a max fetched before it can show a weight.
-  await loadMaxes();
+  // A new abbreviation needs its max read before it can show a weight.
+  computeMaxes();
   render();
 }
 
@@ -1268,7 +1298,7 @@ function wireEvents() {
       state.basis = btn.dataset.basis;
       savePrefs();
       renderChips();
-      await loadMaxes();
+      computeMaxes();
       render();
     });
   }
@@ -1289,7 +1319,8 @@ function wireEvents() {
     state.plan = clone(DEFAULT_PLAN);
     state.customized = false;
     setStatus("Restored the default routine.", "ok");
-    loadMaxes().then(render);
+    computeMaxes();
+    render();
   });
 
   $("#plan-export").addEventListener("click", async () => {
@@ -1322,7 +1353,8 @@ function wireEvents() {
     state.plan = parsed;
     savePlan();
     setStatus("Plan replaced.", "ok");
-    loadMaxes().then(render);
+    computeMaxes();
+    render();
   });
 
   // Every editable control is rendered fresh on each pass, so the handlers
@@ -1383,16 +1415,18 @@ async function init() {
   loadPrefs();
   loadPlan();
   wireEvents();
-  mountFatigueV2Toggle($("#v2-toggle"), async () => {
-    await loadActualLoad();
+  mountFatigueV2Toggle($("#v2-toggle"), () => {
+    computeActualLoad();
     render();
   });
   render();
 
-  await loadFatigueRates();
-  await loadDictionary();
+  // All three at once: the log is scored against the dictionary and the
+  // rates, but needs neither to download.
+  await Promise.all([loadFatigueRates(), loadDictionary(), loadLog()]);
   renderExerciseOptions();
-  await Promise.all([loadMaxes(), loadActualLoad()]);
+  computeMaxes();
+  computeActualLoad();
   render();
 }
 
