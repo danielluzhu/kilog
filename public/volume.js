@@ -277,6 +277,7 @@ function renderStacked(
     unit = "Sets",
     totalText = (v) => `${v} set${v === 1 ? "" : "s"}`,
     selected,
+    width = chartWidth(wrap),
   }
 ) {
   // Unselected series stay in the stack rather than being dropped: the bar
@@ -299,7 +300,7 @@ function renderStacked(
   }
   emptyEl.style.display = "none";
 
-  const W = chartWidth(wrap), H = 280;
+  const W = width, H = 280;
   const padL = 40, padR = 12, padT = 12, padB = 46;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
@@ -697,6 +698,12 @@ function render() {
     },
   ]);
 
+  // Every chart's width is read before anything is drawn. Read between
+  // charts, each one made the browser lay the page out again to answer.
+  const [volWidth, muscleWidth, wfuWidth, bodyPartWidth] = [
+    "#vol-chart-wrap", "#muscle-chart-wrap", "#wfu-chart-wrap", "#bodypart-chart-wrap",
+  ].map((sel) => chartWidth($(sel)));
+
   renderStats(buckets);
 
   const tierSpec = {
@@ -768,10 +775,10 @@ function render() {
     unit: "part-sets/wk",
   });
 
-  renderStacked($("#vol-chart-wrap"), $("#vol-empty"), buckets, tierSpec);
-  renderStacked($("#muscle-chart-wrap"), $("#muscle-empty"), buckets, patternSpec);
-  renderStacked($("#wfu-chart-wrap"), $("#wfu-empty"), buckets, wfuSpec);
-  renderStacked($("#bodypart-chart-wrap"), $("#bodypart-empty"), buckets, bodyPartSpec);
+  renderStacked($("#vol-chart-wrap"), $("#vol-empty"), buckets, { ...tierSpec, width: volWidth });
+  renderStacked($("#muscle-chart-wrap"), $("#muscle-empty"), buckets, { ...patternSpec, width: muscleWidth });
+  renderStacked($("#wfu-chart-wrap"), $("#wfu-empty"), buckets, { ...wfuSpec, width: wfuWidth });
+  renderStacked($("#bodypart-chart-wrap"), $("#bodypart-empty"), buckets, { ...bodyPartSpec, width: bodyPartWidth });
   renderLegend("#tier-legend", buckets, tierSpec);
   renderLegend("#muscle-legend", buckets, patternSpec);
   renderLegend("#wfu-legend", buckets, wfuSpec);
