@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { db } from "./db.ts";
 import { normalizeDate } from "./lib/dates.ts";
 import { countSets } from "./lib/setCount.ts";
+import { fatigueV2Prices, noteFatigueWrite } from "./lib/fatigueV2.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
 
@@ -108,6 +109,20 @@ function listWorkoutsGrouped(url: URL) {
     setsByWorkout.get(s.workout_id)!.push(s.value);
   }
 
+  // v2 is priced against the whole log, so the page is looked up in it rather
+  // than priced on its own. A failure costs the Log its v2 numbers, which it
+  // then leaves out, not the page.
+  let v2: Map<number, number> | null = null;
+  try {
+    v2 = fatigueV2Prices(() => ({
+      rows: listVolume(),
+      dictionary: listDictionary(),
+      rates: listFatigueRates(),
+    })).byId;
+  } catch (err) {
+    console.error("fatigue v2 pricing failed:", err);
+  }
+
   const workoutsByDate = new Map<string, any[]>();
   for (const w of workouts) {
     if (!workoutsByDate.has(w.date)) workoutsByDate.set(w.date, []);
@@ -116,12 +131,18 @@ function listWorkoutsGrouped(url: URL) {
       exercise: w.exercise,
       exerciseName: dict.get(w.exercise) || null,
       sets: setsByWorkout.get(w.id) ?? [],
+      ...(v2 ? { fatigueV2: v2.get(w.id) ?? 0 } : {}),
     });
   }
 
   const days = dates
     .filter((date) => workoutsByDate.has(date))
-    .map((date) => ({ date, workouts: workoutsByDate.get(date)! }));
+    .map((date) => {
+      const dayWorkouts = workoutsByDate.get(date)!;
+      if (!v2) return { date, workouts: dayWorkouts };
+      const fatigueV2 = dayWorkouts.reduce((sum, w) => sum + w.fatigueV2, 0);
+      return { date, workouts: dayWorkouts, fatigueV2 };
+    });
 
   return { days, totalDays, totalWorkouts };
 }
@@ -948,7 +969,9 @@ const server = Bun.serve({
   port: PORT,
   hostname: "0.0.0.0",
   async fetch(req) {
-    return compressed(req, await route(req));
+    const res = await route(req);
+    if (req.method !== "GET") noteFatigueWrite();
+    return compressed(req, res);
   },
 });
 

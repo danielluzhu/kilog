@@ -138,7 +138,6 @@ $("#add-form").addEventListener("submit", async (e) => {
     dateInput.value = date; // keep date for logging multiple exercises same day
 
     await loadDictionaryOptions();
-    await loadFatigueV2();
     await refreshLog();
   } catch (err) {
     status.textContent = err.message;
@@ -146,37 +145,11 @@ $("#add-form").addEventListener("submit", async (e) => {
   }
 });
 
-// ---------- fatigue v2 (on trial) ----------
-// v2 needs the whole log -- each set is read against the lift's max over the
-// prior year -- where the history below is fetched a page at a time. So it
-// is priced once from /api/volume and looked up by date (day headers) or by
-// workout id (exercise rows) when the log is drawn, and re-priced after
-// anything is saved.
-
-let fatigueV2ByDate = new Map();
-let fatigueV2ById = new Map();
-
-async function loadFatigueV2() {
-  try {
-    const res = await fetch("/api/volume");
-    const { rows } = priceVolumeRows(await res.json());
-    const byDate = new Map();
-    const byId = new Map();
-    for (const r of rows) {
-      byDate.set(r.date, (byDate.get(r.date) || 0) + r.wfuV2);
-      byId.set(r.id, r.wfuV2);
-    }
-    fatigueV2ByDate = byDate;
-    fatigueV2ById = byId;
-  } catch {
-    // The log falls back to WFU alone.
-    fatigueV2ByDate = new Map();
-    fatigueV2ById = new Map();
-  }
-}
-
 // ---------- history table / log (grouped by day, newest day first) ----------
 
+// Each day carries its v2 from the server (fatigueV2 on the day and on each
+// workout): v2 reads every set against the lift's past year, which a page of
+// the log can't be priced from on its own.
 const DAYS_PER_PAGE = 14;
 let dayOffset = 0;
 let currentSearch = "";
@@ -230,7 +203,7 @@ function summarizeDay(workouts) {
   return { total, byTier, fatigueUnits };
 }
 
-function dayHeaderHtml(date, workouts) {
+function dayHeaderHtml(date, workouts, v2) {
   const { total, byTier, fatigueUnits } = summarizeDay(workouts);
   // Zero-count tiers are left out — a row of "0 complex" on every accessory
   // day is noise, and their absence says the same thing.
@@ -247,7 +220,6 @@ function dayHeaderHtml(date, workouts) {
   // A day of nothing but stretching or steady-state cardio scores no fatigue
   // units at all — omitted rather than shown as a "0". v2 rides in the same
   // pill while it's on trial; a day of only misses has v2 and no WFU.
-  const v2 = fatigueV2ByDate.get(date);
   const wfuPill =
     fatigueUnits || v2
       ? `<span class="day-wfu" title="${escapeHtml(`${WFU_EXPLAINER}\n\n${FATIGUE_V2_EXPLAINER}`)}">${formatFatigueUnits(
@@ -281,7 +253,7 @@ function renderDays(days, append) {
     headerTr.tabIndex = 0;
     headerTr.setAttribute("role", "button");
     headerTr.setAttribute("aria-expanded", String(open));
-    headerTr.innerHTML = dayHeaderHtml(day.date, day.workouts);
+    headerTr.innerHTML = dayHeaderHtml(day.date, day.workouts, day.fatigueV2);
     tbody.appendChild(headerTr);
 
     for (const w of day.workouts) {
@@ -358,7 +330,7 @@ function rowHtml(w) {
   // but misses has v2 and no sets.
   const n = countSets(w.sets);
   const mult = fatigueMultiplier(w.exercise, w.exerciseName);
-  const v2 = fatigueV2ById.get(w.id);
+  const v2 = w.fatigueV2;
   const setCountTitle =
     `x${mult} fatigue = ${formatFatigueUnits(n * mult)} WFU. ${WFU_EXPLAINER}` +
     (v2 === undefined ? "" : `\n\n${FATIGUE_V2_EXPLAINER}`);
@@ -431,7 +403,6 @@ async function saveEdit(tr, id, editor) {
   }
   markLogged();
   await loadDictionaryOptions();
-  await loadFatigueV2();
   await refreshLog();
 }
 
@@ -463,5 +434,4 @@ $("#search").addEventListener("input", (e) => {
 // and movement pattern can be set by hand there, and drawing first showed the
 // name-derived guess on whichever loads won the race — so a lift's pill could
 // read Technique on one load and Complex on the next.
-// v2 is priced after both, since it reads tiers and rates off them.
-Promise.allSettled([loadDictionaryOptions(), loadFatigueRates()]).then(loadFatigueV2).then(refreshLog);
+Promise.allSettled([loadDictionaryOptions(), loadFatigueRates()]).then(refreshLog);
