@@ -856,7 +856,12 @@ function fatigueV2Effort(weight, reps, max) {
 // `workouts`; maxOn(exercise, isoDate) is the max v2 would read a set on that
 // date against, or 0.
 function fatigueUnitsV2(workouts) {
-  const dayOf = (iso) => Math.round(Date.parse(`${iso}T00:00:00Z`) / 86400000);
+  const dayNumbers = new Map();
+  const dayOf = (iso) => {
+    let day = dayNumbers.get(iso);
+    if (day === undefined) dayNumbers.set(iso, (day = Math.round(Date.parse(`${iso}T00:00:00Z`) / 86400000)));
+    return day;
+  };
   const sets = [];
   const bestByDay = new Map(); // exercise -> Map(day -> best estimate that day)
   workouts.forEach((wk, wi) => {
@@ -877,8 +882,28 @@ function fatigueUnitsV2(workouts) {
     });
   });
 
+  // The max on every day each exercise was trained, in one pass per exercise:
+  // a sliding window over its days in order, keeping only the estimates that
+  // could still be the best (each newer and lower than the one before it).
+  const maxByDay = new Map(); // exercise -> Map(day -> max over the window ending that day)
+  for (const [exercise, days] of bestByDay) {
+    const out = new Map();
+    const candidates = [];
+    let head = 0;
+    for (const [d, v] of [...days].sort((a, b) => a[0] - b[0])) {
+      while (candidates.length > head && candidates[candidates.length - 1][1] <= v) candidates.pop();
+      candidates.push([d, v]);
+      while (candidates[head][0] < d - FATIGUE_V2_LOOKBACK_DAYS) head++;
+      out.set(d, candidates[head][1]);
+    }
+    maxByDay.set(exercise, out);
+  }
+  // Any other day (one with only misses logged, or a planned one) is read the
+  // long way.
   const maxCache = new Map();
   const maxOnDay = (exercise, day) => {
+    const known = maxByDay.get(exercise)?.get(day);
+    if (known !== undefined) return known;
     const key = `${exercise}|${day}`;
     if (maxCache.has(key)) return maxCache.get(key);
     let best = 0;
