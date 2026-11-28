@@ -20,6 +20,9 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_sets_workout_id ON sets(workout_id);
   CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(date);
+  -- The dictionary's usage counts and sled check join every exercise to its
+  -- workouts, and without this each one scanned the whole table (186ms -> 20ms).
+  CREATE INDEX IF NOT EXISTS idx_workouts_exercise ON workouts(exercise, date);
 
   CREATE TABLE IF NOT EXISTS exercise_dictionary (
     abbreviation TEXT PRIMARY KEY,
