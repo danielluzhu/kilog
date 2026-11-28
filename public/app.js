@@ -147,10 +147,11 @@ $("#add-form").addEventListener("submit", async (e) => {
 
 // ---------- history table / log (grouped by day, newest day first) ----------
 
-// Each day carries its v2 from the server (fatigueV2 on the day and on each
-// workout): v2 reads every set against the lift's past year, which a page of
-// the log can't be priced from on its own.
-const DAYS_PER_PAGE = 14;
+// A page is a week of training days; older ones come a page at a time from
+// "Load more". Each day carries its v2 from the server (fatigueV2 on the day
+// and on each workout): v2 reads every set against the lift's past year, which
+// a page of the log can't be priced from on its own.
+const DAYS_PER_PAGE = 7;
 let dayOffset = 0;
 let currentSearch = "";
 // Days before today start folded to their header: the log is opened to add
