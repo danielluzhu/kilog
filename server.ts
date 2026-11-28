@@ -829,102 +829,126 @@ function authorized(req: Request) {
 
 // ---------- server ----------
 
+// Text responses go out gzipped when the browser takes it. The full log the
+// fatigue numbers are priced from is 858KB of JSON and 80KB compressed, and
+// on a phone that download was most of the wait. Level 4 rather than the
+// default 6: within a few KB of it, at two-thirds of the time.
+const COMPRESSIBLE_TYPES = /^(application\/json|text\/|application\/javascript|image\/svg)/;
+const MIN_COMPRESSED_BYTES = 1024;
+
+async function compressed(req: Request, res: Response): Promise<Response> {
+  const type = res.headers.get("Content-Type") ?? "";
+  if (!COMPRESSIBLE_TYPES.test(type) || res.headers.has("Content-Encoding")) return res;
+  if (!/\bgzip\b/.test(req.headers.get("Accept-Encoding") ?? "")) return res;
+  const body = new Uint8Array(await res.arrayBuffer());
+  const headers = new Headers(res.headers);
+  headers.append("Vary", "Accept-Encoding");
+  if (body.length < MIN_COMPRESSED_BYTES) return new Response(body, { status: res.status, headers });
+  headers.set("Content-Encoding", "gzip");
+  headers.delete("Content-Length");
+  return new Response(Bun.gzipSync(body, { level: 4 }), { status: res.status, headers });
+}
+
+async function route(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const { pathname } = url;
+
+  if (!authorized(req)) {
+    return new Response("Unauthorized", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="kilog", charset="UTF-8"' },
+    });
+  }
+
+  try {
+    if (pathname === "/api/workouts" && req.method === "GET") {
+      return json(listWorkoutsGrouped(url));
+    }
+    if (pathname === "/api/volume" && req.method === "GET") {
+      return json(listVolume());
+    }
+    if (pathname === "/api/workouts" && req.method === "POST") {
+      return json(createWorkout(await req.json()), { status: 201 });
+    }
+    if (pathname === "/api/workouts/bulk" && req.method === "POST") {
+      return json(bulkCreateWorkouts(await req.json()));
+    }
+    const workoutMatch = pathname.match(/^\/api\/workouts\/(\d+)$/);
+    if (workoutMatch && req.method === "PUT") {
+      return json(updateWorkout(Number(workoutMatch[1]), await req.json()));
+    }
+    if (workoutMatch && req.method === "DELETE") {
+      deleteWorkout(Number(workoutMatch[1]));
+      return json({ ok: true });
+    }
+    const dateMatch = pathname.match(/^\/api\/workouts\/on\/(\d{4}-\d{2}-\d{2})$/);
+    if (dateMatch && req.method === "GET") {
+      return json(workoutsOnDate(dateMatch[1]));
+    }
+
+    if (pathname === "/api/cardio" && req.method === "GET") {
+      return json(listCardioGrouped(url));
+    }
+    if (pathname === "/api/cardio" && req.method === "POST") {
+      return json(createCardio(await req.json()), { status: 201 });
+    }
+    const cardioMatch = pathname.match(/^\/api\/cardio\/(\d+)$/);
+    if (cardioMatch && req.method === "PUT") {
+      return json(updateCardio(Number(cardioMatch[1]), await req.json()));
+    }
+    if (cardioMatch && req.method === "DELETE") {
+      deleteCardio(Number(cardioMatch[1]));
+      return json({ ok: true });
+    }
+
+    if (pathname === "/api/fatigue-rates" && req.method === "GET") {
+      return json(listFatigueRates());
+    }
+    if (pathname === "/api/fatigue-rates" && req.method === "POST") {
+      return json(setFatigueRate(await req.json()));
+    }
+
+    if (pathname === "/api/dictionary" && req.method === "GET") {
+      return json(listDictionary());
+    }
+    if (pathname === "/api/dictionary" && req.method === "POST") {
+      return json(upsertDictionaryEntry(await req.json()), { status: 201 });
+    }
+    if (pathname === "/api/dictionary/bulk" && req.method === "POST") {
+      return json(bulkUpsertDictionary(await req.json()));
+    }
+    if (pathname === "/api/dictionary/merge" && req.method === "POST") {
+      return json(mergeDictionaryEntries(await req.json()));
+    }
+    const historyMatch = pathname.match(/^\/api\/exercises\/([^/]+)\/history$/);
+    if (historyMatch && req.method === "GET") {
+      return json(exerciseHistory(decodeURIComponent(historyMatch[1])));
+    }
+    const dictMatch = pathname.match(/^\/api\/dictionary\/([^/]+)$/);
+    if (dictMatch && req.method === "DELETE") {
+      deleteDictionaryEntry(decodeURIComponent(dictMatch[1]));
+      return json({ ok: true });
+    }
+
+    // static files
+    let filePath = pathname === "/" ? "/index.html" : pathname;
+    if (!filePath.includes(".")) filePath += ".html";
+    const file = Bun.file(`${import.meta.dir}/public${filePath}`);
+    if (await file.exists()) return new Response(file);
+
+    return new Response("Not found", { status: 404 });
+  } catch (err: any) {
+    const message = err?.message ?? "Internal error";
+    const status = message === "not found" ? 404 : 400;
+    return json({ error: message }, { status });
+  }
+}
+
 const server = Bun.serve({
   port: PORT,
   hostname: "0.0.0.0",
   async fetch(req) {
-    const url = new URL(req.url);
-    const { pathname } = url;
-
-    if (!authorized(req)) {
-      return new Response("Unauthorized", {
-        status: 401,
-        headers: { "WWW-Authenticate": 'Basic realm="kilog", charset="UTF-8"' },
-      });
-    }
-
-    try {
-      if (pathname === "/api/workouts" && req.method === "GET") {
-        return json(listWorkoutsGrouped(url));
-      }
-      if (pathname === "/api/volume" && req.method === "GET") {
-        return json(listVolume());
-      }
-      if (pathname === "/api/workouts" && req.method === "POST") {
-        return json(createWorkout(await req.json()), { status: 201 });
-      }
-      if (pathname === "/api/workouts/bulk" && req.method === "POST") {
-        return json(bulkCreateWorkouts(await req.json()));
-      }
-      const workoutMatch = pathname.match(/^\/api\/workouts\/(\d+)$/);
-      if (workoutMatch && req.method === "PUT") {
-        return json(updateWorkout(Number(workoutMatch[1]), await req.json()));
-      }
-      if (workoutMatch && req.method === "DELETE") {
-        deleteWorkout(Number(workoutMatch[1]));
-        return json({ ok: true });
-      }
-      const dateMatch = pathname.match(/^\/api\/workouts\/on\/(\d{4}-\d{2}-\d{2})$/);
-      if (dateMatch && req.method === "GET") {
-        return json(workoutsOnDate(dateMatch[1]));
-      }
-
-      if (pathname === "/api/cardio" && req.method === "GET") {
-        return json(listCardioGrouped(url));
-      }
-      if (pathname === "/api/cardio" && req.method === "POST") {
-        return json(createCardio(await req.json()), { status: 201 });
-      }
-      const cardioMatch = pathname.match(/^\/api\/cardio\/(\d+)$/);
-      if (cardioMatch && req.method === "PUT") {
-        return json(updateCardio(Number(cardioMatch[1]), await req.json()));
-      }
-      if (cardioMatch && req.method === "DELETE") {
-        deleteCardio(Number(cardioMatch[1]));
-        return json({ ok: true });
-      }
-
-      if (pathname === "/api/fatigue-rates" && req.method === "GET") {
-        return json(listFatigueRates());
-      }
-      if (pathname === "/api/fatigue-rates" && req.method === "POST") {
-        return json(setFatigueRate(await req.json()));
-      }
-
-      if (pathname === "/api/dictionary" && req.method === "GET") {
-        return json(listDictionary());
-      }
-      if (pathname === "/api/dictionary" && req.method === "POST") {
-        return json(upsertDictionaryEntry(await req.json()), { status: 201 });
-      }
-      if (pathname === "/api/dictionary/bulk" && req.method === "POST") {
-        return json(bulkUpsertDictionary(await req.json()));
-      }
-      if (pathname === "/api/dictionary/merge" && req.method === "POST") {
-        return json(mergeDictionaryEntries(await req.json()));
-      }
-      const historyMatch = pathname.match(/^\/api\/exercises\/([^/]+)\/history$/);
-      if (historyMatch && req.method === "GET") {
-        return json(exerciseHistory(decodeURIComponent(historyMatch[1])));
-      }
-      const dictMatch = pathname.match(/^\/api\/dictionary\/([^/]+)$/);
-      if (dictMatch && req.method === "DELETE") {
-        deleteDictionaryEntry(decodeURIComponent(dictMatch[1]));
-        return json({ ok: true });
-      }
-
-      // static files
-      let filePath = pathname === "/" ? "/index.html" : pathname;
-      if (!filePath.includes(".")) filePath += ".html";
-      const file = Bun.file(`${import.meta.dir}/public${filePath}`);
-      if (await file.exists()) return new Response(file);
-
-      return new Response("Not found", { status: 404 });
-    } catch (err: any) {
-      const message = err?.message ?? "Internal error";
-      const status = message === "not found" ? 404 : 400;
-      return json({ error: message }, { status });
-    }
+    return compressed(req, await route(req));
   },
 });
 
