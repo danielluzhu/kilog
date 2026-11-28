@@ -149,21 +149,29 @@ $("#add-form").addEventListener("submit", async (e) => {
 // ---------- fatigue v2 (on trial) ----------
 // v2 needs the whole log -- each set is read against the lift's max over the
 // prior year -- where the history below is fetched a page at a time. So it
-// is priced once from /api/volume and looked up by date when a day is drawn,
-// and re-priced after anything is saved.
+// is priced once from /api/volume and looked up by date (day headers) or by
+// workout id (exercise rows) when the log is drawn, and re-priced after
+// anything is saved.
 
 let fatigueV2ByDate = new Map();
+let fatigueV2ById = new Map();
 
 async function loadFatigueV2() {
   try {
     const res = await fetch("/api/volume");
     const { rows } = priceVolumeRows(await res.json());
     const byDate = new Map();
-    for (const r of rows) byDate.set(r.date, (byDate.get(r.date) || 0) + r.wfuV2);
+    const byId = new Map();
+    for (const r of rows) {
+      byDate.set(r.date, (byDate.get(r.date) || 0) + r.wfuV2);
+      byId.set(r.id, r.wfuV2);
+    }
     fatigueV2ByDate = byDate;
+    fatigueV2ById = byId;
   } catch {
-    // The day headers fall back to WFU alone.
+    // The log falls back to WFU alone.
     fatigueV2ByDate = new Map();
+    fatigueV2ById = new Map();
   }
 }
 
@@ -343,14 +351,22 @@ function rowHtml(w) {
     ? `<span class="orm-badge" title="${escapeHtml(describeScoredSet(top))}">~${formatOneRM(top)} 1RM</span>`
     : "";
 
-  // The exercise's own fatigue weighting hangs off the set count as a title
-  // rather than a second visible number — the day header carries the total,
-  // and a per-row pill on every line would drown the log.
+  // The exercise's fatigue rides on the set count's muted line rather than in
+  // a pill — the day header carries the total, and a per-row pill on every
+  // line would drown the log. While v2 is on trial both numbers show, so a
+  // day's v2 can be traced to the lifts that make it up; a row of nothing
+  // but misses has v2 and no sets.
   const n = countSets(w.sets);
   const mult = fatigueMultiplier(w.exercise, w.exerciseName);
-  const setCountTitle = `x${mult} fatigue = ${formatFatigueUnits(n * mult)} WFU. ${WFU_EXPLAINER}`;
-  const setCount = n
-    ? `<span class="set-count" title="${escapeHtml(setCountTitle)}">${n} set${n === 1 ? "" : "s"}</span>`
+  const v2 = fatigueV2ById.get(w.id);
+  const setCountTitle =
+    `x${mult} fatigue = ${formatFatigueUnits(n * mult)} WFU. ${WFU_EXPLAINER}` +
+    (v2 === undefined ? "" : `\n\n${FATIGUE_V2_EXPLAINER}`);
+  const parts = [];
+  if (n) parts.push(`${n} set${n === 1 ? "" : "s"}`, `${formatFatigueUnits(n * mult)} WFU`);
+  if (v2 !== undefined && (n || v2)) parts.push(`v2 ${formatFatigueUnits(v2)}`);
+  const setCount = parts.length
+    ? `<span class="set-count" title="${escapeHtml(setCountTitle)}">${parts.join(" · ")}</span>`
     : "";
 
   return `

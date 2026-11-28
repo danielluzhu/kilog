@@ -290,7 +290,7 @@ function listVolume() {
   // -- and the charts drop them themselves.
   const rows = db
     .query(
-      `SELECT w.date, w.exercise, d.full_name AS exerciseName,
+      `SELECT w.id, w.date, w.exercise, d.full_name AS exerciseName,
               d.movement_pattern AS movementPattern, d.fatigue_tier AS fatigueTier,
               d.fatigue_multiplier AS fatigueMultiplier,
               -- In set order: a bare rep count takes the weight of the set
