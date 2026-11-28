@@ -36,10 +36,18 @@ function parseDateParts(iso) {
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
+// One formatter per set of options, built on first use: toLocaleDateString
+// builds a fresh one on every call, and the Volume page labels thousands of
+// dates per render.
+const DATE_FORMATTERS = new Map();
 function formatDate(iso, opts) {
   const d = parseDateParts(iso);
   if (!d) return iso;
-  return d.toLocaleDateString(undefined, opts ?? { year: "numeric", month: "short", day: "numeric" });
+  const options = opts ?? { year: "numeric", month: "short", day: "numeric" };
+  const key = JSON.stringify(options);
+  let formatter = DATE_FORMATTERS.get(key);
+  if (!formatter) DATE_FORMATTERS.set(key, (formatter = new Intl.DateTimeFormat(undefined, options)));
+  return formatter.format(d);
 }
 
 function formatShortDate(iso) {
