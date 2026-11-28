@@ -1,11 +1,13 @@
 const $ = (sel) => document.querySelector(sel);
 
+// One formatter for every row: toLocaleDateString builds a new one per call.
+const LAST_USED_FORMAT = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" });
+
 function formatLastUsed(iso) {
   if (!iso) return "never";
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return iso;
-  const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return LAST_USED_FORMAT.format(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
 }
 
 let entries = [];
@@ -151,7 +153,35 @@ function buildFilterOptions() {
     '<option value="__unset">— not set —</option>';
 }
 
+// One <tr> per entry, kept between filters. The rows are only built when an
+// entry's data changes; searching, filtering and sorting just pick which of
+// them are in the table and in what order, so typing in the search box
+// doesn't rebuild ~240 rows of dropdowns on every keystroke.
+const rowEls = new Map();
+
+function rowsFromHtml(html) {
+  const holder = document.createElement("tbody");
+  holder.innerHTML = html;
+  return [...holder.children];
+}
+
 function render() {
+  rowEls.clear();
+  for (const tr of rowsFromHtml(entries.map(rowHtml).join(""))) rowEls.set(tr.dataset.abbrev, tr);
+  showRows();
+}
+
+// Rebuilds one entry's row in place, for an edit that only changes that row.
+function renderRow(abbreviation) {
+  const entry = entries.find((e) => e.abbreviation === abbreviation);
+  const old = rowEls.get(abbreviation);
+  if (!entry || !old) return render();
+  const [tr] = rowsFromHtml(rowHtml(entry));
+  rowEls.set(abbreviation, tr);
+  old.replaceWith(tr);
+}
+
+function showRows() {
   const search = $("#dict-search").value.trim().toLowerCase();
   const unnamedOnly = $("#unnamed-only").checked;
   const sortMode = $("#dict-sort").value;
@@ -177,86 +207,88 @@ function render() {
 
   $("#dict-count").textContent = `${filtered.length} / ${entries.length} entries`;
 
-  const tbody = $("#dict-body");
-  tbody.innerHTML = filtered
-    .map((e) => {
-      const typeLabel = describeLiftCategory(e.abbreviation, e.full_name);
-      const typeCell = typeLabel
-        ? `<span class="pill">${escapeHtml(typeLabel)}</span>`
-        : '<span class="muted">—</span>';
-      const equipment = classifyEquipment(e.abbreviation, e.full_name);
-      const equipmentCell = equipment
-        ? `<span class="pill">${escapeHtml(equipment)}</span>`
-        : '<span class="muted">—</span>';
-      // Same Auto-vs-override contract as the muscle column: the select shows
-      // the hand-set tier if there is one, otherwise the derived one, and the
-      // blank option hands the row back to the classifier.
-      const autoTier = autoFatigueTier(e.abbreviation, e.full_name);
-      const effectiveTier = e.fatigue_tier || autoTier;
-      const fatigueCell = `<select class="tag-select fatigue-select fatigue-${effectiveTier}${
-        e.fatigue_tier ? " is-set" : ""
-      }" title="${e.fatigue_tier ? "Set by hand" : "Derived from the exercise type"}">
-          <option value=""${e.fatigue_tier ? "" : " selected"}>${escapeHtml(
-            FATIGUE_TIER_LABELS[autoTier]
-          )} (auto)</option>
-          ${FATIGUE_TIERS
-            .map(
-              (t) =>
-                `<option value="${t}"${e.fatigue_tier === t ? " selected" : ""}>${escapeHtml(
-                  FATIGUE_TIER_LABELS[t]
-                )}</option>`
-            )
-            .join("")}
-        </select>`;
-      // The dropdown shows the hand-assigned pattern if there is one, otherwise
-      // the keyword guess. "Auto" clears the override and hands the row back
-      // to the classifier, so the two states stay distinguishable.
-      const autoPattern = classifyMovementPattern(e.abbreviation, e.full_name);
-      const patternCell = `<select class="tag-select pattern-select${e.movement_pattern ? " is-set" : ""}" title="${
-        e.movement_pattern ? "Set by hand" : autoPattern ? "Auto-detected from the name" : "Not detected — pick one"
-      }">
-          <option value=""${e.movement_pattern ? "" : " selected"}>${
-            autoPattern ? `${escapeHtml(MOVEMENT_PATTERN_LABELS[autoPattern])} (auto)` : "— (auto)"
-          }</option>
-          ${MOVEMENT_PATTERNS.map(
-            (g) =>
-              `<option value="${g}"${e.movement_pattern === g ? " selected" : ""}>${escapeHtml(
-                MOVEMENT_PATTERN_LABELS[g]
-              )}</option>`
-          ).join("")}
-        </select>`;
+  $("#dict-body").replaceChildren(...filtered.map((e) => rowEls.get(e.abbreviation)));
+  updateMergeButton();
+}
 
-      // The rate this exercise's sets are billed at. Blank shows what its
-      // tier prices it at and follows the tier from then on; a number here
-      // outranks the tier, so the placeholder is what "clear this" gets you.
-      const autoMultiplier = autoFatigueMultiplier(e.abbreviation, e.full_name, effectiveTier);
-      const hasMultiplier = e.fatigue_multiplier !== null && e.fatigue_multiplier !== undefined;
-      const wfuCell = `<input type="text" inputmode="decimal" class="wfu-input${
-        hasMultiplier ? " is-set" : ""
-      }" value="${escapeHtml(hasMultiplier ? e.fatigue_multiplier : "")}" placeholder="${escapeHtml(
-        formatFatigueUnits(autoMultiplier)
-      )}" title="${
-        hasMultiplier
-          ? `Set by hand: every counted set bills ${formatFatigueUnits(
-              Number(e.fatigue_multiplier)
-            )} WFU. Clear the box to go back to ${formatFatigueUnits(autoMultiplier)} from the ${
-              FATIGUE_TIER_LABELS[effectiveTier]
-            } tier.`
-          : `From the ${FATIGUE_TIER_LABELS[effectiveTier]} tier: ${formatFatigueUnits(
-              autoMultiplier
-            )} WFU per counted set. Type a number to price this exercise yourself.`
-      }" />`;
+function rowHtml(e) {
+  const typeLabel = describeLiftCategory(e.abbreviation, e.full_name);
+  const typeCell = typeLabel
+    ? `<span class="pill">${escapeHtml(typeLabel)}</span>`
+    : '<span class="muted">—</span>';
+  const equipment = classifyEquipment(e.abbreviation, e.full_name);
+  const equipmentCell = equipment
+    ? `<span class="pill">${escapeHtml(equipment)}</span>`
+    : '<span class="muted">—</span>';
+  // Same Auto-vs-override contract as the muscle column: the select shows
+  // the hand-set tier if there is one, otherwise the derived one, and the
+  // blank option hands the row back to the classifier.
+  const autoTier = autoFatigueTier(e.abbreviation, e.full_name);
+  const effectiveTier = e.fatigue_tier || autoTier;
+  const fatigueCell = `<select class="tag-select fatigue-select fatigue-${effectiveTier}${
+    e.fatigue_tier ? " is-set" : ""
+  }" title="${e.fatigue_tier ? "Set by hand" : "Derived from the exercise type"}">
+      <option value=""${e.fatigue_tier ? "" : " selected"}>${escapeHtml(
+        FATIGUE_TIER_LABELS[autoTier]
+      )} (auto)</option>
+      ${FATIGUE_TIERS
+        .map(
+          (t) =>
+            `<option value="${t}"${e.fatigue_tier === t ? " selected" : ""}>${escapeHtml(
+              FATIGUE_TIER_LABELS[t]
+            )}</option>`
+        )
+        .join("")}
+    </select>`;
+  // The dropdown shows the hand-assigned pattern if there is one, otherwise
+  // the keyword guess. "Auto" clears the override and hands the row back
+  // to the classifier, so the two states stay distinguishable.
+  const autoPattern = classifyMovementPattern(e.abbreviation, e.full_name);
+  const patternCell = `<select class="tag-select pattern-select${e.movement_pattern ? " is-set" : ""}" title="${
+    e.movement_pattern ? "Set by hand" : autoPattern ? "Auto-detected from the name" : "Not detected — pick one"
+  }">
+      <option value=""${e.movement_pattern ? "" : " selected"}>${
+        autoPattern ? `${escapeHtml(MOVEMENT_PATTERN_LABELS[autoPattern])} (auto)` : "— (auto)"
+      }</option>
+      ${MOVEMENT_PATTERNS.map(
+        (g) =>
+          `<option value="${g}"${e.movement_pattern === g ? " selected" : ""}>${escapeHtml(
+            MOVEMENT_PATTERN_LABELS[g]
+          )}</option>`
+      ).join("")}
+    </select>`;
 
-      // Only offered where a sled is plausible — an input on every one of the
-      // 400+ rows would be noise. Blank means "use the default". This is the
-      // fallback for sets logged as a plain "S+"; a set that names its own
-      // weight ("S25+61x12", one machine among several) always wins.
-      const sledCell = exerciseUsesSled(entries, e.abbreviation, e.full_name)
-        ? `<input type="text" inputmode="decimal" class="sled-input" value="${escapeHtml(
-            e.sled_weight_kg ?? ""
-          )}" placeholder="${DEFAULT_SLED_WEIGHT_KG}" title="Default sled/carriage weight in kg for this exercise, used by sets logged as a plain S+. A set can override it inline (S25+61x12). Blank uses the ${DEFAULT_SLED_WEIGHT_KG}kg default." />`
-        : '<span class="muted">—</span>';
-      return `
+  // The rate this exercise's sets are billed at. Blank shows what its
+  // tier prices it at and follows the tier from then on; a number here
+  // outranks the tier, so the placeholder is what "clear this" gets you.
+  const autoMultiplier = autoFatigueMultiplier(e.abbreviation, e.full_name, effectiveTier);
+  const hasMultiplier = e.fatigue_multiplier !== null && e.fatigue_multiplier !== undefined;
+  const wfuCell = `<input type="text" inputmode="decimal" class="wfu-input${
+    hasMultiplier ? " is-set" : ""
+  }" value="${escapeHtml(hasMultiplier ? e.fatigue_multiplier : "")}" placeholder="${escapeHtml(
+    formatFatigueUnits(autoMultiplier)
+  )}" title="${
+    hasMultiplier
+      ? `Set by hand: every counted set bills ${formatFatigueUnits(
+          Number(e.fatigue_multiplier)
+        )} WFU. Clear the box to go back to ${formatFatigueUnits(autoMultiplier)} from the ${
+          FATIGUE_TIER_LABELS[effectiveTier]
+        } tier.`
+      : `From the ${FATIGUE_TIER_LABELS[effectiveTier]} tier: ${formatFatigueUnits(
+          autoMultiplier
+        )} WFU per counted set. Type a number to price this exercise yourself.`
+  }" />`;
+
+  // Only offered where a sled is plausible — an input on every one of the
+  // 400+ rows would be noise. Blank means "use the default". This is the
+  // fallback for sets logged as a plain "S+"; a set that names its own
+  // weight ("S25+61x12", one machine among several) always wins.
+  const sledCell = exerciseUsesSled(entries, e.abbreviation, e.full_name)
+    ? `<input type="text" inputmode="decimal" class="sled-input" value="${escapeHtml(
+        e.sled_weight_kg ?? ""
+      )}" placeholder="${DEFAULT_SLED_WEIGHT_KG}" title="Default sled/carriage weight in kg for this exercise, used by sets logged as a plain S+. A set can override it inline (S25+61x12). Blank uses the ${DEFAULT_SLED_WEIGHT_KG}kg default." />`
+    : '<span class="muted">—</span>';
+  return `
     <tr data-abbrev="${escapeHtml(e.abbreviation)}">
       <td><input type="checkbox" class="row-select" ${selected.has(e.abbreviation) ? "checked" : ""} /></td>
       <td class="col-abbrev"><a class="exercise-link" href="/lapse.html?exercise=${encodeURIComponent(
@@ -283,83 +315,64 @@ function render() {
       }</td>
       <td class="actions"><button class="small danger delete-btn">Delete</button></td>
     </tr>`;
-    })
-    .join("");
-
-  tbody.querySelectorAll(".row-select").forEach((cb) => {
-    cb.addEventListener("change", () => {
-      const abbreviation = cb.closest("tr").dataset.abbrev;
-      if (cb.checked) selected.add(abbreviation);
-      else selected.delete(abbreviation);
-      updateMergeButton();
-    });
-  });
-  tbody.querySelectorAll(".name-input").forEach((input) => {
-    input.addEventListener("change", async () => {
-      const abbreviation = input.closest("tr").dataset.abbrev;
-      await saveEntry(abbreviation, input.value.trim());
-    });
-  });
-  tbody.querySelectorAll(".fatigue-select").forEach((sel) => {
-    sel.addEventListener("change", async () => {
-      const abbreviation = sel.closest("tr").dataset.abbrev;
-      // "" is the Auto option: clears the override rather than storing a blank.
-      await saveFatigueTier(abbreviation, sel.value || null);
-      await loadDictionary(); // the pill colour keys off the effective tier
-    });
-  });
-  tbody.querySelectorAll(".pattern-select").forEach((sel) => {
-    sel.addEventListener("change", async () => {
-      const abbreviation = sel.closest("tr").dataset.abbrev;
-      // "" is the Auto option: clears the override rather than storing a blank.
-      await saveMovementPattern(abbreviation, sel.value || null);
-      sel.classList.toggle("is-set", !!sel.value);
-    });
-  });
-  tbody.querySelectorAll(".wfu-input").forEach((input) => {
-    input.addEventListener("change", async () => {
-      const abbreviation = input.closest("tr").dataset.abbrev;
-      const raw = input.value.trim();
-      const n = Number(raw);
-      if (raw !== "" && !(Number.isFinite(n) && n >= 0 && n <= MAX_FATIGUE_MULTIPLIER)) {
-        input.value = "";
-        alert(
-          `WFU per set must be a number between 0 and ${MAX_FATIGUE_MULTIPLIER} ` +
-            "(or blank to use the fatigue tier's rate)."
-        );
-        return;
-      }
-      await saveFatigueMultiplier(abbreviation, raw === "" ? null : n);
-      // Re-rendered rather than patched in place: the cell's title and
-      // placeholder both describe the rate that is now in force.
-      render();
-    });
-  });
-  tbody.querySelectorAll(".sled-input").forEach((input) => {
-    input.addEventListener("change", async () => {
-      const row = input.closest("tr");
-      const abbreviation = row.dataset.abbrev;
-      const raw = input.value.trim();
-      if (raw !== "" && !(Number(raw) >= 0)) {
-        input.value = "";
-        alert("Sled weight must be a non-negative number (or blank for the default).");
-        return;
-      }
-      await saveSledWeight(abbreviation, raw === "" ? null : Number(raw));
-    });
-  });
-  tbody.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const abbreviation = btn.closest("tr").dataset.abbrev;
-      if (!confirm(`Delete dictionary entry "${abbreviation}"?`)) return;
-      await fetch(`/api/dictionary/${encodeURIComponent(abbreviation)}`, { method: "DELETE" });
-      selected.delete(abbreviation);
-      await loadDictionary();
-    });
-  });
-
-  updateMergeButton();
 }
+
+// The rows come and go with every filter, so their controls are handled here
+// on the table body rather than by a listener on each one.
+$("#dict-body").addEventListener("change", async (event) => {
+  const el = event.target;
+  const abbreviation = el.closest("tr")?.dataset.abbrev;
+  if (abbreviation === undefined) return;
+
+  if (el.matches(".row-select")) {
+    if (el.checked) selected.add(abbreviation);
+    else selected.delete(abbreviation);
+    updateMergeButton();
+  } else if (el.matches(".name-input")) {
+    await saveEntry(abbreviation, el.value.trim());
+  } else if (el.matches(".fatigue-select")) {
+    // "" is the Auto option: clears the override rather than storing a blank.
+    await saveFatigueTier(abbreviation, el.value || null);
+    await loadDictionary(); // the pill colour keys off the effective tier
+  } else if (el.matches(".pattern-select")) {
+    // "" is the Auto option: clears the override rather than storing a blank.
+    await saveMovementPattern(abbreviation, el.value || null);
+    el.classList.toggle("is-set", !!el.value);
+  } else if (el.matches(".wfu-input")) {
+    const raw = el.value.trim();
+    const n = Number(raw);
+    if (raw !== "" && !(Number.isFinite(n) && n >= 0 && n <= MAX_FATIGUE_MULTIPLIER)) {
+      el.value = "";
+      alert(
+        `WFU per set must be a number between 0 and ${MAX_FATIGUE_MULTIPLIER} ` +
+          "(or blank to use the fatigue tier's rate)."
+      );
+      return;
+    }
+    await saveFatigueMultiplier(abbreviation, raw === "" ? null : n);
+    // Re-rendered rather than patched in place: the cell's title and
+    // placeholder both describe the rate that is now in force.
+    renderRow(abbreviation);
+  } else if (el.matches(".sled-input")) {
+    const raw = el.value.trim();
+    if (raw !== "" && !(Number(raw) >= 0)) {
+      el.value = "";
+      alert("Sled weight must be a non-negative number (or blank for the default).");
+      return;
+    }
+    await saveSledWeight(abbreviation, raw === "" ? null : Number(raw));
+  }
+});
+
+$("#dict-body").addEventListener("click", async (event) => {
+  const btn = event.target.closest(".delete-btn");
+  if (!btn) return;
+  const abbreviation = btn.closest("tr").dataset.abbrev;
+  if (!confirm(`Delete dictionary entry "${abbreviation}"?`)) return;
+  await fetch(`/api/dictionary/${encodeURIComponent(abbreviation)}`, { method: "DELETE" });
+  selected.delete(abbreviation);
+  await loadDictionary();
+});
 
 // `sledWeightKg` of null clears the per-exercise value and falls back to the
 // default. The full name is sent unchanged so the upsert doesn't blank it.
@@ -423,11 +436,17 @@ async function saveEntry(abbreviation, fullName) {
   else entries.push({ abbreviation, full_name: fullName, usage_count: 0, last_used: null });
 }
 
-$("#dict-fatigue").addEventListener("change", render);
-$("#dict-pattern").addEventListener("change", render);
-$("#dict-search").addEventListener("input", render);
-$("#unnamed-only").addEventListener("change", render);
-$("#dict-sort").addEventListener("change", render);
+$("#dict-fatigue").addEventListener("change", showRows);
+$("#dict-pattern").addEventListener("change", showRows);
+// Laying out a few hundred rows of dropdowns is the slow part of a filter, so
+// the search waits for a pause in typing rather than redrawing per letter.
+let searchTimer = 0;
+$("#dict-search").addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(showRows, 150);
+});
+$("#unnamed-only").addEventListener("change", showRows);
+$("#dict-sort").addEventListener("change", showRows);
 
 // ---------- merge abbreviations ----------
 
