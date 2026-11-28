@@ -77,16 +77,25 @@ let bucketMode = "week";
 let rangeKey = "365";
 let customDays = 14;
 
+// The rows as fetched, kept so switching v2 on or off re-prices them
+// without fetching again.
+let rawRows = [];
+
 async function loadVolume() {
   const res = await fetch("/api/volume");
-  const raw = await res.json();
+  rawRows = await res.json();
+  priceRows();
+  render();
+}
+
+function priceRows() {
   // This page never loads the dictionary, so overrides ride along on the
   // volume rows themselves rather than through registerDictionary() — which
   // is why priceVolumeRows reads the tier and rate off each row. Weighted
   // volume rides alongside the raw count, never instead of it: the charts
   // stay in sets, WFUs (and v2 beside them) surface in the stat tiles and
-  // the tables.
-  rows = priceVolumeRows(raw)
+  // the tables. v2 is only priced while it's switched on.
+  rows = priceVolumeRows(rawRows, { v2: fatigueV2Shown() })
     .rows.map((r) => ({
       ...r,
       day: dayNumber(r.date),
@@ -97,7 +106,6 @@ async function loadVolume() {
     // silently bucketing it under today. A session of nothing but misses
     // stays: it counts no sets, but v2 prices it.
     .filter((r) => r.day !== null && (r.setCount > 0 || r.wfuV2 > 0));
-  render();
 }
 
 // ---------- bucketing ----------
@@ -472,8 +480,8 @@ function renderLegend(sel, buckets, spec) {
   $(sel).innerHTML = keys + clear;
 }
 
-// `showWfu` adds the weighted totals (WFU, then v2 beside it) as final
-// columns — the tier table only, since the weighting is a property of the
+// `showWfu` adds the weighted totals (WFU, then v2 beside it while v2 is
+// switched on) as final columns — the tier table only, since the weighting is a property of the
 // tier and repeating it against
 // movement patterns would just be the same number sliced a way it doesn't
 // come from.
@@ -482,6 +490,7 @@ function renderTable(tbodySel, buckets, spec) {
     seriesName, stack, labelFor, headSel, showWfu,
     format = formatSets, totalKey = "total", totalLabel = "Total",
   } = spec;
+  const showV2 = showWfu && fatigueV2Shown();
   const present = stack.filter((k) => buckets.some((b) => (b[seriesName][k] || 0) > 0));
   // The table sits under the chart it describes, so a selection has to reach
   // it too — otherwise the two disagree about what's being looked at.
@@ -492,9 +501,8 @@ function renderTable(tbodySel, buckets, spec) {
       `<th>Period</th>${present
         .map((k) => `<th${cls(k)}>${escapeHtml(labelFor(k))}</th>`)
         .join("")}<th>${escapeHtml(totalLabel)}</th>` +
-      (showWfu
-        ? `<th title="${escapeHtml(WFU_EXPLAINER)}">WFU</th><th title="${escapeHtml(FATIGUE_V2_EXPLAINER)}">v2</th>`
-        : "");
+      (showWfu ? `<th title="${escapeHtml(WFU_EXPLAINER)}">WFU</th>` : "") +
+      (showV2 ? `<th title="${escapeHtml(FATIGUE_V2_EXPLAINER)}">v2</th>` : "");
   }
   $(tbodySel).innerHTML = [...buckets]
     .reverse()
@@ -507,7 +515,7 @@ function renderTable(tbodySel, buckets, spec) {
           .join("")}
         <td><strong>${format(b[totalKey])}</strong></td>
         ${showWfu ? `<td>${b.wfu ? formatFatigueUnits(b.wfu) : '<span class="muted">—</span>'}</td>` : ""}
-        ${showWfu ? `<td>${b.wfuV2 ? formatFatigueUnits(b.wfuV2) : '<span class="muted">—</span>'}</td>` : ""}
+        ${showV2 ? `<td>${b.wfuV2 ? formatFatigueUnits(b.wfuV2) : '<span class="muted">—</span>'}</td>` : ""}
       </tr>`
     )
     .join("");
@@ -758,7 +766,8 @@ function render() {
 
   renderRateRow("#vol-rate", "Sets", "sets", "sets/wk");
   renderRateRow("#wfu-rate", "WFU", "wfu", "WFU/wk");
-  renderRateRow("#wfu-v2-rate", "v2", "wfuV2", "v2/wk");
+  $("#wfu-v2-rate").style.display = fatigueV2Shown() ? "" : "none";
+  if (fatigueV2Shown()) renderRateRow("#wfu-v2-rate", "v2", "wfuV2", "v2/wk");
   renderSeriesRates(patternSpec, {
     headSel: "#pattern-rate-head",
     bodySel: "#pattern-rate-body",
@@ -855,6 +864,10 @@ $("#vrange-last-year").textContent = `Last year (${currentYear() - 1})`;
 
 markActive();
 loadFatigueRates().then(loadVolume);
+mountFatigueV2Toggle($("#v2-toggle"), () => {
+  priceRows();
+  render();
+});
 onWidthChange(() => {
   if ($("#vol-chart-wrap svg")) render();
 });

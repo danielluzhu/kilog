@@ -642,7 +642,8 @@ async function loadActualLoad() {
   try {
     const res = await fetch("/api/volume");
     // Priced over the whole log, which v2 needs; only the window is summed.
-    const { rows, v2 } = priceVolumeRows(await res.json());
+    // v2 is only priced while it's switched on, and stays null otherwise.
+    const { rows, v2 } = priceVolumeRows(await res.json(), { v2: fatigueV2Shown() });
     state.fatigueV2 = v2;
     const cutoff = daysAgoDate(ACTUAL_WINDOW_DAYS);
     let wfu = 0;
@@ -657,7 +658,7 @@ async function loadActualLoad() {
     }
     const weeks = ACTUAL_WINDOW_DAYS / 7;
     state.actualWfuPerWeek = wfu / weeks;
-    state.actualWfuV2PerWeek = wfuV2 / weeks;
+    state.actualWfuV2PerWeek = v2 ? wfuV2 / weeks : null;
     state.actualDaysPerWeek = days.size / weeks;
   } catch {
     state.actualWfuPerWeek = null;
@@ -1382,6 +1383,10 @@ async function init() {
   loadPrefs();
   loadPlan();
   wireEvents();
+  mountFatigueV2Toggle($("#v2-toggle"), async () => {
+    await loadActualLoad();
+    render();
+  });
   render();
 
   await loadFatigueRates();

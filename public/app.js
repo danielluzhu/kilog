@@ -179,6 +179,7 @@ async function fetchLog(reset) {
   if (reset) dayOffset = 0;
   const params = new URLSearchParams({ limit: DAYS_PER_PAGE, offset: dayOffset });
   if (currentSearch) params.set("search", currentSearch);
+  if (fatigueV2Shown()) params.set("fatigueV2", "1");
   const res = await fetch(`/api/workouts?${params}`);
   return res.json();
 }
@@ -223,7 +224,9 @@ function dayHeaderHtml(date, workouts, v2) {
   // pill while it's on trial; a day of only misses has v2 and no WFU.
   const wfuPill =
     fatigueUnits || v2
-      ? `<span class="day-wfu" title="${escapeHtml(`${WFU_EXPLAINER}\n\n${FATIGUE_V2_EXPLAINER}`)}">${formatFatigueUnits(
+      ? `<span class="day-wfu" title="${escapeHtml(
+          v2 === undefined ? WFU_EXPLAINER : `${WFU_EXPLAINER}\n\n${FATIGUE_V2_EXPLAINER}`
+        )}">${formatFatigueUnits(
           fatigueUnits
         )} WFU${v2 === undefined ? "" : ` · v2 ${formatFatigueUnits(v2)}`}</span>`
       : "";
@@ -254,7 +257,7 @@ function renderDays(days, append) {
     headerTr.tabIndex = 0;
     headerTr.setAttribute("role", "button");
     headerTr.setAttribute("aria-expanded", String(open));
-    headerTr.innerHTML = dayHeaderHtml(day.date, day.workouts, day.fatigueV2);
+    headerTr.innerHTML = dayHeaderHtml(day.date, day.workouts, fatigueV2Shown() ? day.fatigueV2 : undefined);
     tbody.appendChild(headerTr);
 
     for (const w of day.workouts) {
@@ -331,7 +334,7 @@ function rowHtml(w) {
   // but misses has v2 and no sets.
   const n = countSets(w.sets);
   const mult = fatigueMultiplier(w.exercise, w.exerciseName);
-  const v2 = w.fatigueV2;
+  const v2 = fatigueV2Shown() ? w.fatigueV2 : undefined;
   const setCountTitle =
     `x${mult} fatigue = ${formatFatigueUnits(n * mult)} WFU. ${WFU_EXPLAINER}` +
     (v2 === undefined ? "" : `\n\n${FATIGUE_V2_EXPLAINER}`);
@@ -436,3 +439,4 @@ $("#search").addEventListener("input", (e) => {
 // name-derived guess on whichever loads won the race — so a lift's pill could
 // read Technique on one load and Complex on the next.
 Promise.allSettled([loadDictionaryOptions(), loadFatigueRates()]).then(refreshLog);
+mountFatigueV2Toggle($("#v2-toggle"), refreshLog);

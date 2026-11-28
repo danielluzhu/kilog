@@ -110,17 +110,20 @@ function listWorkoutsGrouped(url: URL) {
   }
 
   // v2 is priced against the whole log, so the page is looked up in it rather
-  // than priced on its own. A failure costs the Log its v2 numbers, which it
-  // then leaves out, not the page.
+  // than priced on its own — and only when asked for, since it's off on the
+  // Log by default. A failure costs the Log its v2 numbers, which it then
+  // leaves out, not the page.
   let v2: Map<number, number> | null = null;
-  try {
-    v2 = fatigueV2Prices(() => ({
-      rows: listVolume(),
-      dictionary: listDictionary(),
-      rates: listFatigueRates(),
-    })).byId;
-  } catch (err) {
-    console.error("fatigue v2 pricing failed:", err);
+  if (url.searchParams.get("fatigueV2") === "1") {
+    try {
+      v2 = fatigueV2Prices(() => ({
+        rows: listVolume(),
+        dictionary: listDictionary(),
+        rates: listFatigueRates(),
+      })).byId;
+    } catch (err) {
+      console.error("fatigue v2 pricing failed:", err);
+    }
   }
 
   const workoutsByDate = new Map<string, any[]>();

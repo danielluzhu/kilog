@@ -952,15 +952,61 @@ function fatigueUnitsV2(workouts) {
 
 // The /api/volume rows, priced the way every page prices them, run through
 // v2. Each row gains `wfu` and `wfuV2`; the v2 context comes back alongside.
-function priceVolumeRows(rows) {
+// With `v2: false` the v2 pass — the costly part, every set of the log — is
+// skipped: `wfuV2` is 0 and the context is null.
+function priceVolumeRows(rows, { v2: withV2 = true } = {}) {
   const priced = rows.map((r) => {
     const tier = r.fatigueTier || classifyFatigueTier(r.exercise, r.exerciseName);
     const rate = fatigueMultiplier(r.exercise, r.exerciseName, tier, r.fatigueMultiplier);
-    return { ...r, tier, rate, wfu: r.setCount * rate };
+    return { ...r, tier, rate, wfu: r.setCount * rate, wfuV2: 0 };
   });
+  if (!withV2) return { rows: priced, v2: null };
   const v2 = fatigueUnitsV2(priced);
   priced.forEach((r, i) => (r.wfuV2 = v2.units[i]));
   return { rows: priced, v2 };
+}
+
+// v2 is hidden unless switched on. The switch is the viewer's, remembered in
+// this browser and shared by every page that shows v2, and while it's off
+// those pages skip pricing v2 at all. Storage can be blocked (a private
+// window); the switch then still works for as long as the page is open.
+const FATIGUE_V2_PREF_KEY = "showFatigueV2";
+let fatigueV2On = (() => {
+  try {
+    return localStorage.getItem(FATIGUE_V2_PREF_KEY) === "1";
+  } catch {
+    return false;
+  }
+})();
+
+function fatigueV2Shown() {
+  return fatigueV2On;
+}
+
+// Puts the on/off button into `slot`; `onChange(on)` redraws the page.
+function mountFatigueV2Toggle(slot, onChange) {
+  if (!slot) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chip v2-toggle";
+  btn.title = FATIGUE_V2_EXPLAINER;
+  const paint = () => {
+    btn.textContent = fatigueV2On ? "v2 on" : "v2 off";
+    btn.classList.toggle("chip-active", fatigueV2On);
+    btn.setAttribute("aria-pressed", String(fatigueV2On));
+  };
+  btn.addEventListener("click", () => {
+    fatigueV2On = !fatigueV2On;
+    try {
+      localStorage.setItem(FATIGUE_V2_PREF_KEY, fatigueV2On ? "1" : "0");
+    } catch {
+      // not remembered, but still switched for this page
+    }
+    paint();
+    onChange(fatigueV2On);
+  });
+  paint();
+  slot.appendChild(btn);
 }
 
 // Lays the hand-set rates from /api/fatigue-rates over the built-in ones.

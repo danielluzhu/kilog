@@ -91,7 +91,7 @@ try {
   let totalDays = 0;
   let totalWorkouts = 0;
   for (let offset = 0; ; offset += 90) {
-    const page = (await get(`/api/workouts?limit=90&offset=${offset}`)) as {
+    const page = (await get(`/api/workouts?limit=90&offset=${offset}&fatigueV2=1`)) as {
       days: unknown[];
       totalDays: number;
       totalWorkouts: number;
